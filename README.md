@@ -78,3 +78,11 @@ mems/bytes/ccost(이 포팅에서 제거한 항목)를 제외한 모든 출력�
 `-v 2`/`-v 4` 추적까지.
 
 예) 13-queens: `73712 solutions, 29080172 updates, 1278828 nodes` — C·Go 동일.
+
+## 관련: ssmcc (다중도 확장)
+
+[`ssmcc/`](ssmcc/README.md)는 같은 모듈 안의 자매 프로그램으로, Knuth의
+[`SSMCC`](https://www-cs-faculty.stanford.edu/~knuth/programs/ssmcc.w)를 옮긴
+것입니다. `ssxcc`에 **항목 다중도**(`u:v|name`)를 더하고 **이진 분기**를 쓰는
+버전입니다. `go run ./ssmcc` 로 실행하거나 `go build -o ssmcc/ssmcc ./ssmcc` 로
+빌드합니다.
