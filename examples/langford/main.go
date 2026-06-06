@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	dcells "github.com/sjnam/dancing-cells"
+	cells "github.com/sjnam/dancing-cells"
 )
 
 func langfordDLX(n int) io.Reader {
@@ -44,7 +44,7 @@ func main() {
 	}
 	n, _ := strconv.Atoi(os.Args[1])
 
-	xc := dcells.NewXCC()
+	xc := cells.NewXCC()
 	res := xc.Dance(langfordDLX(n))
 
 	s := make([]int, 2*n)

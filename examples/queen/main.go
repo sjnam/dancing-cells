@@ -7,7 +7,7 @@ import (
 	"os"
 	"strconv"
 
-	dcells "github.com/sjnam/dancing-cells"
+	cells "github.com/sjnam/dancing-cells"
 )
 
 func encode(x int) byte {
@@ -72,7 +72,7 @@ func main() {
 	}
 	n, _ := strconv.Atoi(os.Args[1])
 
-	xc := dcells.NewXCC()
+	xc := cells.NewXCC()
 	res := xc.Dance(queenDLX(n))
 
 	i := 0

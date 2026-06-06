@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	dcells "github.com/sjnam/dancing-cells"
+	cells "github.com/sjnam/dancing-cells"
 )
 
 const xccInput = `
@@ -111,7 +111,7 @@ const xccInput = `
 `
 
 func main() {
-	xcc := dcells.NewXCC()
+	xcc := cells.NewXCC()
 	res := xcc.Dance(strings.NewReader(xccInput))
 
 	answer := map[byte][]string{

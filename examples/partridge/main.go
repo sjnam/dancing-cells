@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	dcells "github.com/sjnam/dancing-cells"
+	cells "github.com/sjnam/dancing-cells"
 )
 
 func patridgeDLX(n int) io.Reader {
@@ -44,7 +44,7 @@ func patridgeDLX(n int) io.Reader {
 }
 
 // fillBoard fills size[r][c] with tile size and tile[r][c] with a unique tile ID.
-func fillBoard(n int, sol []dcells.Option) (size, tile [][]int) {
+func fillBoard(n int, sol []cells.Option) (size, tile [][]int) {
 	N := n * (n + 1) / 2
 	size = make([][]int, N)
 	tile = make([][]int, N)
@@ -197,7 +197,7 @@ func main() {
 			n = v
 		}
 	}
-	mcc := dcells.NewMCC()
+	mcc := cells.NewMCC()
 	mcc.PulseInterval = 30 * time.Second
 	mcc = mcc.WithContext(ctx)
 	res := mcc.Dance(patridgeDLX(n))

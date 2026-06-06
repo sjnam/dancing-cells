@@ -10,7 +10,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	dcells "github.com/sjnam/dancing-cells"
+	cells "github.com/sjnam/dancing-cells"
 )
 
 func reverse(sa []rune) []rune {
@@ -99,7 +99,7 @@ func decode(str string) (int, int) {
 	return x[0], x[1]
 }
 
-func puzzleBoard(sol []dcells.Option, wd, ht int) {
+func puzzleBoard(sol []cells.Option, wd, ht int) {
 	board := make([][]rune, ht)
 	for i := 0; i < ht; i++ {
 		board[i] = make([]rune, wd)
@@ -153,7 +153,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	xcc := dcells.NewXCC()
+	xcc := cells.NewXCC()
 	res := xcc.Dance(
 		wordSearchDLX(strings.Fields(string(buf)), wd, ht))
 

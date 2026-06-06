@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	dcells "github.com/sjnam/dancing-cells"
+	cells "github.com/sjnam/dancing-cells"
 )
 
 func main() {
@@ -38,7 +38,7 @@ func main() {
 		}
 	}
 
-	res := dcells.NewXCC().Dance(fd)
+	res := cells.NewXCC().Dance(fd)
 	i := 0
 	for sol := range res.Solutions {
 		i++

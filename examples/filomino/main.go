@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	dcells "github.com/sjnam/dancing-cells"
+	cells "github.com/sjnam/dancing-cells"
 )
 
 func digit(b byte) int {
@@ -40,7 +40,7 @@ func main() {
 	nr, _ := strconv.Atoi(dimen[0])
 	nc, _ := strconv.Atoi(dimen[1])
 
-	xc := dcells.NewXCC()
+	xc := cells.NewXCC()
 	res := xc.Dance(fd)
 
 	box := make([][]int, nr)

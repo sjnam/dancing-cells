@@ -22,7 +22,7 @@ import (
 	"runtime/debug"
 	"time"
 
-	dcells "github.com/sjnam/dancing-cells"
+	cells "github.com/sjnam/dancing-cells"
 )
 
 // sudokuInput encodes the blanks of a puzzle as an exact-cover problem. The DLX
@@ -84,7 +84,7 @@ func solve(line []byte) result {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	res := dcells.NewXCC().WithContext(ctx).Dance(sudokuInput(line))
+	res := cells.NewXCC().WithContext(ctx).Dance(sudokuInput(line))
 	sol, ok := <-res.Solutions
 	if !ok {
 		return result{line, nil} // no solution
