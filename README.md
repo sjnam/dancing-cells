@@ -67,9 +67,15 @@ option. Lines beginning with `|` are comments.
 | Langford pairs | `go run ./examples/langford 4` |
 | Pentominoes | `go run ./examples/pentominoes examples/pentominoes/6x10.dlx` |
 | Sudoku | `go run ./examples/sudoku examples/sudoku/puzzles.txt` |
+| Filomino | `go run ./examples/filomino examples/filomino/10x10.filomino.dlx` |
+| Zebra puzzle | `go run ./examples/zebra` |
+| Word search | `go run ./examples/wordsearch examples/wordsearch/movie.txt 13 13` |
 
 각 예제는 문제를 DLX 텍스트로 생성(또는 파일에서 읽어)해 `Dance`에 넘기고
-`Solutions` 채널을 소비합니다 — dlx 예제와 동일한 패턴입니다.
+`Solutions` 채널을 소비합니다 — dlx 예제와 동일한 패턴입니다. 항목 이름과 색은
+임의 길이의 (멀티바이트 가능) 문자열이라 zebra(`nationality:England`)나
+한글 word search도 그대로 동작합니다. (다중도가 필요한 partridge는 ssmcc의
+라이브러리화가 선행되어야 하므로 제외했습니다.)
 
 ## Reference CLIs
 

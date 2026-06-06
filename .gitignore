@@ -3,3 +3,11 @@
 /cmd/ssxcc/ssxcc
 /cmd/ssmcc/ssmcc
 *.shape
+# stray example binaries (built into cwd)
+/queen
+/langford
+/pentominoes
+/sudoku
+/filomino
+/zebra
+/wordsearch

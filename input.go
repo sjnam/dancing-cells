@@ -4,12 +4,14 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"strings"
 )
 
 // The input is the DLX format shared by Knuth's solvers: a line of item names
-// (primary, then '|', then secondary), followed by one option per line listing
-// the item names it contains. A secondary item in an option may carry a
-// one-character color as "name:c". Lines beginning with '|' are comments.
+// (primary, then a lone '|', then secondary), followed by one option per line
+// listing the item names it contains. A secondary item in an option may carry a
+// color as "name:color". Item names and colors are arbitrary whitespace-free
+// strings. Lines beginning with '|' are comments.
 
 type parseError struct{ msg string }
 
@@ -19,7 +21,6 @@ func failf(format string, a ...any) {
 	panic(&parseError{fmt.Sprintf(format, a...)})
 }
 
-// inputMatrix parses the whole problem from rd into the solver's structures.
 func (s *Solver) inputMatrix(rd io.Reader) {
 	br := bufio.NewReader(rd)
 	s.readItemNames(br)
@@ -27,19 +28,16 @@ func (s *Solver) inputMatrix(rd io.Reader) {
 }
 
 // nextLine reads one input line, returning it as a NUL-terminated, NUL-padded
-// byte buffer (so C-style buf[p+j] probing stays in bounds), plus strlen(buf).
-func nextLine(br *bufio.Reader) (buf []byte, slen int, ok bool) {
+// byte buffer (so reading buf[p] one past the content stays in bounds and
+// stops at the terminating NUL).
+func nextLine(br *bufio.Reader) (buf []byte, ok bool) {
 	str, err := br.ReadString('\n')
 	if len(str) == 0 && err != nil {
-		return nil, 0, false
+		return nil, false
 	}
-	if len(str) == 0 || str[len(str)-1] != '\n' {
-		str += "\n"
-	}
-	slen = len(str)
-	buf = make([]byte, slen+12)
+	buf = make([]byte, len(str)+1)
 	copy(buf, str)
-	return buf, slen, true
+	return buf, true
 }
 
 func skipSpace(buf []byte, p int) int {
@@ -49,184 +47,152 @@ func skipSpace(buf []byte, p int) int {
 	return p
 }
 
-func indexByte(b []byte, c byte) int {
-	for i := range b {
-		if b[i] == c {
-			return i
-		}
+// token reads buf[p:] up to the next whitespace, NUL, or (if stopColon) ':'.
+func token(buf []byte, p int, stopColon bool) (string, int) {
+	start := p
+	for buf[p] != 0 && !isspace(buf[p]) && !(stopColon && buf[p] == ':') {
+		p++
 	}
-	return -1
-}
-
-func trimToNul(b []byte) string {
-	if i := indexByte(b, 0); i >= 0 {
-		return string(b[:i])
-	}
-	return string(b)
+	return string(buf[start:p]), p
 }
 
 func (s *Solver) readItemNames(br *bufio.Reader) {
 	var buf []byte
-	var slen, p int
+	var p int
+	found := false
 	for {
 		var ok bool
-		if buf, slen, ok = nextLine(br); !ok {
+		if buf, ok = nextLine(br); !ok {
 			break
 		}
-		if p = slen - 1; buf[p] != '\n' {
-			failf("input line way too long")
-		}
 		if p = skipSpace(buf, 0); buf[p] != '|' && buf[p] != 0 {
-			s.lastItm = 1
+			found = true
 			break
 		}
 	}
-	if s.lastItm == 0 {
+	if !found {
 		failf("no items")
 	}
 	for buf[p] != 0 {
-		s.set = ensure(s.set, (s.lastItm<<2)+1)
-		var nb [8]byte
-		j := 0
-		for ; j < 8 && !isspace(buf[p+j]); j++ {
-			if buf[p+j] == ':' || buf[p+j] == '|' {
-				failf("illegal character in item name: %q", trimToNul(buf))
-			}
-			nb[j] = buf[p+j]
-		}
-		if j == 8 && !isspace(buf[p+j]) {
-			failf("item name too long: %q", trimToNul(buf))
-		}
-		l, r := packLR(&nb)
-		s.setLname(s.lastItm<<2, l)
-		s.setRname(s.lastItm<<2, r)
-		for k := s.lastItm - 1; k != 0; k-- {
-			if s.lname(k<<2) == l && s.rname(k<<2) == r {
-				failf("duplicate item name: %s", decodeName(l, r))
-			}
-		}
-		s.lastItm++
-		p = skipSpace(buf, p+j+1)
-		if buf[p] == '|' {
+		name, next := token(buf, p, false)
+		if name == "|" {
 			if s.second != secondUnset {
 				failf("item name line contains | twice")
 			}
-			s.second = s.lastItm
-			p = skipSpace(buf, p+1)
+			s.second = len(s.names) // the next item's number
+		} else {
+			if strings.ContainsAny(name, ":|") {
+				failf("illegal character in item name: %q", name)
+			}
+			if _, ok := s.internName(name); !ok {
+				failf("duplicate item name: %s", name)
+			}
 		}
+		p = skipSpace(buf, next)
 	}
+	s.lastItm = len(s.names) // items + 1 (names[0] is unused)
 }
 
 func (s *Solver) readOptions(br *bufio.Reader) {
 	for {
-		buf, slen, ok := nextLine(br)
+		buf, ok := nextLine(br)
 		if !ok {
 			break
 		}
-		p := slen - 1
-		if buf[p] != '\n' {
-			failf("option line too long")
-		}
-		if p = skipSpace(buf, 0); buf[p] == '|' || buf[p] == 0 {
+		if p := skipSpace(buf, 0); buf[p] == '|' || buf[p] == 0 {
 			continue
 		}
-		spacer := s.lastNode
-		hasPrimary := false
-		for buf[p] != 0 {
-			var nb [8]byte
-			j := 0
-			for ; j < 8 && !isspace(buf[p+j]) && buf[p+j] != ':'; j++ {
-				nb[j] = buf[p+j]
-			}
-			if j == 0 {
-				failf("empty item name")
-			}
-			if j == 8 && !isspace(buf[p+j]) && buf[p+j] != ':' {
-				failf("item name too long: %q", trimToNul(buf))
-			}
-			k := s.createNode(&nb, spacer, &hasPrimary)
-			switch {
-			case buf[p+j] != ':':
-				s.nd[s.lastNode].clr = 0
-			case k >= s.second:
-				if isspace(buf[p+j+1]) || !isspace(buf[p+j+2]) {
-					failf("color must be a single character: %q", trimToNul(buf))
-				}
-				s.nd[s.lastNode].clr = int32(buf[p+j+1])
-				p += 2
-			default:
-				failf("primary item must be uncolored: %q", trimToNul(buf))
-			}
-			p = skipSpace(buf, p+j+1)
-		}
-		if !hasPrimary {
-			for s.lastNode > spacer {
-				k := int(s.nd[s.lastNode].itm) << 2
-				s.setSize(k, s.size(k)-1)
-				s.setPos(k, spacer-1)
-				s.lastNode--
-			}
-		} else {
-			s.nd[spacer].loc = int32(s.lastNode - spacer)
-			s.lastNode++
-			s.nd = ensure(s.nd, s.lastNode+1)
-			s.options++
-			s.nd[s.lastNode].itm = int32(spacer + 1 - s.lastNode)
-		}
+		s.readOption(buf)
 	}
 	s.finalize()
 }
 
-// createNode appends a node for the named item to the current option and
-// returns its input slot index (item number << 2), marking hasPrimary.
-func (s *Solver) createNode(nb *[8]byte, spacer int, hasPrimary *bool) int {
-	l, r := packLR(nb)
-	k := 0
-	for k = (s.lastItm - 1) << 2; k > 0; k -= 4 {
-		if s.lname(k) != l {
-			continue
+func (s *Solver) readOption(buf []byte) {
+	spacer := s.lastNode
+	hasPrimary := false
+	for p := skipSpace(buf, 0); buf[p] != 0; {
+		name, next := token(buf, p, true)
+		if name == "" {
+			failf("empty item name")
 		}
-		if s.rname(k) == r {
-			break
+		m, known := s.nameIndex[name]
+		if !known {
+			failf("unknown item name: %s", name)
 		}
+		s.createNode(m, spacer, &hasPrimary)
+		if buf[next] == ':' {
+			if m < s.second {
+				failf("primary item must be uncolored: %s", name)
+			}
+			color, ce := token(buf, next+1, false)
+			if color == "" {
+				failf("missing color after %s:", name)
+			}
+			s.nd[s.lastNode].clr = int32(s.internColor(color))
+			next = ce
+		} else {
+			s.nd[s.lastNode].clr = 0
+		}
+		p = skipSpace(buf, next)
 	}
-	if k == 0 {
-		failf("unknown item name: %s", decodeName(l, r))
+
+	if !hasPrimary {
+		for s.lastNode > spacer {
+			slot := int(s.nd[s.lastNode].itm) << 2
+			s.setSize(slot, s.size(slot)-1)
+			s.setPos(slot, spacer-1)
+			s.lastNode--
+		}
+		return
 	}
-	if s.pos(k) > spacer {
-		failf("duplicate item name in this option: %s", decodeName(l, r))
+	s.nd[spacer].loc = int32(s.lastNode - spacer)
+	s.lastNode++
+	s.nd = ensure(s.nd, s.lastNode+1)
+	s.options++
+	s.nd[s.lastNode].itm = int32(spacer + 1 - s.lastNode)
+}
+
+// createNode appends a node for item number m to the current option, marking
+// hasPrimary when m is primary.
+func (s *Solver) createNode(m, spacer int, hasPrimary *bool) {
+	slot := m << 2
+	s.set = ensure(s.set, slot)
+	if s.pos(slot) > spacer {
+		failf("duplicate item name in this option: %s", s.names[m])
 	}
 	s.lastNode++
 	s.nd = ensure(s.nd, s.lastNode+1)
-	t := s.size(k)
-	s.nd[s.lastNode].itm = int32(k >> 2)
+	t := s.size(slot)
+	s.nd[s.lastNode].itm = int32(m)
 	s.nd[s.lastNode].loc = int32(t)
-	if (k >> 2) < s.second {
+	if m < s.second {
 		*hasPrimary = true
 	}
-	s.setSize(k, t+1)
-	s.setPos(k, s.lastNode)
-	return k
+	s.setSize(slot, t+1)
+	s.setPos(slot, s.lastNode)
 }
 
-// finalize lays out the final set array (names, pointers, active lists) once
-// all options have been read.
+// finalize lays out the final set array (sizes, positions, item numbers, and
+// the active option lists) once all options have been read.
 func (s *Solver) finalize() {
 	s.active, s.itemlen = s.lastItm-1, s.lastItm-1
 	s.item = ensure(s.item, s.itemlen)
+	s.set = ensure(s.set, (s.itemlen<<2)+1) // all input slots readable
+
 	j := primExtra
 	k := 0
 	for ; k < s.itemlen; k++ {
 		s.item[k] = int32(j)
 		j += primExtra + s.size((k+1)<<2)
 	}
-	s.setlen = j - 4
+	s.setlen = j - primExtra
 	s.set = ensure(s.set, j+1)
 	if s.second == secondUnset {
 		s.osecond, s.second = s.active, j
 	} else {
 		s.osecond = s.second - 1
 	}
+
 	for ; k != 0; k-- {
 		base := int(s.item[k-1])
 		if k == s.second {
@@ -237,9 +203,9 @@ func (s *Solver) finalize() {
 			s.baditem = k
 		}
 		s.setPos(base, k-1)
-		s.setRname(base, s.rname(k<<2))
-		s.setLname(base, s.lname(k<<2))
+		s.setItemNo(base, k)
 	}
+
 	for k = 1; k < s.lastNode; k++ {
 		if s.nd[k].itm < 0 {
 			continue

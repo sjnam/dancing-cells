@@ -59,6 +59,23 @@ r y:B
 	}
 }
 
+func TestMultiCharColorAndLongNames(t *testing.T) {
+	// Arbitrary-length item names and multi-character color names (as the
+	// zebra/wordsearch examples need).
+	input := `house1 house2 | nationality
+house1 nationality:England
+house2 nationality:England
+`
+	sols := collect(t, input)
+	if len(sols) != 1 {
+		t.Fatalf("want 1 solution, got %d: %v", len(sols), sols)
+	}
+	// Each option keeps its color name in the output.
+	if !strings.Contains(sols[0], "nationality:England") {
+		t.Errorf("color name lost: %q", sols[0])
+	}
+}
+
 func TestNoSolution(t *testing.T) {
 	// Item c can never be covered.
 	input := `a b c

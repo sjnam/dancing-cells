@@ -13,6 +13,8 @@
 //			fmt.Println(opt) // opt is []string of item names, e.g. [a d f]
 //		}
 //	}
+//
+// Item names and colors are arbitrary (possibly multibyte) strings, as in dlx.
 package dcells
 
 import (
@@ -27,7 +29,7 @@ const (
 )
 
 // Option is one option of a solution, given as the list of its item names. A
-// colored secondary item appears as "name:c".
+// colored secondary item appears as "name:color".
 type Option []string
 
 // Result is returned by Dance. Range over Solutions to receive every exact
@@ -39,7 +41,8 @@ type Result struct {
 }
 
 // node is one cell of the matrix. itm and clr are fixed after input; loc moves
-// as options dance in and out of an item's active set.
+// as options dance in and out of an item's active set. clr is an interned color
+// id (0 means none).
 type node struct {
 	itm, loc, clr int32
 }
@@ -73,6 +76,12 @@ type Solver struct {
 	baditem  int
 	osecond  int
 
+	// interned item names (by item number, 1-based) and colors (by id, 1-based)
+	names      []string
+	nameIndex  map[string]int
+	colorNames []string
+	colorIndex map[string]int
+
 	// force stack of items reduced to a single remaining option
 	force  []int32
 	forced int
@@ -99,6 +108,10 @@ type Solver struct {
 func NewDancer() *Solver {
 	return &Solver{
 		second:        secondUnset,
+		names:         []string{""}, // item numbers are 1-based
+		nameIndex:     make(map[string]int),
+		colorNames:    []string{""}, // color 0 means "no color"
+		colorIndex:    make(map[string]int),
 		ctx:           context.Background(),
 		PulseInterval: time.Hour,
 	}
@@ -129,46 +142,48 @@ func ensure[T any](s []T, n int) []T {
 	if n <= cap(s) {
 		return s[:n]
 	}
-	c := max(cap(s)*2, n, 64)
-	t := make([]T, n, c)
+	t := make([]T, n, max(cap(s)*2, n, 64))
 	copy(t, s)
 	return t
 }
 
+// internName maps an item name to its 1-based number, registering it the first
+// time. ok is false on a duplicate.
+func (s *Solver) internName(name string) (num int, ok bool) {
+	if _, dup := s.nameIndex[name]; dup {
+		return 0, false
+	}
+	num = len(s.names)
+	s.names = append(s.names, name)
+	s.nameIndex[name] = num
+	return num, true
+}
+
+// internColor maps a color name to its 1-based id, registering it the first
+// time.
+func (s *Solver) internColor(name string) int {
+	if id, ok := s.colorIndex[name]; ok {
+		return id
+	}
+	id := len(s.colorNames)
+	s.colorNames = append(s.colorNames, name)
+	s.colorIndex[name] = id
+	return id
+}
+
 // Sparse-set field accessors for item x (an index into set):
 //
-//	set[x-1]=size  set[x-2]=pos  set[x-3]=rname  set[x-4]=lname
-func (s *Solver) size(x int) int  { return int(s.set[x-1]) }
-func (s *Solver) pos(x int) int   { return int(s.set[x-2]) }
-func (s *Solver) rname(x int) int { return int(s.set[x-3]) }
-func (s *Solver) lname(x int) int { return int(s.set[x-4]) }
+//	set[x-1]=size  set[x-2]=pos  set[x-3]=item number (for name lookup)
+func (s *Solver) size(x int) int   { return int(s.set[x-1]) }
+func (s *Solver) pos(x int) int    { return int(s.set[x-2]) }
+func (s *Solver) itemNo(x int) int { return int(s.set[x-3]) }
 
-func (s *Solver) setSize(x, v int)  { s.set[x-1] = int32(v) }
-func (s *Solver) setPos(x, v int)   { s.set[x-2] = int32(v) }
-func (s *Solver) setRname(x, v int) { s.set[x-3] = int32(v) }
-func (s *Solver) setLname(x, v int) { s.set[x-4] = int32(v) }
+func (s *Solver) setSize(x, v int)   { s.set[x-1] = int32(v) }
+func (s *Solver) setPos(x, v int)    { s.set[x-2] = int32(v) }
+func (s *Solver) setItemNo(x, v int) { s.set[x-3] = int32(v) }
 
 func isspace(c byte) bool {
 	return c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r'
-}
-
-// packLR encodes up to 8 name bytes into two little-endian 32-bit ints.
-func packLR(b *[8]byte) (int, int) {
-	l := int(b[0]) | int(b[1])<<8 | int(b[2])<<16 | int(b[3])<<24
-	r := int(b[4]) | int(b[5])<<8 | int(b[6])<<16 | int(b[7])<<24
-	return l, r
-}
-
-func decodeName(l, r int) string {
-	b := [8]byte{
-		byte(l), byte(l >> 8), byte(l >> 16), byte(l >> 24),
-		byte(r), byte(r >> 8), byte(r >> 16), byte(r >> 24),
-	}
-	n := 0
-	for n < 8 && b[n] != 0 {
-		n++
-	}
-	return string(b[:n])
 }
 
 // option reconstructs the option containing node p as its list of item names,
@@ -181,10 +196,9 @@ func (s *Solver) option(p int) Option {
 	}
 	var opt Option
 	for q := p; s.nd[q].itm > 0; q++ {
-		x := int(s.nd[q].itm)
-		name := decodeName(s.lname(x), s.rname(x))
-		if s.nd[q].clr != 0 {
-			name += ":" + string(rune(s.nd[q].clr))
+		name := s.names[s.itemNo(int(s.nd[q].itm))]
+		if c := s.nd[q].clr; c != 0 {
+			name += ":" + s.colorNames[c]
 		}
 		opt = append(opt, name)
 	}
