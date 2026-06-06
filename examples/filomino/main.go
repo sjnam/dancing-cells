@@ -40,7 +40,7 @@ func main() {
 	nr, _ := strconv.Atoi(dimen[0])
 	nc, _ := strconv.Atoi(dimen[1])
 
-	xc := dcells.NewDancer()
+	xc := dcells.NewXCC()
 	res := xc.Dance(fd)
 
 	box := make([][]int, nr)

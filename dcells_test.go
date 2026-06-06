@@ -10,7 +10,7 @@ import (
 // sorted, joined string, plus the whole set sorted, for stable comparison.
 func collect(t *testing.T, input string) []string {
 	t.Helper()
-	res := NewDancer().Dance(strings.NewReader(input))
+	res := NewXCC().Dance(strings.NewReader(input))
 	var sols []string
 	for sol := range res.Solutions {
 		opts := make([]string, len(sol))
@@ -81,7 +81,7 @@ func TestNoSolution(t *testing.T) {
 	input := `a b c
 a b
 `
-	res := NewDancer().Dance(strings.NewReader(input))
+	res := NewXCC().Dance(strings.NewReader(input))
 	n := 0
 	for range res.Solutions {
 		n++
@@ -118,7 +118,7 @@ func nQueensCount(t *testing.T, n int) int {
 			b.WriteString("\n")
 		}
 	}
-	res := NewDancer().Dance(strings.NewReader(b.String()))
+	res := NewXCC().Dance(strings.NewReader(b.String()))
 	n2 := 0
 	for range res.Solutions {
 		n2++

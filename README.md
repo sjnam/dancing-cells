@@ -31,7 +31,7 @@ a d f
 b g
 d e g
 `
-    xc := dcells.NewDancer()
+    xc := dcells.NewXCC()
     res := xc.Dance(strings.NewReader(input))
 
     for sol := range res.Solutions {
@@ -42,7 +42,7 @@ d e g
 }
 ```
 
-- `NewDancer()` returns an `*XCC`; set `Debug = true` for an input summary and
+- `NewXCC()` returns an `*XCC`; set `Debug = true` for an input summary and
   final stats on stderr, like dlx.
 - `Dance(io.Reader) *Result` parses the DLX text and returns
   `Result{ Solutions <-chan []Option, Heartbeat <-chan string }`.
@@ -66,7 +66,7 @@ allows a primary item to be covered a *range* of times (Knuth's SSMCC, binary
 branching). Give a multiplicity prefix in the item line: `low:high|name` or
 `high|name` (default `1:1`). For example `2|a` means item `a` must be covered
 exactly twice. With default multiplicities it solves ordinary XCC, so it is a
-strict superset of `NewDancer` (the partridge example uses it).
+strict superset of `NewXCC` (the partridge example uses it).
 
 ## Examples
 

@@ -6,7 +6,7 @@
 // feed a problem in the DLX text format through an io.Reader and range over the
 // resulting solutions.
 //
-//	xc := dcells.NewDancer()
+//	xc := dcells.NewXCC()
 //	res := xc.Dance(reader)
 //	for sol := range res.Solutions {
 //		for _, opt := range sol {
@@ -108,9 +108,9 @@ type XCC struct {
 	pulse     *time.Ticker
 }
 
-// NewDancer returns a ready-to-use XCC. Heartbeats are off by default; set
+// NewXCC returns a ready-to-use XCC. Heartbeats are off by default; set
 // PulseInterval > 0 to receive them.
-func NewDancer() *XCC {
+func NewXCC() *XCC {
 	return &XCC{
 		second:     secondUnset,
 		names:      []string{""}, // item numbers are 1-based
@@ -215,7 +215,7 @@ func (s *XCC) option(p int) Option {
 
 // MCC solves exact cover with item multiplicities and colors, using sparse-set
 // "dancing cells" and binary branching. It is the library form of the SSMCC
-// engine and complements the XCC type (NewDancer); use it when items may
+// engine and complements the XCC type (NewXCC); use it when items may
 // be covered a range of times.
 //
 //	mcc := dcells.NewMCC()

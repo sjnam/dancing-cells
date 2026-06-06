@@ -5,7 +5,7 @@
 //
 // Puzzles are solved in parallel across all CPUs while results are emitted in
 // input order (an "ordered fan-in"), since the puzzles are independent and each
-// NewDancer() is fully self-contained.
+// NewXCC() is fully self-contained.
 //
 //	go run ./examples/sudoku examples/sudoku/puzzles.txt
 package main
@@ -84,7 +84,7 @@ func solve(line []byte) result {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	res := dcells.NewDancer().WithContext(ctx).Dance(sudokuInput(line))
+	res := dcells.NewXCC().WithContext(ctx).Dance(sudokuInput(line))
 	sol, ok := <-res.Solutions
 	if !ok {
 		return result{line, nil} // no solution

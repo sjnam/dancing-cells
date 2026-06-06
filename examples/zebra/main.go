@@ -111,7 +111,7 @@ const xccInput = `
 `
 
 func main() {
-	xcc := dcells.NewDancer()
+	xcc := dcells.NewXCC()
 	res := xcc.Dance(strings.NewReader(xccInput))
 
 	answer := map[byte][]string{

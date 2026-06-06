@@ -38,7 +38,7 @@ func main() {
 		}
 	}
 
-	res := dcells.NewDancer().Dance(fd)
+	res := dcells.NewXCC().Dance(fd)
 	i := 0
 	for sol := range res.Solutions {
 		i++
