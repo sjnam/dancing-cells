@@ -1,3 +1,5 @@
 /ssxcc
-/ssmcc/ssmcc
+/ssmcc
+/cmd/ssxcc/ssxcc
+/cmd/ssmcc/ssmcc
 *.shape

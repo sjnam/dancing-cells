@@ -2,8 +2,8 @@
 
 Donald E. Knuth의 CWEB 프로그램
 [`SSMCC`](https://www-cs-faculty.stanford.edu/~knuth/programs/ssmcc.w)를
-Go로 옮긴 것입니다. 상위 폴더의 [`ssxcc`](../README.md)(색 제약 정확 피복)에
-**항목 다중도(multiplicity)**를 더한 버전으로, Filip Stappers가 2023년에
+Go로 옮긴 것입니다. 자매 프로그램 [`ssxcc`](../ssxcc/README.md)(색 제약 정확
+피복)에 **항목 다중도(multiplicity)**를 더한 버전으로, Filip Stappers가 2023년에
 DLX3의 다중도 기법을 결합해 확장했습니다.
 
 `ssxcc`와의 핵심 차이:
@@ -23,18 +23,17 @@ DLX3의 다중도 기법을 결합해 확장했습니다.
 
 ## 빌드 & 실행
 
-모듈 루트에서 실행합니다. 바이너리 이름이 `ssmcc/` 폴더와 겹치므로 빌드 산출물은
-폴더 안에 둡니다.
+모듈 루트에서:
 
 ```sh
-go run ./ssmcc -m 1 ssmcc/examples/multiplicity.dlx
-python3 ssmcc/examples/queens.py 8 | go run ./ssmcc -m 1
-go build -o ssmcc/ssmcc ./ssmcc      # 바이너리로 빌드하려면
+go run ./cmd/ssmcc -m 1 cmd/ssmcc/examples/multiplicity.dlx
+python3 cmd/ssmcc/examples/queens.py 8 | go run ./cmd/ssmcc -m 1
+go build -o ssmcc ./cmd/ssmcc        # 바이너리로 빌드하려면
 ```
 
 ## 입력 형식
 
-[`ssxcc`](../README.md)와 동일하되, 1차 항목 이름에 다중도 접두사를 붙일 수
+[`ssxcc`](../ssxcc/README.md)와 동일하되, 1차 항목 이름에 다중도 접두사를 붙일 수
 있습니다.
 
 ```text
@@ -47,7 +46,7 @@ b c
 `1:3|a` 는 "a를 1~3번", `2|a` 는 "a를 정확히 2번"을 뜻합니다. 2차 항목은
 다중도를 가질 수 없고, 옵션 안에서 `이름:색`으로 색을 지정할 수 있습니다.
 
-명령행 플래그는 [`ssxcc`](../README.md)와 같습니다(weight용 `-w`/`-W` 제외).
+명령행 플래그는 [`ssxcc`](../ssxcc/README.md)와 같습니다(weight용 `-w`/`-W` 제외).
 
 ## 파일 구성
 
