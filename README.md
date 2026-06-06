@@ -59,6 +59,15 @@ The first non-comment line lists item names: primary items, then `|`, then
 secondary items (which may be colored inside options). Each later line is one
 option. Lines beginning with `|` are comments.
 
+### Multiplicities (`NewMCC`)
+
+`NewMCC()` returns an `*MCC` with the same `Dance`/`Result`/`Option` API but
+allows a primary item to be covered a *range* of times (Knuth's SSMCC, binary
+branching). Give a multiplicity prefix in the item line: `low:high|name` or
+`high|name` (default `1:1`). For example `2|a` means item `a` must be covered
+exactly twice. With default multiplicities it solves ordinary XCC, so it is a
+strict superset of `NewDancer` (the partridge example uses it).
+
 ## Examples
 
 | 예제 | 실행 |
@@ -69,13 +78,14 @@ option. Lines beginning with `|` are comments.
 | Sudoku | `go run ./examples/sudoku examples/sudoku/puzzles.txt` |
 | Filomino | `go run ./examples/filomino examples/filomino/10x10.filomino.dlx` |
 | Zebra puzzle | `go run ./examples/zebra` |
+| Partridge (multiplicities) | `go run ./examples/partridge 8` |
 | Word search | `go run ./examples/wordsearch examples/wordsearch/movie.txt 13 13` |
 
 각 예제는 문제를 DLX 텍스트로 생성(또는 파일에서 읽어)해 `Dance`에 넘기고
 `Solutions` 채널을 소비합니다 — dlx 예제와 동일한 패턴입니다. 항목 이름과 색은
 임의 길이의 (멀티바이트 가능) 문자열이라 zebra(`nationality:England`)나
-한글 word search도 그대로 동작합니다. (다중도가 필요한 partridge는 ssmcc의
-라이브러리화가 선행되어야 하므로 제외했습니다.)
+한글 word search도 그대로 동작합니다. 다중도가 필요한 partridge는 `NewMCC`로
+풉니다. 이로써 dlx의 모든 예제가 dancing cells로 포팅됐습니다.
 
 ## Reference CLIs
 
