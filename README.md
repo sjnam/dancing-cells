@@ -6,10 +6,6 @@ dancing-cells counterpart to [`sjnam/dlx`](https://github.com/sjnam/dlx) and
 exposes the same library API, so the dlx example programs port over almost
 unchanged.
 
-The engine is a Go port of Knuth's
-[`SSXCC`](https://www-cs-faculty.stanford.edu/~knuth/programs/ssxcc.w);
-its solutions and search statistics match the original C program exactly.
-
 ## Library
 
 ```go
