@@ -1,4 +1,4 @@
-# dancing-cells
+# Dancing Cells
 
 Exact cover with colors (XCC), solved with Donald E. Knuth's sparse-set
 **"dancing cells"** technique instead of dancing links. This repository is the
@@ -16,14 +16,14 @@ its solutions and search statistics match the original C program exactly.
 package main
 
 import (
-	"fmt"
-	"strings"
+    "fmt"
+    "strings"
 
-	dcells "github.com/sjnam/dancing-cells"
+    dcells "github.com/sjnam/dancing-cells"
 )
 
 func main() {
-	input := `a b c d e f g
+    input := `a b c d e f g
 c e
 a d g
 b c f
@@ -31,14 +31,14 @@ a d f
 b g
 d e g
 `
-	xc := dcells.NewDancer()
-	res := xc.Dance(strings.NewReader(input))
+    xc := dcells.NewDancer()
+    res := xc.Dance(strings.NewReader(input))
 
-	for sol := range res.Solutions {
-		for _, opt := range sol {
-			fmt.Println(opt) // opt is []string, e.g. [a d f]
-		}
-	}
+    for sol := range res.Solutions {
+        for _, opt := range sol {
+            fmt.Println(opt) // opt is []string, e.g. [a d f]
+        }
+    }
 }
 ```
 

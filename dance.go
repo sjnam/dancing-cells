@@ -26,8 +26,10 @@ func (s *Solver) Dance(rd io.Reader) *Result {
 				"(%d options, %d+%d items, %d entries successfully read)\n",
 				s.options, s.osecond, s.itemlen-s.osecond, s.lastNode)
 		}
-		s.pulse = time.NewTicker(s.PulseInterval)
-		defer s.pulse.Stop()
+		if s.PulseInterval > 0 {
+			s.pulse = time.NewTicker(s.PulseInterval)
+			defer s.pulse.Stop()
+		}
 
 		if s.baditem == 0 {
 			s.search(0)
@@ -101,6 +103,9 @@ func (s *Solver) visit(level int) bool {
 
 // tick offers a heartbeat string when the pulse fires, without blocking.
 func (s *Solver) tick() {
+	if s.pulse == nil {
+		return
+	}
 	select {
 	case <-s.pulse.C:
 		select {

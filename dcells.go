@@ -104,16 +104,16 @@ type Solver struct {
 	pulse     *time.Ticker
 }
 
-// NewDancer returns a ready-to-use Solver.
+// NewDancer returns a ready-to-use Solver. Heartbeats are off by default; set
+// PulseInterval > 0 to receive them.
 func NewDancer() *Solver {
 	return &Solver{
-		second:        secondUnset,
-		names:         []string{""}, // item numbers are 1-based
-		nameIndex:     make(map[string]int),
-		colorNames:    []string{""}, // color 0 means "no color"
-		colorIndex:    make(map[string]int),
-		ctx:           context.Background(),
-		PulseInterval: time.Hour,
+		second:     secondUnset,
+		names:      []string{""}, // item numbers are 1-based
+		nameIndex:  make(map[string]int),
+		colorNames: []string{""}, // color 0 means "no color"
+		colorIndex: make(map[string]int),
+		ctx:        context.Background(),
 	}
 }
 
