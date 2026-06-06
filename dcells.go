@@ -1,0 +1,192 @@
+// Package dcells solves exact-cover-with-colors (XCC) problems using sparse-set
+// "dancing cells" data structures instead of dancing links.
+//
+// It is a library form of the SSXCC engine (a Go port of Donald E. Knuth's
+// program of the same name), exposing an API that mirrors github.com/sjnam/dlx:
+// feed a problem in the DLX text format through an io.Reader and range over the
+// resulting solutions.
+//
+//	xc := dcells.NewDancer()
+//	res := xc.Dance(reader)
+//	for sol := range res.Solutions {
+//		for _, opt := range sol {
+//			fmt.Println(opt) // opt is []string of item names, e.g. [a d f]
+//		}
+//	}
+package dcells
+
+import (
+	"context"
+	"time"
+)
+
+const (
+	primExtra   = 4       // set entries reserved below each item's base
+	infSize     = 1 << 30 // "no item to branch on" => a solution
+	secondUnset = 1 << 30 // sentinel for "no primary/secondary boundary yet"
+)
+
+// Option is one option of a solution, given as the list of its item names. A
+// colored secondary item appears as "name:c".
+type Option []string
+
+// Result is returned by Dance. Range over Solutions to receive every exact
+// cover; the channel is closed when the search finishes (or the context is
+// cancelled). Heartbeat optionally carries periodic progress strings.
+type Result struct {
+	Solutions <-chan []Option
+	Heartbeat <-chan string
+}
+
+// node is one cell of the matrix. itm and clr are fixed after input; loc moves
+// as options dance in and out of an item's active set.
+type node struct {
+	itm, loc, clr int32
+}
+
+// twoints is one savestack entry: an item and the size to restore.
+type twoints struct {
+	l, r int32
+}
+
+// Solver holds the state of one dancing-cells computation.
+type Solver struct {
+	// Debug, when true, prints the input summary and final statistics to
+	// stderr, like the dlx library.
+	Debug bool
+	// PulseInterval controls how often a Heartbeat string is offered.
+	PulseInterval time.Duration
+
+	ctx context.Context
+
+	// matrix, items, and the sparse-set "set" array
+	nd       []node
+	lastNode int
+	item     []int32
+	second   int
+	lastItm  int
+	set      []int32
+	itemlen  int
+	setlen   int
+	active   int
+	oactive  int
+	baditem  int
+	osecond  int
+
+	// force stack of items reduced to a single remaining option
+	force  []int32
+	forced int
+
+	// depth-first search state
+	choice    []int32
+	saved     []int32
+	savestack []twoints
+	saveptr   int
+
+	// statistics
+	updates uint64
+	nodes   uint64
+	options uint64
+	count   uint64
+
+	// output, set up per Dance call
+	solStream chan []Option
+	heartbeat chan string
+	pulse     *time.Ticker
+}
+
+// NewDancer returns a ready-to-use Solver.
+func NewDancer() *Solver {
+	return &Solver{
+		second:        secondUnset,
+		ctx:           context.Background(),
+		PulseInterval: time.Hour,
+	}
+}
+
+// WithContext returns a copy of the Solver that aborts its search when ctx is
+// cancelled. Call it before Dance.
+func (s *Solver) WithContext(ctx context.Context) *Solver {
+	if ctx == nil {
+		panic("dcells: nil context")
+	}
+	c := *s
+	c.ctx = ctx
+	return &c
+}
+
+// Updates and Nodes report search statistics after the Solutions channel has
+// been fully drained.
+func (s *Solver) Updates() uint64 { return s.updates }
+func (s *Solver) Nodes() uint64   { return s.nodes }
+
+// ensure returns a slice of length >= n with s's contents preserved, growing
+// the backing array (amortized) when necessary.
+func ensure[T any](s []T, n int) []T {
+	if n <= len(s) {
+		return s
+	}
+	if n <= cap(s) {
+		return s[:n]
+	}
+	c := max(cap(s)*2, n, 64)
+	t := make([]T, n, c)
+	copy(t, s)
+	return t
+}
+
+// Sparse-set field accessors for item x (an index into set):
+//
+//	set[x-1]=size  set[x-2]=pos  set[x-3]=rname  set[x-4]=lname
+func (s *Solver) size(x int) int  { return int(s.set[x-1]) }
+func (s *Solver) pos(x int) int   { return int(s.set[x-2]) }
+func (s *Solver) rname(x int) int { return int(s.set[x-3]) }
+func (s *Solver) lname(x int) int { return int(s.set[x-4]) }
+
+func (s *Solver) setSize(x, v int)  { s.set[x-1] = int32(v) }
+func (s *Solver) setPos(x, v int)   { s.set[x-2] = int32(v) }
+func (s *Solver) setRname(x, v int) { s.set[x-3] = int32(v) }
+func (s *Solver) setLname(x, v int) { s.set[x-4] = int32(v) }
+
+func isspace(c byte) bool {
+	return c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r'
+}
+
+// packLR encodes up to 8 name bytes into two little-endian 32-bit ints.
+func packLR(b *[8]byte) (int, int) {
+	l := int(b[0]) | int(b[1])<<8 | int(b[2])<<16 | int(b[3])<<24
+	r := int(b[4]) | int(b[5])<<8 | int(b[6])<<16 | int(b[7])<<24
+	return l, r
+}
+
+func decodeName(l, r int) string {
+	b := [8]byte{
+		byte(l), byte(l >> 8), byte(l >> 16), byte(l >> 24),
+		byte(r), byte(r >> 8), byte(r >> 16), byte(r >> 24),
+	}
+	n := 0
+	for n < 8 && b[n] != 0 {
+		n++
+	}
+	return string(b[:n])
+}
+
+// option reconstructs the option containing node p as its list of item names,
+// in the order the items were given (with ":color" suffixes for colored
+// secondary items). The order is independent of which node p is, matching the
+// dlx library, so callers can index opt[0], opt[1], ... positionally.
+func (s *Solver) option(p int) Option {
+	for s.nd[p-1].itm > 0 {
+		p-- // move to the option's first node
+	}
+	var opt Option
+	for q := p; s.nd[q].itm > 0; q++ {
+		x := int(s.nd[q].itm)
+		name := decodeName(s.lname(x), s.rname(x))
+		if s.nd[q].clr != 0 {
+			name += ":" + string(rune(s.nd[q].clr))
+		}
+		opt = append(opt, name)
+	}
+	return opt
+}
