@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// The dancing. Unlike the d-way Solver, MCC branches in a binary tree: a node
+// The dancing. Unlike the d-way XCC, MCC branches in a binary tree: a node
 // is an item i and an option o. The LEFT child includes o (covering i once
 // more); the RIGHT child removes o while leaving i uncovered. stage counts the
 // LEFT branches taken (= options in the partial solution); saveState/restoreState

@@ -42,7 +42,7 @@ d e g
 }
 ```
 
-- `NewDancer()` returns a `*Solver`; set `Debug = true` for an input summary and
+- `NewDancer()` returns an `*XCC`; set `Debug = true` for an input summary and
   final stats on stderr, like dlx.
 - `Dance(io.Reader) *Result` parses the DLX text and returns
   `Result{ Solutions <-chan []Option, Heartbeat <-chan string }`.

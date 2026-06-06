@@ -52,8 +52,8 @@ type twoints struct {
 	l, r int32
 }
 
-// Solver holds the state of one dancing-cells computation.
-type Solver struct {
+// XCC holds the state of one dancing-cells computation.
+type XCC struct {
 	// Debug, when true, prints the input summary and final statistics to
 	// stderr, like the dlx library.
 	Debug bool
@@ -104,10 +104,10 @@ type Solver struct {
 	pulse     *time.Ticker
 }
 
-// NewDancer returns a ready-to-use Solver. Heartbeats are off by default; set
+// NewDancer returns a ready-to-use XCC. Heartbeats are off by default; set
 // PulseInterval > 0 to receive them.
-func NewDancer() *Solver {
-	return &Solver{
+func NewDancer() *XCC {
+	return &XCC{
 		second:     secondUnset,
 		names:      []string{""}, // item numbers are 1-based
 		nameIndex:  make(map[string]int),
@@ -117,9 +117,9 @@ func NewDancer() *Solver {
 	}
 }
 
-// WithContext returns a copy of the Solver that aborts its search when ctx is
+// WithContext returns a copy of the XCC that aborts its search when ctx is
 // cancelled. Call it before Dance.
-func (s *Solver) WithContext(ctx context.Context) *Solver {
+func (s *XCC) WithContext(ctx context.Context) *XCC {
 	if ctx == nil {
 		panic("dcells: nil context")
 	}
@@ -130,8 +130,8 @@ func (s *Solver) WithContext(ctx context.Context) *Solver {
 
 // Updates and Nodes report search statistics after the Solutions channel has
 // been fully drained.
-func (s *Solver) Updates() uint64 { return s.updates }
-func (s *Solver) Nodes() uint64   { return s.nodes }
+func (s *XCC) Updates() uint64 { return s.updates }
+func (s *XCC) Nodes() uint64   { return s.nodes }
 
 // ensure returns a slice of length >= n with s's contents preserved, growing
 // the backing array (amortized) when necessary.
@@ -149,7 +149,7 @@ func ensure[T any](s []T, n int) []T {
 
 // internName maps an item name to its 1-based number, registering it the first
 // time. ok is false on a duplicate.
-func (s *Solver) internName(name string) (num int, ok bool) {
+func (s *XCC) internName(name string) (num int, ok bool) {
 	if _, dup := s.nameIndex[name]; dup {
 		return 0, false
 	}
@@ -161,7 +161,7 @@ func (s *Solver) internName(name string) (num int, ok bool) {
 
 // internColor maps a color name to its 1-based id, registering it the first
 // time.
-func (s *Solver) internColor(name string) int {
+func (s *XCC) internColor(name string) int {
 	if id, ok := s.colorIndex[name]; ok {
 		return id
 	}
@@ -174,13 +174,13 @@ func (s *Solver) internColor(name string) int {
 // Sparse-set field accessors for item x (an index into set):
 //
 //	set[x-1]=size  set[x-2]=pos  set[x-3]=item number (for name lookup)
-func (s *Solver) size(x int) int   { return int(s.set[x-1]) }
-func (s *Solver) pos(x int) int    { return int(s.set[x-2]) }
-func (s *Solver) itemNo(x int) int { return int(s.set[x-3]) }
+func (s *XCC) size(x int) int   { return int(s.set[x-1]) }
+func (s *XCC) pos(x int) int    { return int(s.set[x-2]) }
+func (s *XCC) itemNo(x int) int { return int(s.set[x-3]) }
 
-func (s *Solver) setSize(x, v int)   { s.set[x-1] = int32(v) }
-func (s *Solver) setPos(x, v int)    { s.set[x-2] = int32(v) }
-func (s *Solver) setItemNo(x, v int) { s.set[x-3] = int32(v) }
+func (s *XCC) setSize(x, v int)   { s.set[x-1] = int32(v) }
+func (s *XCC) setPos(x, v int)    { s.set[x-2] = int32(v) }
+func (s *XCC) setItemNo(x, v int) { s.set[x-3] = int32(v) }
 
 func isspace(c byte) bool {
 	return c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r'
@@ -190,7 +190,7 @@ func isspace(c byte) bool {
 // in the order the items were given (with ":color" suffixes for colored
 // secondary items). The order is independent of which node p is, matching the
 // dlx library, so callers can index opt[0], opt[1], ... positionally.
-func (s *Solver) option(p int) Option {
+func (s *XCC) option(p int) Option {
 	for s.nd[p-1].itm > 0 {
 		p-- // move to the option's first node
 	}

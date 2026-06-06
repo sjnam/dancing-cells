@@ -21,7 +21,7 @@ func failf(format string, a ...any) {
 	panic(&parseError{fmt.Sprintf(format, a...)})
 }
 
-func (s *Solver) inputMatrix(rd io.Reader) {
+func (s *XCC) inputMatrix(rd io.Reader) {
 	br := bufio.NewReader(rd)
 	s.readItemNames(br)
 	s.readOptions(br)
@@ -56,7 +56,7 @@ func token(buf []byte, p int, stopColon bool) (string, int) {
 	return string(buf[start:p]), p
 }
 
-func (s *Solver) readItemNames(br *bufio.Reader) {
+func (s *XCC) readItemNames(br *bufio.Reader) {
 	var buf []byte
 	var p int
 	found := false
@@ -93,7 +93,7 @@ func (s *Solver) readItemNames(br *bufio.Reader) {
 	s.lastItm = len(s.names) // items + 1 (names[0] is unused)
 }
 
-func (s *Solver) readOptions(br *bufio.Reader) {
+func (s *XCC) readOptions(br *bufio.Reader) {
 	for {
 		buf, ok := nextLine(br)
 		if !ok {
@@ -107,7 +107,7 @@ func (s *Solver) readOptions(br *bufio.Reader) {
 	s.finalize()
 }
 
-func (s *Solver) readOption(buf []byte) {
+func (s *XCC) readOption(buf []byte) {
 	spacer := s.lastNode
 	hasPrimary := false
 	for p := skipSpace(buf, 0); buf[p] != 0; {
@@ -154,7 +154,7 @@ func (s *Solver) readOption(buf []byte) {
 
 // createNode appends a node for item number m to the current option, marking
 // hasPrimary when m is primary.
-func (s *Solver) createNode(m, spacer int, hasPrimary *bool) {
+func (s *XCC) createNode(m, spacer int, hasPrimary *bool) {
 	slot := m << 2
 	s.set = ensure(s.set, slot)
 	if s.pos(slot) > spacer {
@@ -174,7 +174,7 @@ func (s *Solver) createNode(m, spacer int, hasPrimary *bool) {
 
 // finalize lays out the final set array (sizes, positions, item numbers, and
 // the active option lists) once all options have been read.
-func (s *Solver) finalize() {
+func (s *XCC) finalize() {
 	s.active, s.itemlen = s.lastItm-1, s.lastItm-1
 	s.item = ensure(s.item, s.itemlen)
 	s.set = ensure(s.set, (s.itemlen<<2)+1) // all input slots readable

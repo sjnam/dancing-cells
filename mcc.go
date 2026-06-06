@@ -7,7 +7,7 @@ import (
 
 // MCC solves exact cover with item multiplicities and colors, using sparse-set
 // "dancing cells" and binary branching. It is the library form of the SSMCC
-// engine and complements the XCC-only Solver (NewDancer); use it when items may
+// engine and complements the XCC type (NewDancer); use it when items may
 // be covered a range of times.
 //
 //	mcc := dcells.NewMCC()

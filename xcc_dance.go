@@ -11,7 +11,7 @@ import (
 // Result whose Solutions channel yields every exact cover. The search runs in a
 // goroutine and blocks on each send, so ranging over Solutions paces it; the
 // channel closes when the search ends or the context is cancelled.
-func (s *Solver) Dance(rd io.Reader) *Result {
+func (s *XCC) Dance(rd io.Reader) *Result {
 	s.inputMatrix(rd)
 
 	s.solStream = make(chan []Option)
@@ -51,7 +51,7 @@ func (s *Solver) Dance(rd io.Reader) *Result {
 // search explores all completions of the current partial solution at the given
 // depth. It returns false to abort the entire search (the context was
 // cancelled or the consumer stopped listening).
-func (s *Solver) search(level int) bool {
+func (s *XCC) search(level int) bool {
 	s.nodes++
 	select {
 	case <-s.ctx.Done():
@@ -87,7 +87,7 @@ func (s *Solver) search(level int) bool {
 
 // visit emits the current solution. It returns false (stopping the search) if
 // the context is cancelled while sending.
-func (s *Solver) visit(level int) bool {
+func (s *XCC) visit(level int) bool {
 	s.count++
 	sol := make([]Option, level)
 	for k := 0; k < level; k++ {
@@ -102,7 +102,7 @@ func (s *Solver) visit(level int) bool {
 }
 
 // tick offers a heartbeat string when the pulse fires, without blocking.
-func (s *Solver) tick() {
+func (s *XCC) tick() {
 	if s.pulse == nil {
 		return
 	}
@@ -120,7 +120,7 @@ func (s *Solver) tick() {
 // option (the force stack) take priority; otherwise the active primary item
 // with the fewest options is chosen, with new singletons pushed onto the force
 // stack. solution==true means no primary item remains.
-func (s *Solver) chooseItem() (best int, solution bool) {
+func (s *XCC) chooseItem() (best int, solution bool) {
 	for s.forced != 0 {
 		s.forced--
 		if f := int(s.force[s.forced]); s.pos(f) < s.active {
@@ -158,7 +158,7 @@ func (s *Solver) chooseItem() (best int, solution bool) {
 // other item of opt is covered, and every conflicting option is hidden. It
 // returns false (after clearing the force stack) if a primary item would be
 // left uncoverable.
-func (s *Solver) commitOption(opt int) bool {
+func (s *XCC) commitOption(opt int) bool {
 	p := s.active
 	s.oactive = s.active
 	for q := opt + 1; q != opt; {
@@ -207,7 +207,7 @@ func (s *Solver) commitOption(opt int) bool {
 // whose color matches are kept (purification). When check != 0, hide returns
 // false if it would make a primary item uncoverable, and pushes any newly
 // singleton primary item onto the force stack.
-func (s *Solver) hide(c, color, check int) bool {
+func (s *XCC) hide(c, color, check int) bool {
 	for rr, end := c, c+s.size(c); rr < end; rr++ {
 		tt := int(s.set[rr])
 		if color != 0 && int(s.nd[tt].clr) == color {
@@ -242,7 +242,7 @@ func (s *Solver) hide(c, color, check int) bool {
 }
 
 // swapOut removes item x from the active list (covering it).
-func (s *Solver) swapOut(x int) {
+func (s *XCC) swapOut(x int) {
 	p := s.active - 1
 	s.active = p
 	pp := s.pos(x)
@@ -254,7 +254,7 @@ func (s *Solver) swapOut(x int) {
 }
 
 // saveSizes snapshots the active items' sizes so a branch can be undone.
-func (s *Solver) saveSizes(level int) {
+func (s *XCC) saveSizes(level int) {
 	s.savestack = ensure(s.savestack, s.saveptr+s.active)
 	for p := 0; p < s.active; p++ {
 		s.savestack[s.saveptr+p] = twoints{s.item[p], int32(s.size(int(s.item[p])))}
@@ -265,7 +265,7 @@ func (s *Solver) saveSizes(level int) {
 }
 
 // restoreSizes undoes the deletions since saveSizes at this level.
-func (s *Solver) restoreSizes(level int) {
+func (s *XCC) restoreSizes(level int) {
 	s.saveptr = int(s.saved[level+1])
 	s.active = s.saveptr - int(s.saved[level])
 	for p := -s.active; p < 0; p++ {
