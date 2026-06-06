@@ -70,7 +70,7 @@ strict superset of `NewDancer` (the partridge example uses it).
 
 ## Examples
 
-| 예제 | 실행 |
+| Example | Run |
 | --- | --- |
 | N-queens | `go run ./examples/queen 8` |
 | Langford pairs | `go run ./examples/langford 4` |
@@ -81,16 +81,18 @@ strict superset of `NewDancer` (the partridge example uses it).
 | Partridge (multiplicities) | `go run ./examples/partridge 8` |
 | Word search | `go run ./examples/wordsearch examples/wordsearch/movie.txt 13 13` |
 
-각 예제는 문제를 DLX 텍스트로 생성(또는 파일에서 읽어)해 `Dance`에 넘기고
-`Solutions` 채널을 소비합니다 — dlx 예제와 동일한 패턴입니다. 항목 이름과 색은
-임의 길이의 (멀티바이트 가능) 문자열이라 zebra(`nationality:England`)나
-한글 word search도 그대로 동작합니다. 다중도가 필요한 partridge는 `NewMCC`로
-풉니다. 이로써 dlx의 모든 예제가 dancing cells로 포팅됐습니다.
+Each example generates the problem as DLX text (or reads it from a file),
+passes it to `Dance`, and consumes the `Solutions` channel — the same pattern as
+the dlx examples. Item names and colors are arbitrary-length (possibly
+multibyte) strings, so zebra (`nationality:England`) and the Korean word search
+work as-is. Partridge, which needs multiplicities, is solved with `NewMCC`. With
+that, every dlx example is now ported to dancing cells.
 
 ## Reference CLIs
 
-`cmd/`에는 Knuth 원본을 충실히 옮긴 명령행 솔버가 있습니다(라이브러리와 별개로,
-검증·비교용). 입력 형식·플래그·C 레퍼런스 동치성은 각 README를 보세요.
+`cmd/` holds faithful command-line ports of Knuth's original programs (separate
+from the library, for verification and comparison). See each README for the
+input format, flags, and equivalence with the C reference.
 
-- [`cmd/ssxcc`](cmd/ssxcc/README.md) — XCC, d-갈래 분기 (라이브러리 엔진의 원본)
-- [`cmd/ssmcc`](cmd/ssmcc/README.md) — 항목 다중도(`u:v|name`) 추가, 이진 분기
+- [`cmd/ssxcc`](cmd/ssxcc/README.md) — XCC, d-way branching (the origin of the library engine)
+- [`cmd/ssmcc`](cmd/ssmcc/README.md) — adds item multiplicities (`u:v|name`), binary branching
