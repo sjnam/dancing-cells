@@ -15,7 +15,7 @@ import (
     "fmt"
     "strings"
 
-    dcells "github.com/sjnam/dancing-cells"
+    cells "github.com/sjnam/dancing-cells"
 )
 
 func main() {
@@ -27,7 +27,7 @@ a d f
 b g
 d e g
 `
-    xc := dcells.NewXCC()
+    xc := cells.NewXCC()
     res := xc.Dance(strings.NewReader(input))
 
     for sol := range res.Solutions {
