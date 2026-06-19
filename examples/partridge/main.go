@@ -12,7 +12,7 @@ import (
 	cells "github.com/sjnam/dancing-cells"
 )
 
-func patridgeDLX(n int) io.Reader {
+func partridgeDC(n int) io.Reader {
 	N := n * (n + 1) / 2
 	r, w := io.Pipe()
 	go func() {
@@ -20,8 +20,8 @@ func patridgeDLX(n int) io.Reader {
 		for i := 1; i <= n; i++ {
 			fmt.Fprintf(w, "%d:%d|#%d ", i, i, i)
 		}
-		for i := 0; i < N; i++ {
-			for j := 0; j < N; j++ {
+		for i := range N {
+			for j := range N {
 				fmt.Fprintf(w, "%d,%d ", i, j)
 			}
 		}
@@ -100,8 +100,8 @@ func printBoard(size, tile [][]int) {
 	// no such cell — its only row is also its top border — so it stays blank.
 	type pos struct{ r, c int }
 	tileCells := make(map[int][]pos)
-	for r := 0; r < N; r++ {
-		for c := 0; c < N; c++ {
+	for r := range N {
+		for c := range N {
 			tileCells[tile[r][c]] = append(tileCells[tile[r][c]], pos{r, c})
 		}
 	}
@@ -180,7 +180,7 @@ func main() {
 	mcc := cells.NewMCC()
 	mcc.PulseInterval = 30 * time.Second
 	mcc = mcc.WithContext(ctx)
-	res := mcc.Dance(patridgeDLX(n))
+	res := mcc.Dance(partridgeDC(n))
 
 	start := time.Now()
 	go func() {

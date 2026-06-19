@@ -31,7 +31,7 @@ import (
 func sudokuInput(line []byte) io.Reader {
 	var pos, row, col, box [9][9]int
 	for i, j := 0, 0; i < 81; i, j = i+9, j+1 {
-		for k := 0; k < 9; k++ {
+		for k := range 9 {
 			if ch := line[i+k]; ch >= '1' && ch <= '9' {
 				d := int(ch - '1')
 				x := j/3*3 + k/3
@@ -43,8 +43,8 @@ func sudokuInput(line []byte) io.Reader {
 	var b bytes.Buffer
 	b.Grow(8192)
 	// Primary items: every unfilled position/row/col/box constraint.
-	for j := 0; j < 9; j++ {
-		for k := 0; k < 9; k++ {
+	for j := range 9 {
+		for k := range 9 {
 			if pos[j][k] == 0 {
 				fmt.Fprintf(&b, "p%d%d ", j, k)
 			}
@@ -54,8 +54,8 @@ func sudokuInput(line []byte) io.Reader {
 		c string
 		a *[9][9]int
 	}{{"r", &row}, {"c", &col}, {"b", &box}} {
-		for j := 0; j < 9; j++ {
-			for k := 0; k < 9; k++ {
+		for j := range 9 {
+			for k := range 9 {
 				if t.a[j][k] == 0 {
 					fmt.Fprintf(&b, "%s%d%d ", t.c, j, k+1)
 				}
@@ -64,9 +64,9 @@ func sudokuInput(line []byte) io.Reader {
 	}
 	b.WriteByte('\n')
 	// One option per legal (position, digit) placement.
-	for j := 0; j < 9; j++ {
-		for k := 0; k < 9; k++ {
-			for d := 0; d < 9; d++ {
+	for j := range 9 {
+		for k := range 9 {
+			for d := range 9 {
 				x := j/3*3 + k/3
 				if pos[j][k] == 0 && row[j][d] == 0 && col[k][d] == 0 && box[x][d] == 0 {
 					fmt.Fprintf(&b, "p%d%d r%d%d c%d%d b%d%d\n", j, k, j, d+1, k, d+1, x, d+1)

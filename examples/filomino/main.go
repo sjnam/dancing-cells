@@ -62,8 +62,8 @@ func main() {
 		}
 	}
 
-	for j := 0; j < nr; j++ {
-		for k := 0; k < nc; k++ {
+	for j := range nr {
+		for k := range nc {
 			fmt.Printf("%d ", box[j][k])
 		}
 		fmt.Println()

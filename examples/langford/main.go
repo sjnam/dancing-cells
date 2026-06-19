@@ -9,7 +9,7 @@ import (
 	cells "github.com/sjnam/dancing-cells"
 )
 
-func langfordDLX(n int) io.Reader {
+func langfordDC(n int) io.Reader {
 	r, w := io.Pipe()
 
 	go func() {
@@ -45,7 +45,7 @@ func main() {
 	n, _ := strconv.Atoi(os.Args[1])
 
 	xc := cells.NewXCC()
-	res := xc.Dance(langfordDLX(n))
+	res := xc.Dance(langfordDC(n))
 
 	s := make([]int, 2*n)
 	for sol := range res.Solutions {

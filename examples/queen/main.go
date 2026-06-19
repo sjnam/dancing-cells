@@ -20,7 +20,7 @@ func encode(x int) byte {
 	}
 }
 
-func queenDLX(n int) io.Reader {
+func queenDC(n int) io.Reader {
 	nn := n + n - 2
 	if nn > 62 {
 		log.Fatal("Sorry , I can't currently handle n>32!")
@@ -32,7 +32,7 @@ func queenDLX(n int) io.Reader {
 			_ = w.Close()
 		}()
 
-		for j := 0; j < n; j++ {
+		for j := range n {
 			t := n + j
 			if j&1 != 0 {
 				t = n - 1 - j
@@ -45,7 +45,7 @@ func queenDLX(n int) io.Reader {
 			fmt.Fprintf(w, " a%c b%c", encode(j), encode(j))
 		}
 		fmt.Fprintln(w)
-		for j := 0; j < n; j++ {
+		for j := range n {
 			for k := 0; k < n; k++ {
 				fmt.Fprintf(w, "r%c c%c", encode(j), encode(k))
 				t := j + k
@@ -73,11 +73,11 @@ func main() {
 	n, _ := strconv.Atoi(os.Args[1])
 
 	xc := cells.NewXCC()
-	res := xc.Dance(queenDLX(n))
+	res := xc.Dance(queenDC(n))
 
 	i := 0
 	board := make([][]string, n)
-	for r := 0; r < n; r++ {
+	for r := range n {
 		board[r] = make([]string, n)
 	}
 	for solution := range res.Solutions {
@@ -108,8 +108,8 @@ func main() {
 		}
 
 		fmt.Printf("%d:\n", i)
-		for r := 0; r < n; r++ {
-			for c := 0; c < n; c++ {
+		for r := range n {
+			for c := range n {
 				fmt.Printf("%s ", board[r][c])
 			}
 			fmt.Println()

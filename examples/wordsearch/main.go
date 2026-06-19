@@ -22,7 +22,7 @@ func reverse(sa []rune) []rune {
 	return r
 }
 
-func wordSearchDLX(words []string, wd, ht int) io.Reader {
+func wordSearchDC(words []string, wd, ht int) io.Reader {
 	pr, pw := io.Pipe()
 	go func() {
 		defer func() {
@@ -32,8 +32,8 @@ func wordSearchDLX(words []string, wd, ht int) io.Reader {
 		// item line
 		fmt.Fprint(pw, strings.Join(words, " "))
 		fmt.Fprint(pw, " | ")
-		for i := 0; i < ht; i++ {
-			for j := 0; j < wd; j++ {
+		for i := range ht {
+			for j := range wd {
 				fmt.Fprintf(pw, "%x%x ", i, j)
 			}
 		}
@@ -44,12 +44,12 @@ func wordSearchDLX(words []string, wd, ht int) io.Reader {
 			wlen := utf8.RuneCountInString(word)
 			runew := []rune(word)
 			for _, a := range [][]rune{runew, reverse(runew)} {
-				for r := 0; r < ht; r++ {
-					for c := 0; c < wd; c++ {
+				for r := range ht {
+					for c := range wd {
 						// horizontal placement
 						if c+wlen <= wd {
 							fmt.Fprintf(pw, "%s ", word)
-							for i := 0; i < wlen; i++ {
+							for i := range wlen {
 								fmt.Fprintf(pw, "%x%x:%c ", r, c+i, a[i])
 							}
 							fmt.Fprintln(pw)
@@ -57,7 +57,7 @@ func wordSearchDLX(words []string, wd, ht int) io.Reader {
 						// vertical placement
 						if r+wlen <= ht {
 							fmt.Fprintf(pw, "%s ", word)
-							for i := 0; i < wlen; i++ {
+							for i := range wlen {
 								fmt.Fprintf(pw, "%x%x:%c ", r+i, c, a[i])
 							}
 							fmt.Fprintln(pw)
@@ -65,7 +65,7 @@ func wordSearchDLX(words []string, wd, ht int) io.Reader {
 						// upward diagonal placement
 						if r+wlen <= ht && c-wlen+1 >= 0 {
 							fmt.Fprintf(pw, "%s ", word)
-							for i := 0; i < wlen; i++ {
+							for i := range wlen {
 								fmt.Fprintf(pw, "%x%x:%c ", r+i, c-i, a[i])
 							}
 							fmt.Fprintln(pw)
@@ -73,7 +73,7 @@ func wordSearchDLX(words []string, wd, ht int) io.Reader {
 						// downward diagonal placement
 						if r+wlen <= ht && c+wlen <= wd {
 							fmt.Fprintf(pw, "%s ", word)
-							for i := 0; i < wlen; i++ {
+							for i := range wlen {
 								fmt.Fprintf(pw, "%x%x:%c ", r+i, c+i, a[i])
 							}
 							fmt.Fprintln(pw)
@@ -155,7 +155,7 @@ func main() {
 
 	xcc := cells.NewXCC()
 	res := xcc.Dance(
-		wordSearchDLX(strings.Fields(string(buf)), wd, ht))
+		wordSearchDC(strings.Fields(string(buf)), wd, ht))
 
 	i := 0
 	for sol := range res.Solutions {
