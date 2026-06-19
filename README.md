@@ -87,8 +87,7 @@ that, every dlx example is now ported to dancing cells.
 ### Langford pairing
 
 ````console
-$ cd examples/langford
-$ go run main.go 4
+$ go run ./examples/langford 4
 [2 3 4 2 1 3 1 4]
 ````
 
@@ -135,7 +134,7 @@ O U U Y Y Y Y T
 ### Nqueen
 
 ````console
-$ go run examples/queen/main.go 8
+$ go run ./examples/queen 8
 1:
 Q . . . . . . .
 . . . . . Q . .
@@ -274,7 +273,7 @@ five different colored houses.
 Who trains the zebra, and who prefers to drink just plain water?
 
 ````console
-$ go run examples/zebra/main.go
+$ go run ./examples/zebra
 Norway      Ukraine     England     Spain       Japan
 diplomat    nurse       sculptor    violinist   painter
 fox         horse       snail       dog         zebra
@@ -285,7 +284,7 @@ yellow      blue        red         white       green
 ### Partridge puzzle
 
 ````console
-$ go run example/partridge/main.go
+$ go run ./examples/partridge 8
 ┌───┬───┬─────────┬─────────────┬─────────────┬─────────────┬───────────┐
 │  2│  2│         │             │             │             │           │
 ├───┴───┤         │             │             │             │           │
