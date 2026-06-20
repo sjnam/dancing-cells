@@ -98,6 +98,8 @@ func printBoard(size, tile [][]int) {
 	// Label each tile in its bottom-right cell, where the cell's top edge is
 	// interior to the tile (no horizontal line to collide with). A 1×1 tile has
 	// no such cell — its only row is also its top border — so it stays blank.
+	// Multi-digit sizes (≥ 10) are written right-aligned into the cell and the
+	// space to its left, both of which are tile interior on the label row.
 	type pos struct{ r, c int }
 	tileCells := make(map[int][]pos)
 	for r := range N {
@@ -131,9 +133,10 @@ func printBoard(size, tile [][]int) {
 		'│', '├', '┤', '┼',
 	}
 
-	var sb strings.Builder
+	// Each row is 2N+1 runes: cell (r, c) occupies junction column 2c and
+	// interior column 2c+1.
+	row := make([]rune, 2*N+1)
 	for r := 0; r <= N; r++ {
-		sb.Reset()
 		for c := 0; c <= N; c++ {
 			// Junction at the top-left corner of cell (r, c): vertical edges run
 			// up (row r-1) and down (row r); horizontal edges run left and right.
@@ -150,20 +153,31 @@ func printBoard(size, tile [][]int) {
 			if c < N && hBorder(r, c) {
 				b |= 1
 			}
-			sb.WriteRune(junc[b])
+			row[2*c] = junc[b]
 
 			if c < N {
-				switch {
-				case hBorder(r, c):
-					sb.WriteRune('─')
-				case label[r][c] > 0:
-					sb.WriteRune(rune('0' + label[r][c]))
-				default:
-					sb.WriteRune(' ')
+				if hBorder(r, c) {
+					row[2*c+1] = '─'
+				} else {
+					row[2*c+1] = ' '
 				}
 			}
 		}
-		fmt.Println(sb.String())
+
+		// Overlay tile labels, right-aligned with the last digit in the cell's
+		// interior column. Extra digits spill left into interior spaces. The
+		// bottom border row (r == N) holds no labels.
+		if r < N {
+			for c := 0; c < N; c++ {
+				if label[r][c] > 0 {
+					ds := strconv.Itoa(label[r][c])
+					for i, p := len(ds)-1, 2*c+1; i >= 0; i, p = i-1, p-1 {
+						row[p] = rune(ds[i])
+					}
+				}
+			}
+		}
+		fmt.Println(string(row))
 	}
 }
 
