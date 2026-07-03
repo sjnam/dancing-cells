@@ -439,22 +439,24 @@ $ go run ./examples/partridge 10
 ## The source is a literate program
 
 The engine is written in the [literate-programming](https://en.wikipedia.org/wiki/Literate_programming)
-style Knuth invented for `TeX`. Rather than three plain `.go` files, the whole
-solver — the XCC engine, the MCC engine, and the DLX parser — is a single
-English [GWEB](https://github.com/sjnam/gweb) document, [`dcells.w`](dcells.w),
-told as one continuous essay: the sparse-set idea and its history, why covering
-is just a swap-and-shrink, how colors and multiplicities change the branch, and
-so on. It follows the same tradition as the `SSXCC` and `SSMCC` programs it was
-ported from, which Knuth himself wrote as literate `CWEB`.
+style Knuth invented for `TeX`. Rather than separate `.go` files, the whole
+solver — the XCC engine, the MCC engine, the DLX parser, and the test suite — is
+a single English [GWEB](https://github.com/sjnam/gweb) document,
+[`dcells.w`](dcells.w), told as one continuous essay: the sparse-set idea and its
+history, why covering is just a swap-and-shrink, how colors and multiplicities
+change the branch, and so on. It follows the same tradition as the `SSXCC` and
+`SSMCC` programs it was ported from, which Knuth himself wrote as literate `CWEB`.
 
-Two tools turn the one source into two outputs:
+The [`Makefile`](Makefile) drives the two GWEB tools:
 
 ```sh
-gtangle dcells.w      # extract dcells.go (the Go source; gitignored)
-gweave  dcells.w      # typeset dcells.tex → PDF
+make            # gtangle dcells.w → dcells.go + dcells_test.go, then build
+make pdf        # gweave dcells.w → typeset dcells.pdf
 ```
 
-`dcells.go` is a build artifact and is not committed — edit `dcells.w` and
+`dcells.go` and `dcells_test.go` are tangled from `dcells.w` and **committed** —
+a Go module needs its source in the tree to be `go get`-able and to satisfy an
+IDE — but `dcells.w` is the source of truth: edit it and run `make` to
 re-tangle. Because `gtangle` emits `//line` directives, a Go compiler error
 points straight back at the line in `dcells.w`.
 

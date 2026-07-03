@@ -1711,4 +1711,226 @@ func (m *MCC) deactivateOptionless() {
 	}
 }
 
+@* Tests.
+A literate program ought to carry its own proof of life. This last part is woven
+from the same source, yet it tangles to a {\it separate\/} file,
+\.{dcells\_test.go}, by way of GWEB's file-output control code --- the one that
+names an auxiliary output rather than the main one. Running |go test| then
+exercises both engines against small problems whose answers we already know.
+
+The shared helper |collect| runs the XCC solver and renders each solution as one
+canonical string --- the item names within an option sorted, the options within a
+solution sorted, and finally the solutions themselves sorted --- so a test can
+compare against an expected value without caring in what order they were found.
+@(dcells_test.go@>=
+package dcells
+
+import (
+	"sort"
+	"strings"
+	"testing"
+)
+
+func collect(t *testing.T, input string) []string {
+	t.Helper()
+	res := NewXCC().Dance(strings.NewReader(input))
+	var sols []string
+	for sol := range res.Solutions {
+		opts := make([]string, len(sol))
+		for i, opt := range sol {
+			opts[i] = strings.Join(opt, " ")
+		}
+		sort.Strings(opts)
+		sols = append(sols, strings.Join(opts, " | "))
+	}
+	sort.Strings(sols)
+	return sols
+}
+
+@ The plainest test is the textbook one: Knuth's six-option example from {\sl
+TAOCP\/} 7.2.2.1, whose only exact cover is $\{a\,d\,f\}$, $\{b\,g\}$,
+$\{c\,e\}$. Two more check the color machinery and confirm that an uncoverable
+item yields no solution at all.
+@(dcells_test.go@>=
+func TestExactCover(t *testing.T) {
+	// The classic TAOCP 7.2.2.1 example: unique cover {a d f},{b g},{c e}.
+	input := "a b c d e f g\nc e\na d g\nb c f\na d f\nb g\nd e g\n"
+	sols := collect(t, input)
+	if len(sols) != 1 {
+		t.Fatalf("want 1 solution, got %d: %v", len(sols), sols)
+	}
+	want := "a d f | b g | c e"
+	if sols[0] != want {
+		t.Errorf("got %q, want %q", sols[0], want)
+	}
+}
+
+func TestColors(t *testing.T) {
+	// Secondary items x,y with colors; two exact covers.
+	input := "p q r | x y\np q x:A y:B\np r x:A y:A\np x:B\nq x:A\nr y:B\n"
+	sols := collect(t, input)
+	if len(sols) != 2 {
+		t.Fatalf("want 2 solutions, got %d: %v", len(sols), sols)
+	}
+}
+
+@ Item names and colors are arbitrary strings, so the next test uses a
+multi-character color (\.{England}) and checks that the name survives into the
+output --- exactly what the zebra and word-search examples rely on.
+@(dcells_test.go@>=
+func TestMultiCharColorAndLongNames(t *testing.T) {
+	input := "house1 house2 | nationality\nhouse1 nationality:England\nhouse2 nationality:England\n"
+	sols := collect(t, input)
+	if len(sols) != 1 {
+		t.Fatalf("want 1 solution, got %d: %v", len(sols), sols)
+	}
+	// Each option keeps its color name in the output.
+	if !strings.Contains(sols[0], "nationality:England") {
+		t.Errorf("color name lost: %q", sols[0])
+	}
+}
+
+func TestNoSolution(t *testing.T) {
+	// Item c can never be covered.
+	input := "a b c\na b\n"
+	res := NewXCC().Dance(strings.NewReader(input))
+	n := 0
+	for range res.Solutions {
+		n++
+	}
+	if n != 0 {
+		t.Errorf("want 0 solutions, got %d", n)
+	}
+}
+
+@ A sterner exercise encodes the $n$-queens problem as exact cover --- rows and
+columns as primary items, the two diagonal families as secondary --- and checks
+the solution counts against their known values (4, 40, and 92 for $n=6,7,8$).
+The two-digit |itoa| keeps the generated item names short and aligned.
+@(dcells_test.go@>=
+func nQueensCount(t *testing.T, n int) int {
+	t.Helper()
+	var b strings.Builder
+	for i := 0; i < n; i++ {
+		b.WriteString(itoa("r", i))
+	}
+	for j := 0; j < n; j++ {
+		b.WriteString(itoa("c", j))
+	}
+	b.WriteString("|")
+	for k := 0; k < 2*n-1; k++ {
+		b.WriteString(itoa(" a", k))
+	}
+	for k := 0; k < 2*n-1; k++ {
+		b.WriteString(itoa(" b", k))
+	}
+	b.WriteString("\n")
+	for i := 0; i < n; i++ {
+		for j := 0; j < n; j++ {
+			b.WriteString(itoa("r", i))
+			b.WriteString(itoa("c", j))
+			b.WriteString(itoa("a", i+j))
+			b.WriteString(itoa("b", i-j+n-1))
+			b.WriteString("\n")
+		}
+	}
+	res := NewXCC().Dance(strings.NewReader(b.String()))
+	n2 := 0
+	for range res.Solutions {
+		n2++
+	}
+	return n2
+}
+
+func itoa(prefix string, x int) string {
+	return prefix + string(rune('0'+x/10)) + string(rune('0'+x%10)) + " "
+}
+
+func TestQueens(t *testing.T) {
+	// Known n-queens solution counts.
+	for n, want := range map[int]int{6: 4, 7: 40, 8: 92} {
+		if got := nQueensCount(t, n); got != want {
+			t.Errorf("%d-queens: got %d, want %d", n, got, want)
+		}
+	}
+}
+
+@ The multiplicity engine gets its own battery. |countMCC| just counts what the
+MCC solver finds, and the cases below probe an exact count (\.{2\|a}), a slack
+range (\.{1:2\|a}), a richer mix cross-checked against \.{cmd/ssmcc}, and ---
+importantly --- that with default multiplicities the MCC engine reproduces
+ordinary XCC, giving the same 92 solutions to 8-queens. Colors work here too.
+@(dcells_test.go@>=
+func countMCC(t *testing.T, input string) int {
+	t.Helper()
+	res := NewMCC().Dance(strings.NewReader(input))
+	n := 0
+	for range res.Solutions {
+		n++
+	}
+	return n
+}
+
+func TestMCCMultiplicity(t *testing.T) {
+	// "a" must be covered exactly twice (2|a); the only cover is {ab, ac}.
+	input := "2|a b c\na b\na c\nb c\n"
+	if n := countMCC(t, input); n != 1 {
+		t.Errorf("exact-twice: got %d solutions, want 1", n)
+	}
+}
+
+func TestMCCSlack(t *testing.T) {
+	// "a" covered 1..2 times; b, c exactly once. One cover: {ab, ac}.
+	input := "1:2|a b c\na b\na c\nb c\n"
+	if n := countMCC(t, input); n != 1 {
+		t.Errorf("slack: got %d solutions, want 1", n)
+	}
+}
+
+func TestMCCRicher(t *testing.T) {
+	// Cross-checked against cmd/ssmcc: 4 solutions.
+	input := "1:3|a 2|b c d\na b\na c\na d\nb c\nb d\nc d\na b c\n"
+	if n := countMCC(t, input); n != 4 {
+		t.Errorf("richer: got %d solutions, want 4", n)
+	}
+}
+
+func TestMCCPlainXCC(t *testing.T) {
+	n := 8
+	var b strings.Builder
+	for i := 0; i < n; i++ {
+		b.WriteString(itoa("r", i))
+	}
+	for j := 0; j < n; j++ {
+		b.WriteString(itoa("c", j))
+	}
+	b.WriteString("|")
+	for k := 0; k < 2*n-1; k++ {
+		b.WriteString(itoa(" a", k))
+	}
+	for k := 0; k < 2*n-1; k++ {
+		b.WriteString(itoa(" b", k))
+	}
+	b.WriteString("\n")
+	for i := 0; i < n; i++ {
+		for j := 0; j < n; j++ {
+			b.WriteString(itoa("r", i))
+			b.WriteString(itoa("c", j))
+			b.WriteString(itoa("a", i+j))
+			b.WriteString(itoa("b", i-j+n-1))
+			b.WriteString("\n")
+		}
+	}
+	if got := countMCC(t, b.String()); got != 92 {
+		t.Errorf("8-queens via MCC: got %d, want 92", got)
+	}
+}
+
+func TestMCCColors(t *testing.T) {
+	input := "p q r | x y\np q x:A y:B\np r x:A y:A\np x:B\nq x:A\nr y:B\n"
+	if n := countMCC(t, input); n != 2 {
+		t.Errorf("colors: got %d solutions, want 2", n)
+	}
+}
+
 @* Index.
