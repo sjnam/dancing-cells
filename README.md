@@ -6,6 +6,11 @@ dancing-cells counterpart to [`sjnam/dlx`](https://github.com/sjnam/dlx) and
 exposes the same library API, so the dlx example programs port over almost
 unchanged.
 
+The library is a **literate program**: its whole source lives in
+[`dcells.w`](dcells.w), a single English [GWEB](https://github.com/sjnam/gweb)
+document that reads as one essay on the sparse-set dance — see
+[The source is a literate program](#the-source-is-a-literate-program) below.
+
 ## Library
 
 ```go
@@ -430,6 +435,28 @@ $ go run ./examples/partridge 10
 └───────────┴─────────────────┴───────────────────┴───────────────────┴───────────────────┴───────────────────┘
 
 ````
+
+## The source is a literate program
+
+The engine is written in the [literate-programming](https://en.wikipedia.org/wiki/Literate_programming)
+style Knuth invented for `TeX`. Rather than three plain `.go` files, the whole
+solver — the XCC engine, the MCC engine, and the DLX parser — is a single
+English [GWEB](https://github.com/sjnam/gweb) document, [`dcells.w`](dcells.w),
+told as one continuous essay: the sparse-set idea and its history, why covering
+is just a swap-and-shrink, how colors and multiplicities change the branch, and
+so on. It follows the same tradition as the `SSXCC` and `SSMCC` programs it was
+ported from, which Knuth himself wrote as literate `CWEB`.
+
+Two tools turn the one source into two outputs:
+
+```sh
+gtangle dcells.w      # extract dcells.go (the Go source; gitignored)
+gweave  dcells.w      # typeset dcells.tex → PDF
+```
+
+`dcells.go` is a build artifact and is not committed — edit `dcells.w` and
+re-tangle. Because `gtangle` emits `//line` directives, a Go compiler error
+points straight back at the line in `dcells.w`.
 
 ## Reference CLIs
 
