@@ -42,4 +42,5 @@ dcells.pdf: dcells.w
 # clean removes only the typeset-document artifacts; the tangled .go files are
 # committed, so `make tangle` (not clean) is what refreshes them.
 clean:
+	rm -f dcells.go dcells_test.go
 	rm -f dcells.tex dcells.pdf dcells.idx dcells.scn dcells.log dcells.toc

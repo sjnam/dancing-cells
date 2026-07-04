@@ -12,6 +12,8 @@
 /dcells.pdf
 /dcells.log
 /dcells.toc
+/dcells.go
+/dcells_test.go
 
 # stray example binaries (built into cwd)
 /queen
