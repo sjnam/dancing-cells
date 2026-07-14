@@ -11,9 +11,9 @@
 @** Introduction.
 Every so often a problem that looks like a puzzle turns out to be the same
 problem wearing a different hat. Packing the squares $1{\times}1$, $2{\times}2$,
-\dots, $n{\times}n$ into a tray --- the {\it partridge puzzle\/}; pencilling
+\dots, $n{\times}n$ into a tray---the {\it partridge puzzle\/}; pencilling
 digits into a Sudoku grid; strewing pentominoes across a chessboard; timetabling
-exams so that no student sits two at once --- each of these is, underneath, a
+exams so that no student sits two at once---each of these is, underneath, a
 single austere question. It is the {\it exact cover\/} problem: given a universe
 of {\it items\/} and a collection of {\it options}, each option being a subset of
 the items, can we select options so that every item is covered exactly once?
@@ -21,15 +21,15 @@ the items, can we select options so that every item is covered exactly once?
 Donald Knuth taught a generation to answer that question with {\it Algorithm~X},
 backtracking made vivid by the {\it dancing links\/} data structure. There, the
 sparse matrix of options and items is threaded by doubly linked lists, so that
-covering an item unstitches it from every list at once, and uncovering it --- on
-the way back up the search tree --- stitches it right back, the links dancing out
+covering an item unstitches it from every list at once, and uncovering it---on
+the way back up the search tree---stitches it right back, the links dancing out
 and in as the search advances and retreats. It is one of the prettiest ideas in
 all of combinatorial computing.
 
 And then, as the idea neared its thirtieth birthday, Knuth wrote it out again
 {\it the other way}. In his programs {\tt SSXCC} and {\tt SSMCC} he threw out the
 links and kept the dance, storing each item's surviving options in a {\it sparse
-set\/} --- the little two-array structure that Preston Briggs and Linda Torczon
+set\/}---the little two-array structure that Preston Briggs and Linda Torczon
 had distilled in 1993 from a throwaway exercise of Aho, Hopcroft, and Ullman. He
 wrote it, he tells us, ``as if I live on a planet where the sparse-set ideas are
 well known, but doubly linked links are almost unheard-of.'' This program is a Go
@@ -42,15 +42,15 @@ loosenings and each earns its own machine.
 The first, |XCC|, is exact cover {\it with colors}. Items come in two flavors:
 {\it primary\/} items, which must be covered exactly once, and {\it secondary\/}
 items, which may be covered any number of times {\it provided all the options
-that touch one agree on its color}. Colors let options negotiate --- ``I will use
-this square only if you paint it blue'' --- and turn out to express a startling
+that touch one agree on its color}. Colors let options negotiate---``I will use
+this square only if you paint it blue''---and turn out to express a startling
 range of constraints. |XCC| branches the way Algorithm~X does: it picks the item
 with the fewest surviving options and tries them all, a {\it $d$-way\/} fan-out.
 
 The second, |MCC|, is exact cover {\it with multiplicities}. Here a primary item
 may ask to be covered not once but between $u$ and $v$ times. This small change
 alters the arithmetic of the search enough that a {\it binary\/} branch ---
-include this one option, or banish it --- serves better than a $d$-way one, so
+include this one option, or banish it---serves better than a $d$-way one, so
 |MCC| is a separate engine rather than a coat of paint on the first.
 
 @ One Go-flavored liberty runs through both. Knuth's solvers print each solution
@@ -58,7 +58,7 @@ to the standard error stream and press on; ours hand each solution back through 
 channel. A caller constructs a solver with |dcells.NewXCC()| or
 |dcells.NewMCC()|, calls |Dance(reader)| on the input, and ranges over
 |res.Solutions|; each value that arrives is a |[]Option|, and each |Option| is a
-|[]string| of item names --- a colored secondary item appearing as |name:color|.
+|[]string| of item names---a colored secondary item appearing as |name:color|.
 The search runs in its own goroutine and blocks on every send, so ranging over
 the solutions paces it, and a consumer who stops listening stops the search.
 This API deliberately mirrors the |dlx| library
@@ -101,7 +101,7 @@ $U=\{x_0,\ldots,x_{n-1}\}$, keep two arrays $p$ and $q$ that are inverse
 permutations of each other, and a count $s$. The members of $S$ are exactly
 $x_{p_0},\ldots,x_{p_{s-1}}$. Then $x_k\in S$ iff $q_k<s$; to delete a member,
 decrease $s$ and swap it to position~$s$; to insert, swap it to position~$s$ and
-increase~$s$. No list, no links --- just two permutations learning to dance.
+increase~$s$. No list, no links---just two permutations learning to dance.
 
 Our sets never start empty and grow; they start {\it full\/} (every option is a
 candidate) and shrink as the search commits to choices, so we keep genuine
@@ -114,7 +114,7 @@ still-active item, an index |x| into a much larger array |set|. Beginning at
 contain that item; so |item| plays the role of the permutation~$p$, and a
 companion field |pos(x)| plays~$q$, recording that this item sits at
 |item[pos(x)]|. Covering an item is then nothing but shrinking a count and
-swapping two array slots --- the sparse-set delete, done over and over. The
+swapping two array slots---the sparse-set delete, done over and over. The
 slots just below each item's base in |set| hold its bookkeeping (its size, its
 position, its item number, and for MCC its multiplicity bounds); named accessor
 methods, defined with each engine, read and write them.
@@ -146,11 +146,11 @@ type node struct {
 }
 
 @ A solution is reported as the list of its options, and each option as the
-list of its item names --- a colored secondary item appearing as \.{name:color}.
+list of its item names---a colored secondary item appearing as \.{name:color}.
 This is deliberately the same shape that the |dlx| library produces, so that
 programs can migrate between the two without noticing. |Result| carries the two
 channels a caller consumes: every exact cover arrives on |Solutions|, and ---
-when the solver's pulse is switched on --- occasional progress strings arrive
+when the solver's pulse is switched on---occasional progress strings arrive
 on |Heartbeat|. Both channels close when the search finishes or its context is
 cancelled.
 @<Solutions and heartbeats@>=
@@ -209,7 +209,7 @@ colorNames []string // interned colors, by id (1-based; 0 means "no color")
 colorIndex map[string]int
 
 @ Both searches keep a {\it force stack\/} of items whose next move is no
-longer a choice --- forced moves will be a recurring character in this story
+longer a choice---forced moves will be a recurring character in this story
 --- and the same counters of search effort. An ``update'' is one sparse-set
 swap; a ``node'' is one visit to the recursive search.
 @<The force stack@>=
@@ -230,16 +230,16 @@ pulse     *time.Ticker
 @** The XCC engine.
 Now the first solver, from the top. The algorithm is Algorithm~X in sparse-set
 clothing, and one paragraph suffices to state it. {\it Choose\/} the active
-primary item with the fewest remaining options --- if none remains, the partial
+primary item with the fewest remaining options---if none remains, the partial
 solution is a solution. {\it Cover\/} that item: remove it from the active list
 and hide every option that can no longer be used. Then {\it try\/} each of its
 options in turn: commit the option (which covers all its other items too),
-recurse, and undo. The rest is bookkeeping --- but bookkeeping chosen so that
+recurse, and undo. The rest is bookkeeping---but bookkeeping chosen so that
 every one of those verbs is a handful of array swaps.
 
 The engine unfolds in four movements, and the groups that follow trace them:
-state and construction; the dance --- the public launcher, the recursive
-search, and the chooser; the covering machinery --- committing, hiding, and
+state and construction; the dance---the public launcher, the recursive
+search, and the chooser; the covering machinery---committing, hiding, and
 the undo apparatus that makes trying reversible; and the small reporting
 offices that hand solutions back to the caller.
 @<The XCC engine@>=
@@ -260,7 +260,7 @@ offices that hand solutions back to the caller.
 
 @* XCC state and construction.
 An |XCC| value carries the entire state of one computation. Besides the
-shared blocks we prepared earlier, it owns the matrix arrays --- |nd|, |item|,
+shared blocks we prepared earlier, it owns the matrix arrays---|nd|, |item|,
 |set|, with |second| marking the boundary between primary and secondary items
 --- and the arrays that record the search path: |choice| holds the option
 chosen at each level, and |saved|/|savestack| snapshot sizes for backtracking.
@@ -301,7 +301,7 @@ saveptr   int
 default heartbeats are off and the context is the background context, never
 cancelled. To make a search cancellable, hand it a context before starting:
 |WithContext| returns a shallow copy, so the original stays reusable, and it
-refuses a nil context outright --- that would otherwise surface as a mysterious
+refuses a nil context outright---that would otherwise surface as a mysterious
 panic deep in the dance. |Updates| and |Nodes| report the search statistics
 once the |Solutions| channel has been drained.
 @<Creating an XCC solver@>=
@@ -370,8 +370,8 @@ func (s *XCC) internColor(name string) int {
 |Dance| reads the matrix (panicking on malformed input), opens the channels,
 and launches the search in a goroutine; it returns at once, and the goroutine
 closes both channels when it is done, so a |range| over the solutions
-terminates naturally. A |baditem| --- a primary item that ended the input with
-no options at all --- makes the whole problem trivially unsolvable, so the
+terminates naturally. A |baditem|---a primary item that ended the input with
+no options at all---makes the whole problem trivially unsolvable, so the
 search is skipped and the channels simply close.
 @<Launching the XCC dance@>=
 func (s *XCC) Dance(rd io.Reader) *Result {
@@ -422,7 +422,7 @@ if s.Debug {
 @ The search is one recursive function. At each node it counts a step, gives
 the context a chance to abort, and offers a heartbeat; then it asks
 |chooseItem| where to branch. A |false| return, here and below, means ``unwind
-the entire search'' --- the caller has walked away or cancelled --- and it
+the entire search''---the caller has walked away or cancelled---and it
 propagates up through every level.
 @<The XCC search@>=
 func (s *XCC) search(level int) bool {
@@ -443,13 +443,13 @@ func (s *XCC) search(level int) bool {
 }
 
 @ Covering |best| starts with the item itself: |swapOut| retires it from the
-active list, and |hide| --- in its unchecked form, since we are committing to
-cover |best| no matter what --- removes each of its options from the sets of
+active list, and |hide|---in its unchecked form, since we are committing to
+cover |best| no matter what---removes each of its options from the sets of
 the {\it other\/} items they touch. What remains in |best|'s own set is
 untouched: those are exactly the candidates to try. We snapshot all the active
 sizes once, then loop: pick a candidate, commit it, recurse, restore the
 sizes, and go around again. Note that |restoreSizes| runs whether or not the
-commit succeeded --- a failed |commitOption| leaves partial damage that must be
+commit succeeded---a failed |commitOption| leaves partial damage that must be
 undone just the same.
 @<Cover |best| and try each of its options in turn@>=
 s.swapOut(best)
@@ -471,7 +471,7 @@ for c := best; c < best+s.size(best); c++ {
 @ Which item shall we branch on? Christine Solnon and Knuth added a wrinkle to
 the classic ``minimum remaining values'' rule that repays its keep: an item
 already down to a {\it single\/} option is a forced move, best taken at once
-and --- crucially --- taken without the expense of saving anybody's sizes. Such
+and---crucially---taken without the expense of saving anybody's sizes. Such
 items wait on the force stack. So we first drain the stack (skipping items
 that were covered while they waited), and only then scan for the emptiest
 primary item. If the scan pushed new singletons, one of them wins instead. A
@@ -494,7 +494,7 @@ func (s *XCC) chooseItem() (best int, solution bool) {
 }
 
 @ Ties go to the leftmost item, matching Knuth's solvers. Size zero cannot
-occur here --- |hide| refuses to let an active primary item starve --- so the
+occur here---|hide| refuses to let an active primary item starve---so the
 empty case documents itself and moves on.
 @<Scan the active primaries for the emptiest@>=
 score := infSize
@@ -522,7 +522,7 @@ spacers whose |itm| is non-positive; starting just past |opt| and following
 the spacer offsets walks the whole option round-robin.) The first pass swaps
 every other item of the option out of the active list, so no future choice
 can land on them. The second pass hides the options that now conflict. If any
-primary item would be left uncoverable, we abandon the commit --- clearing the
+primary item would be left uncoverable, we abandon the commit---clearing the
 force stack, whose pending entries died with the branch.
 @<Committing an XCC option@>=
 func (s *XCC) commitOption(opt int) bool {
@@ -555,7 +555,7 @@ s.active = p
 @ The second pass distinguishes the two item flavors. A primary item is being
 covered outright, so every other option that uses it must go. A secondary item
 is being {\it purified\/}: options that agree with the committed color survive,
-the rest go --- and Solnon's observation, which this code inherits, is that
+the rest go---and Solnon's observation, which this code inherits, is that
 purification and covering are the same sweep seen from two angles, so one
 |hide| serves both. A secondary item already purified earlier (its |pos| is
 beyond |oactive|) is skipped entirely.
@@ -583,7 +583,7 @@ for q := opt + 1; q != opt; {
 
 @ |hide| walks the options remaining in item |c|'s set and deletes each from
 the sets of {\it its\/} other items. When a |color| is given (|c| is secondary),
-options sharing that color are kept --- that is the purification. The |check|
+options sharing that color are kept---that is the purification. The |check|
 flag tells |hide| whether anyone is still allowed to veto: when we hide the
 branching item itself the answer is no, but during a commit a primary item
 that drops to zero options kills the branch, and one that drops to a single
@@ -652,7 +652,7 @@ func (s *XCC) swapOut(x int) {
 in reverse, mirror-image code that had to be maintained in step with the
 forward pass. Solnon's suggestion, adopted here, is happily cruder: before a
 branch, save the {\it sizes\/} of all active items in one sweep; afterward,
-slam them back. Positions and set contents need no repair --- the swaps left
+slam them back. Positions and set contents need no repair---the swaps left
 every set a permutation of itself, and a restored size re-admits exactly the
 right entries. The |saved| array remembers how deep the save stack was at each
 level, which also tells |restoreSizes| how many items were active then.
@@ -677,8 +677,8 @@ func (s *XCC) restoreSizes(level int) {
 }
 
 @* XCC reporting.
-Reaching a solution, we materialize it from the |choice| stack --- one option
-per level --- and send it down the channel. The send is the pacing point: if
+Reaching a solution, we materialize it from the |choice| stack---one option
+per level---and send it down the channel. The send is the pacing point: if
 the consumer has abandoned the range, or the context is cancelled, the other
 arm of the select fires and the whole search unwinds.
 @<Visiting an XCC solution@>=
@@ -739,7 +739,7 @@ func (s *XCC) option(p int) Option {
 The second solver answers a richer question. In |MCC| a primary item carries a
 {\it multiplicity\/} $[u..v]$: it must be covered at least $u$ and at most $v$
 times, plain exact cover being the case $[1..1]$. Two numbers travel with each
-such item. Its {\it bound\/} is its residual capacity --- how many more times
+such item. Its {\it bound\/} is its residual capacity---how many more times
 it still wants covering, counting down as options are chosen. Its {\it slack\/}
 is $v-u$, the give in the constraint, and it never changes. Filip Stappers
 added these extensions to Knuth's line of solvers in 2023.
@@ -747,7 +747,7 @@ added these extensions to Knuth's line of solvers in 2023.
 Multiplicities change the shape of the branch. An item that may be covered
 several times is not disposed of by one $d$-way fan-out over its options, so
 |MCC| branches {\it in binary}: each search node names one item and one of its
-options and asks two questions --- {\it include\/} the option, or {\it
+options and asks two questions---{\it include\/} the option, or {\it
 remove\/} it and choose again. The item to branch on is the one of least {\it
 branching degree\/} $\ell+s-b+1$, where $\ell$ is its number of surviving
 options, $b$ its bound, and $s=\min({\rm slack},b)$; degree~1 means the move
@@ -786,8 +786,8 @@ const (
 	mccIprop = 5 // input-phase slot spacing
 )
 
-@ The |MCC| state mirrors |XCC| almost field for field --- the shared blocks
-are literally the same sections --- but there is no |oactive|, no |choice|,
+@ The |MCC| state mirrors |XCC| almost field for field---the shared blocks
+are literally the same sections---but there is no |oactive|, no |choice|,
 and no |saved|: binary branching records its path in |included| (one option
 per stage, ready for output) and rewinds through a save stack of
 size-and-bound triples.
@@ -934,7 +934,7 @@ if m.Debug {
 @ Now the binary dance. After the usual node count, abort check, and pulse, a
 forced item left over from a covering at some shallower node takes absolute
 priority; then the chooser speaks, possibly discovering new forced items of
-its own; and a degree of |infSize| means no primary item remains --- a
+its own; and a degree of |infSize| means no primary item remains---a
 solution. Only then do we truly branch.
 @<The MCC search@>=
 func (m *MCC) search(stage int) bool {
@@ -974,7 +974,7 @@ for m.forced != 0 {
 option, |opt|. The {\it left\/} child includes it and moves to |stage+1|; the
 {\it right\/} child restores the state, removes the option, and re-enters the
 {\it same\/} stage to choose afresh. When the degree is~1 there is no right
-child --- excluding the option would starve the item --- so half the work
+child---excluding the option would starve the item---so half the work
 vanishes. Either way we leave with the save stack exactly as we found it.
 @<Branch left and right on |best|@>=
 mark := m.saveState()
@@ -1000,7 +1000,7 @@ if score != 1 {
 m.saveptr = mark
 
 @ A forced item has exactly one admissible move and no alternative, so we
-commit it and step forward {\it without saving anything\/} --- that is the
+commit it and step forward {\it without saving anything\/}---that is the
 whole point of recognizing forced moves, per Solnon's 2023 improvement. Some
 ancestor's |restoreState| will undo its effects when the time comes. Note the
 quiet |true| when the inclusion fails: the branch is dead, but the search as a
@@ -1018,7 +1018,7 @@ func (m *MCC) forcedMove(stage, bi int) bool {
 
 @ The chooser weighs every active primary item by the branching degree
 $\ell+s-b+1$ and keeps the smallest, breaking ties by smaller slack, then
-larger size, then leftmost position --- a cascade tuned by Knuth's
+larger size, then leftmost position---a cascade tuned by Knuth's
 experiments. An item whose degree falls to~1 is forced, and, because it may
 still need covering more than once, it is pushed |bound-slack| times so that
 each required covering gets its turn.
@@ -1052,8 +1052,8 @@ func (m *MCC) chooseBest() (best, score int) {
 }
 
 @* The MCC branch actions.
-Including an option walks its nodes --- first rewinding to the option's
-start --- and settles accounts with each item in turn via |coverOrCommit|. An
+Including an option walks its nodes---first rewinding to the option's
+start---and settles accounts with each item in turn via |coverOrCommit|. An
 item found already inactive is fine if secondary (it was purified earlier)
 and impossible if primary. A |false| from anywhere means some item became
 uncoverable and the caller's branch is dead.
@@ -1083,7 +1083,7 @@ func (m *MCC) includeOption(opt int) bool {
 
 @ For one item |ii| of the included option (whose node is |cur|, sitting at
 slot |p| of |ii|'s set) there are two futures. A primary item first pays one
-unit of bound; if that exhausts it --- or if |ii| is secondary --- the item is
+unit of bound; if that exhausts it---or if |ii| is secondary---the item is
 finished and leaves the field. Otherwise |ii| still wants more coverings and
 merely drops this option from its set.
 @<Including an MCC option@>=
@@ -1100,7 +1100,7 @@ func (m *MCC) coverOrCommit(ii, cur, p int) bool {
 }
 
 @ Finishing an item means removing every {\it competing\/} option from the
-rest of the matrix --- except, when |ii| is secondary and the committed node
+rest of the matrix---except, when |ii| is secondary and the committed node
 carries a color, the options that agree with that color: they are purified,
 not removed. The item itself is then deactivated. (The loop runs downward
 because |removeFromOtherSets| reshuffles the set as it works.)
@@ -1123,7 +1123,7 @@ for s := ii + ss - 1; s >= ii; s-- {
 }
 m.deactivate(ii)
 
-@ An item that still wants coverings loses just this one option --- unless
+@ An item that still wants coverings loses just this one option---unless
 that would push its set below |bound-slack|, the minimum it can still hope to
 collect, in which case the branch dies. Dropping the last option of an item
 whose remaining demand is zero simply retires it.
@@ -1150,7 +1150,7 @@ m.nd[cur].loc, m.nd[nnp].loc = int32(ii+ss), int32(p)
 m.updates++
 
 @ Removing a competing option deletes it from every active set it belongs to,
-skipping purified secondary items, and watching --- as always --- for a
+skipping purified secondary items, and watching---as always---for a
 primary item pushed below its coverable minimum.
 @<Excluding an MCC option@>=
 func (m *MCC) removeFromOtherSets(optp int) bool {
@@ -1184,8 +1184,8 @@ func (m *MCC) removeFromOtherSets(optp int) bool {
 	return true
 }
 
-@ The right branch of the search needs the same deletion --- remove option
-|cur| without committing it --- and differs from |removeFromOtherSets| in one
+@ The right branch of the search needs the same deletion---remove option
+|cur| without committing it---and differs from |removeFromOtherSets| in one
 detail only: a |false| here is an ordinary ``can't cover,'' reported to a
 caller who is about to backtrack anyway, so the force stack is left in peace.
 @<Excluding an MCC option@>=
@@ -1231,7 +1231,7 @@ func (m *MCC) deactivate(ii int) {
 
 @ Binary branching cannot get away with saving only sizes: bounds change too.
 So |saveState| snapshots each active item's size and (for primary items) its
-bound, returning a mark for |restoreState| to rewind to --- the multiplicity
+bound, returning a mark for |restoreState| to rewind to---the multiplicity
 analogue of the |XCC| undo machinery.
 @<MCC undo machinery@>=
 func (m *MCC) saveState() int {
@@ -1321,7 +1321,7 @@ Item names and colors are whitespace-free strings, and a line beginning with
 item may be written \.{high\|name} or \.{low:high\|name} to declare that it
 wants covering between |low| and |high| times, the bare name meaning $[1..1]$.
 
-Parsing happens in two phases per engine --- the item line, then the options
+Parsing happens in two phases per engine---the item line, then the options
 --- followed by a {\it finalization\/} that lays out the sparse sets the
 dance expects. The two engines' phases differ only where multiplicities
 intrude, but Go's type system makes sharing the code more trouble than it is
@@ -1349,7 +1349,7 @@ func failf(format string, a ...any) {
 
 @ |nextLine| reads one line into a NUL-terminated, NUL-padded buffer, so that
 scanning one byte past the content stays in bounds and stops at the
-terminating NUL --- a small trick borrowed from the C originals that spares
+terminating NUL---a small trick borrowed from the C originals that spares
 every scanner below an end-of-buffer test.
 @<Reading one line@>=
 func isspace(c byte) bool {
@@ -1366,8 +1366,8 @@ func nextLine(br *bufio.Reader) (buf []byte, ok bool) {
 	return buf, true
 }
 
-@ |token| lifts the next word, stopping at whitespace, the NUL, or --- when
-|stopColon| is set --- a colon, which is how an option's \.{name:color} is
+@ |token| lifts the next word, stopping at whitespace, the NUL, or---when
+|stopColon| is set---a colon, which is how an option's \.{name:color} is
 split.
 @<Scanning tokens@>=
 func skipSpace(buf []byte, p int) int {
@@ -1462,8 +1462,8 @@ func (s *XCC) readOptions(br *bufio.Reader) {
 }
 
 @ Reading one option is a loop of name-and-maybe-color scans. An option that
-mentions no primary item can never be chosen --- committing it would cover
-nothing --- so it is quietly unwound, node by node; Knuth's solvers print a
+mentions no primary item can never be chosen---committing it would cover
+nothing---so it is quietly unwound, node by node; Knuth's solvers print a
 warning here, and we simply drop it. A real option is sealed with a spacer
 node so the runs stay separable.
 @<XCC option input@>=
@@ -1485,7 +1485,7 @@ func (s *XCC) readOption(buf []byte) {
 	s.nd[s.lastNode].itm = int32(spacer + 1 - s.lastNode)
 }
 
-@ A color may follow a name after a colon --- but only on a secondary item.
+@ A color may follow a name after a colon---but only on a secondary item.
 @<Scan one XCC item name and its color@>=
 name, next := token(buf, p, true)
 if name == "" {
@@ -1521,8 +1521,8 @@ for s.lastNode > spacer {
 	s.lastNode--
 }
 
-@ During input the |set| array is used at a coarse |m<<2| spacing --- room
-enough for each item's reserved slots --- and |createNode| tallies one more
+@ During input the |set| array is used at a coarse |m<<2| spacing---room
+enough for each item's reserved slots---and |createNode| tallies one more
 node for item |m| there, catching a repeated item within a single option by
 noticing that the item's last-seen position is already inside this option.
 @<XCC option input@>=
@@ -1553,8 +1553,8 @@ func (s *XCC) finalize() {
 	@<Repoint the XCC nodes@>@;
 }
 
-@ The first sweep assigns each item a compact base in |set| --- leaving
-|primExtra| reserved slots below it --- and converts the primary/secondary
+@ The first sweep assigns each item a compact base in |set|---leaving
+|primExtra| reserved slots below it---and converts the primary/secondary
 boundary into those coordinates. A problem with no \.{\|} in its item line has
 no secondary items, and |second| lands just past the used part of |set|.
 @<Lay out the XCC set array@>=
@@ -1837,8 +1837,8 @@ if m.second == secondUnset {
 @ Alongside size, position, and number, this sweep copies in each primary
 item's slack and bound, and the notion of |baditem| sharpens: fatal trouble is
 a primary item that cannot even reach its {\it lower\/} bound. A primary item
-with lower bound~0 and no options is not trouble at all --- it simply never
-appears --- so it is stacked for the closing sweep, as is any optionless
+with lower bound~0 and no options is not trouble at all---it simply never
+appears---so it is stacked for the closing sweep, as is any optionless
 secondary item.
 @<Fill in the MCC item headers@>=
 for ; k != 0; k-- {
@@ -1892,13 +1892,13 @@ func (m *MCC) deactivateOptionless() {
 @** Tests.
 A literate program ought to carry its own proof of life. This last part is
 woven from the same source, yet it tangles to a {\it separate\/} file,
-\.{dcells\_test.go}, by way of GWEB's file-output control code --- the one that
+\.{dcells\_test.go}, by way of GWEB's file-output control code---the one that
 names an auxiliary output rather than the main one. Running |go test| then
 exercises both engines against small problems whose answers we already know.
 
 The shared helper |collect| runs the XCC solver and renders each solution as
-one canonical string --- the item names within an option sorted, the options
-within a solution sorted, and finally the solutions themselves sorted --- so a
+one canonical string---the item names within an option sorted, the options
+within a solution sorted, and finally the solutions themselves sorted---so a
 test can compare against an expected value without caring in what order they
 were found.
 @(dcells_test.go@>=
@@ -1968,7 +1968,7 @@ func TestNoSolution(t *testing.T) {
 
 @ Item names and colors are arbitrary strings, so the next test uses a
 multi-character color (\.{England}) and checks that the name survives into the
-output --- exactly what the zebra and word-search examples rely on.
+output---exactly what the zebra and word-search examples rely on.
 @(dcells_test.go@>=
 func TestMultiCharColorAndLongNames(t *testing.T) {
 	input := "house1 house2 | nationality\nhouse1 nationality:England\nhouse2 nationality:England\n"
@@ -1982,8 +1982,8 @@ func TestMultiCharColorAndLongNames(t *testing.T) {
 	}
 }
 
-@ A sterner exercise encodes the $n$-queens problem as exact cover --- rows
-and columns as primary items, the two diagonal families as secondary --- and
+@ A sterner exercise encodes the $n$-queens problem as exact cover---rows
+and columns as primary items, the two diagonal families as secondary---and
 checks the solution counts against their known values (4, 40, and 92 for
 $n=6,7,8$). The two-digit |itoa| keeps the generated item names short and
 aligned.
@@ -2075,8 +2075,8 @@ func TestMCCRicher(t *testing.T) {
 }
 
 @ Finally, two sanity checks that the MCC engine subsumes the plain one: with
-default multiplicities it must reproduce ordinary XCC --- the same 92
-solutions to 8-queens --- and the color machinery must work there too.
+default multiplicities it must reproduce ordinary XCC---the same 92
+solutions to 8-queens---and the color machinery must work there too.
 @(dcells_test.go@>=
 func TestMCCPlainXCC(t *testing.T) {
 	n := 8
