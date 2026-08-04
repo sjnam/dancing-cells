@@ -1971,7 +1971,8 @@ multi-character color (\.{England}) and checks that the name survives into the
 output---exactly what the zebra and word-search examples rely on.
 @(dcells_test.go@>=
 func TestMultiCharColorAndLongNames(t *testing.T) {
-	input := "house1 house2 | nationality\nhouse1 nationality:England\nhouse2 nationality:England\n"
+	input := "house1 house2 | nationality\n" +
+		"house1 nationality:England\nhouse2 nationality:England\n"
 	sols := collect(t, input)
 	if len(sols) != 1 {
 		t.Fatalf("want 1 solution, got %d: %v", len(sols), sols)

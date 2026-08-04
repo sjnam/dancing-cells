@@ -81,6 +81,7 @@ strict superset of `NewXCC` (the partridge example uses it).
 | Zebra puzzle | `go run ./examples/zebra` |
 | Partridge (multiplicities) | `go run ./examples/partridge 8` |
 | Word search | `go run ./examples/wordsearch examples/wordsearch/movie.txt 13 13` |
+| Five words, 24 letters | `go run ./examples/words examples/words/sgb-words.txt 5` |
 
 Each example generates the problem as DLX text (or reads it from a file),
 passes it to `Dance`, and consumes the `Solutions` channel — the same pattern as
@@ -436,6 +437,32 @@ $ go run ./examples/partridge 10
 
 ````
 
+### Five words that cover 24 letters
+
+`sgb-words.txt` is the Stanford GraphBase list of 5757 five-letter English
+words. Five of them fill 25 letter slots; can those slots cover 24 distinct
+letters of the alphabet? (Twenty-five cannot be done — no five words on this
+list are pairwise letter-disjoint.) The write-up is
+[`examples/words/words.w`](examples/words/words.w).
+
+````console
+$ go run ./examples/words examples/words/sgb-words.txt 8
+frock glitz nymph squab vowed   (o를 두 번, j x 빠짐)
+frock squab veldt whomp zingy   (o를 두 번, j x 빠짐)
+frock glitz nymph squab vexed   (vexed 안에서 겹침, j w 빠짐)
+foxed glitz nymph squab wreck   (e를 두 번, j v 빠짐)
+fjord glitz nymph squab wreck   (r를 두 번, v x 빠짐)
+frock glitz jived nymph squab   (i를 두 번, w x 빠짐)
+frock glitz nymph squab waved   (a를 두 번, j x 빠짐)
+foxed glitz nymph squab wrack   (a를 두 번, j v 빠짐)
+해 8개
+````
+
+Pass `0` instead of `8` to enumerate them all: 9592 answers in about 40 seconds.
+The solver itself returns 8132 — one per letter set — and each is expanded into
+the words that realize it, since anagrams like `stack` and `tacks` share a
+letter set and are interchangeable in an answer.
+
 ## The source is a literate program
 
 The engine is written in the [literate-programming](https://en.wikipedia.org/wiki/Literate_programming)
@@ -447,18 +474,25 @@ history, why covering is just a swap-and-shrink, how colors and multiplicities
 change the branch, and so on. It follows the same tradition as the `SSXCC` and
 `SSMCC` programs it was ported from, which Knuth himself wrote as literate `CWEB`.
 
-The [`Makefile`](Makefile) drives the two GWEB tools:
+The [`Makefile`](Makefile) drives the GWEB tools:
 
 ```sh
-make            # gtangle dcells.w → dcells.go + dcells_test.go, then build
-make pdf        # gweave dcells.w → typeset dcells.pdf
+make            # gtangle the .w files → .go, then build
+make pdf        # gweave → typeset dcells.pdf and examples/words/words.pdf
+make clean      # remove everything the .w files generate
 ```
 
-`dcells.go` and `dcells_test.go` are tangled from `dcells.w` and **committed** —
-a Go module needs its source in the tree to be `go get`-able and to satisfy an
-IDE — but `dcells.w` is the source of truth: edit it and run `make` to
-re-tangle. Because `gtangle` emits `//line` directives, a Go compiler error
-points straight back at the line in `dcells.w`.
+Only the `.w` files are checked in. `dcells.go`, `dcells_test.go`, and the
+typeset documents are all generated, so `make` is the first thing to run in a
+fresh clone. Because `gtangle` emits `//line` directives, a Go compiler error
+points straight back at the line in the `.w` file it came from.
+
+[`examples/words`](examples/words/words.w) is a second literate program, this
+one in Korean, and it is where the modelling ideas get explained rather than the
+engine: how *is there a set of five five-letter words covering 24 letters of the
+alphabet?* turns into a DLX input. Its answer is that colors alone — no
+multiplicities — are enough to pin the word count at exactly five. It is typeset
+with `luatex` (kotexgweb) and carries a MetaPost figure, [`words.mp`](examples/words/words.mp).
 
 ## Reference CLIs
 
