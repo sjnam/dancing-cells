@@ -68,16 +68,16 @@ $$\hbox{\it Which transversal costs the least?}$$
 ``Is there a transversal?'' is exact cover. There are $3n$ items---$n$ rows,
 $n$ columns, $n$ symbols---and $n^2$ options, one per cell; the option for cell
 $(i,j)$ covers row~$i$, column~$j$, and the symbol written there. Transversals
-of the square and exact covers of that problem correspond one to one. |Dance|
+of the square and exact covers of that problem correspond one to one. |cells.Dance|
 answers this much.
 
-``Which costs the least?'' is answered by |Minimize|. Price the options and the
+``Which costs the least?'' is answered by |cells.Minimize|. Price the options and the
 engine searches by branch and bound, sending out each transversal that is
 cheaper than everything before it; the last one to arrive is the cheapest.
 That much is easy too---all it takes is a price list. The meat is what comes
 next, the {\it bound}.
 
-Why is this the right floor on which to make the two algorithms meet?
+@ Why is this the right floor on which to make the two algorithms meet?
 Finding a transversal is {\it 3-dimensional matching}: rows, columns, and
 symbols interlocked all at once, and one of Karp's twenty-one NP-complete
 problems. But erase {\it any one\/} of the three axes and what remains is
@@ -89,13 +89,13 @@ $O(n^3)$.
 The drop between those two sentences is the whole point. What we relax to is
 not an estimate but {\it a subproblem's exact optimum}, so the bound is strong.
 And the relaxation has the same shape as the original, so the live (item,
-option) pairs that |Frame| hands out can be poured straight into a matrix.
+option) pairs that |cells.Frame| hands out can be poured straight into a matrix.
 There is no second data structure to build.
 
 In short: {\it NP-hard, but polynomial one dimension down}. No better floor for
 dancing cells and a Hungarian dance together.
 
-@ So far as I could find, nobody has put the two together in quite this way.
+So far as I could find, nobody has put the two together in quite this way.
 Using the Hungarian method for a branch-and-bound lower bound is an old trick,
 but what I turned up is mostly about the quadratic assignment problem; and
 where the {\tt DLX} line has been given costs and bounds, the bound was not
@@ -137,7 +137,7 @@ func main() {
 
 @ The command line takes one thing, the order of the square. Prices come from
 a random generator, so a different seed makes a different problem, and
-\.{-plain} solves it a second time with the bound taken off, for the sake of
+`\.{-plain}' solves it a second time with the bound taken off, for the sake of
 comparing node counts. That is: what happens if you dance the fast strain
 without the slow one.
 @<Read the command line@>=
@@ -155,7 +155,7 @@ if err != nil || n < 1 {
 @* The square and its prices.
 One |board| carries everything this computation needs. The first half is the
 problem itself; the second half is the household the bound keeps and rummages
-through at every node. It is allocated up front for one reason: |Bound| is
+through at every node. It is allocated up front for one reason: |cells.Bound| is
 called once per search node, and nothing there may go asking for memory.
 @<Data structures@>=
 type board struct {
@@ -250,7 +250,7 @@ for i := 0; i < n; i++ {
 }
 input := sb.String()
 
-@ Now solve. |Minimize| takes the price function, and |Bound| is simply dropped
+@ Now solve. |cells.Minimize| takes the price function, and |cells.Bound| is simply dropped
 into a field---two lines in all. The covers that arrive keep getting cheaper,
 so keeping only the last one leaves us holding the answer.
 @<Make the cover problem and solve it@>=
@@ -269,7 +269,7 @@ took := time.Since(start)
 read. While it is answering, it also fills in the table that turns an option
 number back into a cell. The bound will consult that table at every node, so
 this is a good moment to build it. The option number is the very handle
-|Bound| will see later.
+|cells.Bound| will see later.
 @<Functions@>=
 func (b *board) price(o int, opt cells.Option) int {
 	i, j := cellOf(opt)
@@ -396,8 +396,8 @@ for j := 1; j <= n; j++ {
 return total
 
 @* Where the two strains meet.
-Now to tie all of it into the shape |Bound| wants. This is the spot where the
-two algorithms take each other's hands. A |Frame| is a peephole into one search
+Now to tie all of it into the shape |cells.Bound| wants. This is the spot where the
+two algorithms take each other's hands. A |cells.Frame| is a peephole into one search
 node, and |f.Live| runs over every surviving (primary item, option) pair. It
 hands out one item's options together, which suits anybody thinking in rows.
 
@@ -542,7 +542,7 @@ if *plain {
 }
 
 @* Did it get faster?
-Odd orders, measured with seed~1. On the left is |Minimize| with the bound
+Odd orders, measured with seed~1. On the left is |cells.Minimize| with the bound
 taken off, on the right the Hungarian Dance technique; nodes are search nodes.
 $$\vbox{\halign{\hfil$#$\quad&\hfil#\quad&\hfil#\quad&\hfil#\quad&\hfil#\quad
 &\hfil#\cr
@@ -612,7 +612,7 @@ two groups well takes some judgment.
 cheaply as possible. The item structure is the same as the transversal
 problem's.\par}
 
-@ Since this was written, the same bound hook has been fitted to the |MCC|
+@ Since this was written, the same bound hook has been fitted to the MCC
 engine too. Binary branching made the place to hang it delicate. Giving up on
 a branch has to happen where the force stack is empty; otherwise the next node
 finds the leftover entries and adopts them as its own forced moves---and under
@@ -621,9 +621,9 @@ one option with the alternatives never tried. The answers still look
 plausible; they merely stop being the cheapest. It took a few thousand random
 problems checked against full enumeration to catch it.
 
-|Frame| became common property in the bargain, and |f.Need(item)| now says how
-many more times an item must at least be covered---always~1 under |XCC|, but
-possibly several under |MCC|. That is what opens the way to pricing a problem
+|cells.Frame| became common property in the bargain, and |f.Need(item)| now says how
+many more times an item must at least be covered---always~1 under XCC, but
+possibly several under MCC. That is what opens the way to pricing a problem
 naturally written with multiplicities, the partridge puzzle for one. That road
 was actually taken in \.{examples/hollow}, where in place of an exact relaxation
 like the Hungarian one the bound merely notices what the geometry has already
