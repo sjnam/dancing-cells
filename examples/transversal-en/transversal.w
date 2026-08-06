@@ -26,8 +26,10 @@ with the debt written into the title.
 
 The Hungarian algorithm has precisely the same provenance. When Harold Kuhn
 called his 1955 method for the assignment problem ``Hungarian,'' it was to
-write into the title the debt he owed K\H onig and Egerv\'ary. What Brahms did,
+write into the title the debt he owed K\H{o}nig and Egerv\'ary. What Brahms did,
 Kuhn did again.
+@^Egerv\'ary, Eugen (= Jen\H{o})@>
+@:Konig}{K\H{o}nig, D\'enes@>
 
 And a cs\'ard\'as is built of two strains. A slow {\it lass\'u\/} and a
 headlong {\it friss\/} alternate, and No.\thinspace5 keeps holding back and
