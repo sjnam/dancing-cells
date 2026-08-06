@@ -1369,7 +1369,7 @@ for mask := 1; mask < 1<<len(names); mask++ {
 	}
 	line := strings.Join(opt, " ")
 	price[line] = rng.Intn(40)
-	b.WriteString(line + "\n")
+	b.WriteString(line);b.WriteString("\n")
 }
 
 @ @(ssmcc_test.go@>=
