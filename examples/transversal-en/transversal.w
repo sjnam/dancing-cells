@@ -139,7 +139,10 @@ func main() {
 a random generator, so a different seed makes a different problem, and
 `\.{-plain}' solves it a second time with the bound taken off, for the sake of
 comparing node counts. That is: what happens if you dance the fast strain
-without the slow one.
+without the slow one. Dropping the slow strain does not turn the search back
+into |cells.Dance|, though. All that stops is the measuring of what is left to
+pay; a branch whose price has already overtaken the incumbent is folded just
+the same. The fast strain, danced with the bound set to zero.
 @<Read the command line@>=
 seed := flag.Int64("seed", 1, "random seed for the cell prices")
 plain := flag.Bool("plain", false, "also solve without the bound, to compare")
@@ -227,9 +230,9 @@ b.hu.used = make([]bool, n+1)
 
 @* Casting it as an exact cover.
 The input is {\tt DLX} text, verbatim. The first line lists the $3n$ item
-names, all of them primary, so no \.{\|} appears. Below it comes one line per
+names, all of them primary, so no `\.{\|}' appears. Below it comes one line per
 cell, naming the row, the column, and the symbol that cell covers. Names are
-built as \.{r3}, \.{c5}, \.{s2} so that later on the name alone will say
+built as `\.{r3}, \.{c5}, \.{s2}' so that later on the name alone will say
 whether an item is a row, a column, or a symbol.
 @<Make the cover problem and solve it@>=
 var sb strings.Builder
@@ -277,7 +280,7 @@ func (b *board) price(o int, opt cells.Option) int {
 	return b.cost[i][j]
 }
 
-@ An option comes back as \.{r3 c5 s2}, in the order it was written, so reading
+@ An option comes back as `\.{r3\ c5\ s2},' in the order it was written, so reading
 the first two names tells us which cell it is.
 @<Functions@>=
 func cellOf(opt cells.Option) (i, j int) {
@@ -535,8 +538,7 @@ if *plain {
 	bare := cells.NewXCC()
 	t0 := time.Now()
 	r2 := bare.Minimize(strings.NewReader(input), b.price)
-	for range r2.Solutions {
-	}
+	for range r2.Solutions {}
 	fmt.Printf("without a bound: %d nodes, %v\n",
 		bare.Nodes(), time.Since(t0).Round(time.Millisecond))
 }
@@ -558,13 +560,14 @@ n&\hbox{no bound}&&\hbox{with a bound}&&\hbox{ratio}\cr
 }}$$
 That the ratio grows with the order is the point. Computing the bound is not
 cheap---about 6 microseconds a node, thirty-six times the 0.17 microseconds of
-a bare one---but with fourteen hundred times fewer nodes it still comes out
+an unbounded one---but with fourteen hundred times fewer nodes it still comes out
 some forty times faster at $n=19$. The wall moves from around nineteen to
 around twenty-seven: with the bound, $n=27$ finishes in two minutes, and
 $n=29$ does not finish in four.
 
 @ So, put honestly: on small boards it is {\it slower}. Below about eleven the
-bare search is over in a blink, and laying $O(m^3)$ on every node is a loss.
+search is over in a blink without any bound at all, and laying $O(m^3)$ on
+every node is a loss.
 The slow strain earns its keep only when the piece runs long. This program
 leaves the bound on always because that is what the essay is about, not because
 it is always right; in earnest, one would switch it off on small boards.
