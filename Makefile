@@ -107,10 +107,10 @@ $(HOLLOW)/hollow.pdf: $(HOLLOW)/hollow.w
 # clean removes everything the .w files generate, tangled Go included;
 # `make` (or `make tangle`) puts the Go sources back.
 clean:
-	rm -f dcells.go ssxcc.go ssxcc_test.go ssmcc.go ssmcc_test.go
+	rm -f ssxcc_test.go ssmcc_test.go
 	rm -f $(addsuffix .tex,$(LIB)) $(addsuffix .pdf,$(LIB)) \
 	      $(addsuffix .idx,$(LIB)) $(addsuffix .scn,$(LIB)) \
-	      $(addsuffix .log,$(LIB)) $(addsuffix .toc,$(LIB))
+	      $(addsuffix .log,$(LIB)) $(addsuffix .toc,$(LIB)) $(addsuffix .dvi,$(LIB))
 	rm -f $(WORDS)/words.go $(TRANS)/transversal.go $(TRANSEN)/transversal.go \
 	      $(HOLLOW)/hollow.go
 	rm -f $(WORDS)/words.tex $(WORDS)/words.pdf $(WORDS)/words.idx \
