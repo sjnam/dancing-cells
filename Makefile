@@ -5,8 +5,8 @@
 #   ssxcc.w    the XCC engine (d-way branching)
 #   ssmcc.w    the MCC engine (multiplicities, binary branching)
 #
-# examples/words is a fourth literate program (in Korean), typeset with luatex
-# since kotexgweb needs it.
+# examples/words and examples/transversal are literate programs too (in Korean),
+# typeset with luatex since kotexgweb needs it.
 #
 # GTANGLE/GWEAVE are named to avoid GNU Make's built-in TANGLE/WEAVE variables
 # (which point at the CWEB tools).
@@ -19,6 +19,7 @@ LUATEX  ?= luatex
 MPTOPDF ?= mptopdf
 
 WORDS := examples/words
+TRANS := examples/transversal
 LIB   := dcells ssxcc ssmcc
 
 .PHONY: all build test vet tangle pdf clean
@@ -43,7 +44,11 @@ $(WORDS)/words.go: $(WORDS)/words.w
 	cd $(WORDS) && $(GTANGLE) words.w
 	gofmt -w $(WORDS)/words.go
 
-tangle: dcells.go ssxcc.go ssmcc.go $(WORDS)/words.go
+$(TRANS)/transversal.go: $(TRANS)/transversal.w
+	cd $(TRANS) && $(GTANGLE) transversal.w
+	gofmt -w $(TRANS)/transversal.go
+
+tangle: dcells.go ssxcc.go ssmcc.go $(WORDS)/words.go $(TRANS)/transversal.go
 
 build: tangle
 	$(GO) build ./...
@@ -55,7 +60,7 @@ vet: tangle
 	$(GO) vet ./...
 
 # Typeset the literate documents (two passes resolve the cross-references).
-pdf: $(addsuffix .pdf,$(LIB)) $(WORDS)/words.pdf
+pdf: $(addsuffix .pdf,$(LIB)) $(WORDS)/words.pdf $(TRANS)/transversal.pdf
 
 %.pdf: %.w
 	$(GWEAVE) $<
@@ -69,6 +74,11 @@ $(WORDS)/words.pdf: $(WORDS)/words.w $(WORDS)/words.mp
 	cd $(WORDS) && $(LUATEX) words.tex
 	cd $(WORDS) && $(LUATEX) words.tex
 
+$(TRANS)/transversal.pdf: $(TRANS)/transversal.w
+	cd $(TRANS) && $(GWEAVE) transversal.w
+	cd $(TRANS) && $(LUATEX) transversal.tex
+	cd $(TRANS) && $(LUATEX) transversal.tex
+
 # clean removes everything the .w files generate, tangled Go included;
 # `make` (or `make tangle`) puts the Go sources back.
 clean:
@@ -76,7 +86,10 @@ clean:
 	rm -f $(addsuffix .tex,$(LIB)) $(addsuffix .pdf,$(LIB)) \
 	      $(addsuffix .idx,$(LIB)) $(addsuffix .scn,$(LIB)) \
 	      $(addsuffix .log,$(LIB)) $(addsuffix .toc,$(LIB))
-	rm -f $(WORDS)/words.go
+	rm -f $(WORDS)/words.go $(TRANS)/transversal.go
 	rm -f $(WORDS)/words.tex $(WORDS)/words.pdf $(WORDS)/words.idx \
 	      $(WORDS)/words.scn $(WORDS)/words.log $(WORDS)/words.toc \
 	      $(WORDS)/words.1 $(WORDS)/words.mpx $(WORDS)/words-1.pdf
+	rm -f $(TRANS)/transversal.tex $(TRANS)/transversal.pdf \
+	      $(TRANS)/transversal.idx $(TRANS)/transversal.scn \
+	      $(TRANS)/transversal.log $(TRANS)/transversal.toc

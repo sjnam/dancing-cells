@@ -107,6 +107,7 @@ strict superset of `NewXCC` (the partridge example uses it).
 | Partridge (multiplicities) | `go run ./examples/partridge 8` |
 | Word search | `go run ./examples/wordsearch examples/wordsearch/movie.txt 13 13` |
 | Five words, 24 letters | `go run ./examples/words examples/words/sgb-words.txt 5` |
+| Cheapest Latin-square transversal | `go run ./examples/transversal -plain 11` |
 
 Each example generates the problem as DLX text (or reads it from a file),
 passes it to `Dance`, and consumes the `Solutions` channel — the same pattern as
@@ -488,6 +489,48 @@ The solver itself returns 8132 — one per letter set — and each is expanded i
 the words that realize it, since anagrams like `stack` and `tacks` share a
 letter set and are interchangeable in an answer.
 
+### Hungarian Dance No. 5
+
+The only example that uses `Minimize` and `Bound`. A *transversal* of a Latin
+square is one cell per row, per column, and per symbol — three "exactly once"
+constraints, so it is an exact cover with 3n items and n² options. Price every
+cell and the question becomes: which transversal is cheapest?
+
+The bound is the point. Forget the symbols and what remains is a minimum-cost
+assignment of the surviving rows to the surviving columns, which the Hungarian
+algorithm solves *exactly* in O(n³). Dropping a constraint can only make the
+answer cheaper, so it is a valid lower bound — and a strong one, because it is
+the exact optimum of a subproblem rather than an estimate. Branching by dancing
+cells, bounding by Hungarian: the write-up
+([`examples/transversal/transversal.w`](examples/transversal/transversal.w),
+which began with Brahms) calls it the *Hungarian Dance Algorithm*.
+
+````console
+$ go run ./examples/transversal -plain 9
+   0:81   1:887   2:847    3:59  [ 4:81]  5:318   6:425   7:540   8:456
+   ...
+가장 싼 횡단의 값 1296, 노드 184개, 1ms
+하한 없이는 노드 2125개, 1ms
+````
+
+The square is the Cayley table of Z_n, so by Hall–Paige it has transversals only
+for odd n (and their counts match OEIS A006717: 15, 133, 2025, 37851 for
+n = 5, 7, 9, 11). The bound pays off more the harder the problem gets:
+
+| n | nodes without a bound | nodes with one | ratio |
+| --: | --: | --: | --: |
+| 13 | 155,095 | 979 | 158× |
+| 15 | 1,681,693 | 6,881 | 244× |
+| 17 | 8,571,751 | 16,842 | 509× |
+| 19 | 117,455,633 | 82,212 | **1429×** |
+| 21 | >350M (1 min, unfinished) | 268,418 | — |
+
+That is 39× in wall clock at n = 19, and it moves the wall from about n = 19 to
+about n = 27 (2 minutes). Below n ≈ 11 the bound costs more than it saves. And
+for even n it does nothing at all: with no transversal there is never an
+incumbent to beat, and branch-and-*bound* only works once it has something to
+beat.
+
 ## The source is a literate program
 
 The engine is written in the [literate-programming](https://en.wikipedia.org/wiki/Literate_programming)
@@ -517,12 +560,14 @@ Only the `.w` files are checked in — every `.go` and every typeset document is
 generated, so `make` is the first thing to run in a fresh clone. Because `gtangle` emits `//line` directives, a Go compiler error
 points straight back at the line in the `.w` file it came from.
 
-[`examples/words`](examples/words/words.w) is a fourth literate program, this
-one in Korean, and it is where the modelling ideas get explained rather than the
-engine: how *is there a set of five five-letter words covering 24 letters of the
-alphabet?* turns into a DLX input. Its answer is that colors alone — no
-multiplicities — are enough to pin the word count at exactly five. It is typeset
-with `luatex` (kotexgweb) and carries a MetaPost figure, [`words.mp`](examples/words/words.mp).
+Two of the examples are literate programs as well, both in Korean, and they are
+where the *modelling* gets explained rather than the engine. Both are typeset
+with `luatex` (kotexgweb).
+
+| Document | What it is |
+| --- | --- |
+| [`examples/words/words.w`](examples/words/words.w) | how *is there a set of five five-letter words covering 24 letters of the alphabet?* turns into a DLX input. Its answer is that colors alone — no multiplicities — pin the word count at exactly five. Carries a MetaPost figure, [`words.mp`](examples/words/words.mp). |
+| [`examples/transversal/transversal.w`](examples/transversal/transversal.w) | *Hungarian Dance No. 5* — the cheapest transversal of a Latin square, branched by dancing cells and bounded by the Hungarian algorithm. Where to find a lower bound, why this one is exact, and where else the trick applies. |
 
 ## Reference CLIs
 

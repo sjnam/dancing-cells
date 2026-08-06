@@ -49,3 +49,12 @@
 /filomino
 /zebra
 /wordsearch
+
+# examples/transversal도 문학적 프로그램이다: transversal.w만 원본이다.
+/examples/transversal/transversal.go
+/examples/transversal/transversal.tex
+/examples/transversal/transversal.idx
+/examples/transversal/transversal.scn
+/examples/transversal/transversal.pdf
+/examples/transversal/transversal.log
+/examples/transversal/transversal.toc
