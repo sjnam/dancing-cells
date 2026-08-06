@@ -6,9 +6,9 @@ dancing-cells counterpart to [`sjnam/dlx`](https://github.com/sjnam/dlx) and
 exposes the same library API, so the dlx example programs port over almost
 unchanged.
 
-The library is a **literate program**: its whole source lives in
-[`dcells.w`](dcells.w), a single English [GWEB](https://github.com/sjnam/gweb)
-document that reads as one essay on the sparse-set dance — see
+The library is a **literate program**: its whole source lives in three English
+[GWEB](https://github.com/sjnam/gweb) documents — [`dcells.w`](dcells.w),
+[`ssxcc.w`](ssxcc.w), and [`ssmcc.w`](ssmcc.w) — see
 [The source is a literate program](#the-source-is-a-literate-program) below.
 
 ## Library
@@ -466,28 +466,33 @@ letter set and are interchangeable in an answer.
 ## The source is a literate program
 
 The engine is written in the [literate-programming](https://en.wikipedia.org/wiki/Literate_programming)
-style Knuth invented for `TeX`. Rather than separate `.go` files, the whole
-solver — the XCC engine, the MCC engine, the DLX parser, and the test suite — is
-a single English [GWEB](https://github.com/sjnam/gweb) document,
-[`dcells.w`](dcells.w), told as one continuous essay: the sparse-set idea and its
-history, why covering is just a swap-and-shrink, how colors and multiplicities
-change the branch, and so on. It follows the same tradition as the `SSXCC` and
-`SSMCC` programs it was ported from, which Knuth himself wrote as literate `CWEB`.
+style Knuth invented for `TeX`, and it follows the same tradition as the `SSXCC`
+and `SSMCC` programs it was ported from, which Knuth himself wrote as literate
+`CWEB`. Knuth kept `DLX1`, `DLX2`, `DLX3` as separate programs rather than one
+program with switches, and so do we:
+
+| Document | What it is |
+| --- | --- |
+| [`dcells.w`](dcells.w) | the common ground — the public API (`Option`, `Result`), the node array both engines dance on, and the `DLX` scanner. Its opening pages tell the sparse-set story. |
+| [`ssxcc.w`](ssxcc.w) | the **XCC** engine: exact cover with colors, *d*-way branching. Reads start to finish on its own. |
+| [`ssmcc.w`](ssmcc.w) | the **MCC** engine: multiplicities, binary branching. Likewise self-contained. |
+
+All three tangle into the one Go package `dcells`, so `NewXCC()` and `NewMCC()`
+still come from a single import.
 
 The [`Makefile`](Makefile) drives the GWEB tools:
 
 ```sh
 make            # gtangle the .w files → .go, then build
-make pdf        # gweave → typeset dcells.pdf and examples/words/words.pdf
+make pdf        # gweave → typeset every document
 make clean      # remove everything the .w files generate
 ```
 
-Only the `.w` files are checked in. `dcells.go`, `dcells_test.go`, and the
-typeset documents are all generated, so `make` is the first thing to run in a
-fresh clone. Because `gtangle` emits `//line` directives, a Go compiler error
+Only the `.w` files are checked in — every `.go` and every typeset document is
+generated, so `make` is the first thing to run in a fresh clone. Because `gtangle` emits `//line` directives, a Go compiler error
 points straight back at the line in the `.w` file it came from.
 
-[`examples/words`](examples/words/words.w) is a second literate program, this
+[`examples/words`](examples/words/words.w) is a fourth literate program, this
 one in Korean, and it is where the modelling ideas get explained rather than the
 engine: how *is there a set of five five-letter words covering 24 letters of the
 alphabet?* turns into a DLX input. Its answer is that colors alone — no

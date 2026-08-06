@@ -3,17 +3,30 @@
 /cmd/ssxcc/ssxcc
 /cmd/ssmcc/ssmcc
 *.shape
-# GWEB literate program: dcells.w is the source of truth. The tangled Go files
-# (dcells.go, dcells_test.go) are committed so the module is importable, but the
-# typeset-document artifacts from gweave/pdftex are not.
+# GWEB 문학적 프로그램: .w 파일만이 원본이다. tangle/weave 결과는 모두 생성물.
+/dcells.go
 /dcells.tex
 /dcells.idx
 /dcells.scn
 /dcells.pdf
 /dcells.log
 /dcells.toc
-/dcells.go
-/dcells_test.go
+/ssxcc.go
+/ssxcc_test.go
+/ssxcc.tex
+/ssxcc.idx
+/ssxcc.scn
+/ssxcc.pdf
+/ssxcc.log
+/ssxcc.toc
+/ssmcc.go
+/ssmcc_test.go
+/ssmcc.tex
+/ssmcc.idx
+/ssmcc.scn
+/ssmcc.pdf
+/ssmcc.log
+/ssmcc.toc
 
 # examples/words도 문학적 프로그램이다: words.w와 words.mp만 원본이고,
 # 나머지는 gtangle/gweave/mptopdf가 만들어 낸다.
