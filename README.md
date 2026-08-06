@@ -108,6 +108,7 @@ strict superset of `NewXCC` (the partridge example uses it).
 | Word search | `go run ./examples/wordsearch examples/wordsearch/movie.txt 13 13` |
 | Five words, 24 letters | `go run ./examples/words examples/words/sgb-words.txt 5` |
 | Cheapest Latin-square transversal | `go run ./examples/transversal -plain 11` |
+| … the same, in English | `go run ./examples/transversal-en -plain 11` |
 
 Each example generates the problem as DLX text (or reads it from a file),
 passes it to `Dance`, and consumes the `Solutions` channel — the same pattern as
@@ -501,9 +502,11 @@ assignment of the surviving rows to the surviving columns, which the Hungarian
 algorithm solves *exactly* in O(n³). Dropping a constraint can only make the
 answer cheaper, so it is a valid lower bound — and a strong one, because it is
 the exact optimum of a subproblem rather than an estimate. Branching by dancing
-cells, bounding by Hungarian: the write-up
-([`examples/transversal/transversal.w`](examples/transversal/transversal.w),
-which began with Brahms) calls it the *Hungarian Dance Algorithm*.
+cells, bounding by Hungarian: the write-up, which began with Brahms, calls it
+the *Hungarian Dance Algorithm*. It exists in two languages —
+[Korean](examples/transversal/transversal.w) and
+[English](examples/transversal-en/transversal.w) — telling the same program
+twice.
 
 ````console
 $ go run ./examples/transversal -plain 9
@@ -560,14 +563,15 @@ Only the `.w` files are checked in — every `.go` and every typeset document is
 generated, so `make` is the first thing to run in a fresh clone. Because `gtangle` emits `//line` directives, a Go compiler error
 points straight back at the line in the `.w` file it came from.
 
-Two of the examples are literate programs as well, both in Korean, and they are
-where the *modelling* gets explained rather than the engine. Both are typeset
-with `luatex` (kotexgweb).
+Three of the examples are literate programs as well, and they are where the
+*modelling* gets explained rather than the engine. The two Korean ones are
+typeset with `luatex` (kotexgweb).
 
 | Document | What it is |
 | --- | --- |
 | [`examples/words/words.w`](examples/words/words.w) | how *is there a set of five five-letter words covering 24 letters of the alphabet?* turns into a DLX input. Its answer is that colors alone — no multiplicities — pin the word count at exactly five. Carries a MetaPost figure, [`words.mp`](examples/words/words.mp). |
 | [`examples/transversal/transversal.w`](examples/transversal/transversal.w) | *Hungarian Dance No. 5* — the cheapest transversal of a Latin square, branched by dancing cells and bounded by the Hungarian algorithm. Where to find a lower bound, why this one is exact, and where else the trick applies. |
+| [`examples/transversal-en/transversal.w`](examples/transversal-en/transversal.w) | the same document in English (and so typeset with `pdftex`). The two tangle to the same program, differing only in its comments and printed strings. |
 
 ## Reference CLIs
 

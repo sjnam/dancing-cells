@@ -6,7 +6,8 @@
 #   ssmcc.w    the MCC engine (multiplicities, binary branching)
 #
 # examples/words and examples/transversal are literate programs too (in Korean),
-# typeset with luatex since kotexgweb needs it.
+# typeset with luatex since kotexgweb needs it. examples/transversal-en is the
+# same program told again in English, so it goes through pdftex like the rest.
 #
 # GTANGLE/GWEAVE are named to avoid GNU Make's built-in TANGLE/WEAVE variables
 # (which point at the CWEB tools).
@@ -19,7 +20,8 @@ LUATEX  ?= luatex
 MPTOPDF ?= mptopdf
 
 WORDS := examples/words
-TRANS := examples/transversal
+TRANS   := examples/transversal
+TRANSEN := examples/transversal-en
 LIB   := dcells ssxcc ssmcc
 
 .PHONY: all build test vet tangle pdf clean
@@ -48,7 +50,12 @@ $(TRANS)/transversal.go: $(TRANS)/transversal.w
 	cd $(TRANS) && $(GTANGLE) transversal.w
 	gofmt -w $(TRANS)/transversal.go
 
-tangle: dcells.go ssxcc.go ssmcc.go $(WORDS)/words.go $(TRANS)/transversal.go
+$(TRANSEN)/transversal.go: $(TRANSEN)/transversal.w
+	cd $(TRANSEN) && $(GTANGLE) transversal.w
+	gofmt -w $(TRANSEN)/transversal.go
+
+tangle: dcells.go ssxcc.go ssmcc.go $(WORDS)/words.go \
+        $(TRANS)/transversal.go $(TRANSEN)/transversal.go
 
 build: tangle
 	$(GO) build ./...
@@ -60,7 +67,8 @@ vet: tangle
 	$(GO) vet ./...
 
 # Typeset the literate documents (two passes resolve the cross-references).
-pdf: $(addsuffix .pdf,$(LIB)) $(WORDS)/words.pdf $(TRANS)/transversal.pdf
+pdf: $(addsuffix .pdf,$(LIB)) $(WORDS)/words.pdf $(TRANS)/transversal.pdf \
+     $(TRANSEN)/transversal.pdf
 
 %.pdf: %.w
 	$(GWEAVE) $<
@@ -79,6 +87,11 @@ $(TRANS)/transversal.pdf: $(TRANS)/transversal.w
 	cd $(TRANS) && $(LUATEX) transversal.tex
 	cd $(TRANS) && $(LUATEX) transversal.tex
 
+$(TRANSEN)/transversal.pdf: $(TRANSEN)/transversal.w
+	cd $(TRANSEN) && $(GWEAVE) transversal.w
+	cd $(TRANSEN) && $(PDFTEX) transversal.tex
+	cd $(TRANSEN) && $(PDFTEX) transversal.tex
+
 # clean removes everything the .w files generate, tangled Go included;
 # `make` (or `make tangle`) puts the Go sources back.
 clean:
@@ -86,10 +99,13 @@ clean:
 	rm -f $(addsuffix .tex,$(LIB)) $(addsuffix .pdf,$(LIB)) \
 	      $(addsuffix .idx,$(LIB)) $(addsuffix .scn,$(LIB)) \
 	      $(addsuffix .log,$(LIB)) $(addsuffix .toc,$(LIB))
-	rm -f $(WORDS)/words.go $(TRANS)/transversal.go
+	rm -f $(WORDS)/words.go $(TRANS)/transversal.go $(TRANSEN)/transversal.go
 	rm -f $(WORDS)/words.tex $(WORDS)/words.pdf $(WORDS)/words.idx \
 	      $(WORDS)/words.scn $(WORDS)/words.log $(WORDS)/words.toc \
 	      $(WORDS)/words.1 $(WORDS)/words.mpx $(WORDS)/words-1.pdf
 	rm -f $(TRANS)/transversal.tex $(TRANS)/transversal.pdf \
 	      $(TRANS)/transversal.idx $(TRANS)/transversal.scn \
 	      $(TRANS)/transversal.log $(TRANS)/transversal.toc
+	rm -f $(TRANSEN)/transversal.tex $(TRANSEN)/transversal.pdf \
+	      $(TRANSEN)/transversal.idx $(TRANSEN)/transversal.scn \
+	      $(TRANSEN)/transversal.log $(TRANSEN)/transversal.toc
