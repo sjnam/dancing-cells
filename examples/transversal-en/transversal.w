@@ -29,7 +29,7 @@ called his 1955 method for the assignment problem ``Hungarian,'' it was to
 write into the title the debt he owed K\H onig and Egerv\'ary. What Brahms did,
 Kuhn did again.
 
-@ And a cs\'ard\'as is built of two strains. A slow {\it lass\'u\/} and a
+And a cs\'ard\'as is built of two strains. A slow {\it lass\'u\/} and a
 headlong {\it friss\/} alternate, and No.\thinspace5 keeps holding back and
 then tearing away. Which is exactly the shape of the search we are about to
 build.
@@ -43,7 +43,7 @@ alternates the two: measure slowly, descend quickly, measure slowly again.
 If the thing wants a name, let it be the {\it Hungarian Dance Algorithm}. The
 branching is danced by cells; the bounding is set by Hungary.
 
-@ So what shall we solve? A {\it Latin square\/} of order~$n$ fills an
+So what shall we solve? A {\it Latin square\/} of order~$n$ fills an
 $n\times n$ grid with $n$ symbols so that no symbol repeats within any row or
 any column---the grid Sudoku is played on. A {\it transversal\/} of that square
 is a choice of $n$ cells, one from each row and one from each column, whose
@@ -58,7 +58,7 @@ $\Bbb Z_n$ is one); Ryser conjectured that a square of odd order must have one,
 and Brualdi and Stein conjectured that every square has a partial transversal
 of $n-1$ cells. Both are still open.
 
-@ Our question lays one more layer on top. Suppose every cell carries a price.
+Our question lays one more layer on top. Suppose every cell carries a price.
 Then we may ask:
 $$\hbox{\it Which transversal costs the least?}$$
 ``Is there a transversal?'' is exact cover. There are $3n$ items---$n$ rows,
@@ -73,7 +73,7 @@ cheaper than everything before it; the last one to arrive is the cheapest.
 That much is easy too---all it takes is a price list. The meat is what comes
 next, the {\it bound}.
 
-@ Why is this the right floor on which to make the two algorithms meet?
+Why is this the right floor on which to make the two algorithms meet?
 Finding a transversal is {\it 3-dimensional matching}: rows, columns, and
 symbols interlocked all at once, and one of Karp's twenty-one NP-complete
 problems. But erase {\it any one\/} of the three axes and what remains is
@@ -91,7 +91,7 @@ There is no second data structure to build.
 In short: {\it NP-hard, but polynomial one dimension down}. No better floor for
 dancing cells and a Hungarian dance together.
 
-@ So far as I could find, nobody has put the two together in quite this way.
+So far as I could find, nobody has put the two together in quite this way.
 Using the Hungarian method for a branch-and-bound lower bound is an old trick,
 but what I turned up is mostly about the quadratic assignment problem; and
 where the {\tt DLX} line has been given costs and bounds, the bound was not
@@ -101,7 +101,8 @@ that I did not find it.
 For the square we take the addition table of $\Bbb Z_n$, that is
 $L_{ij}=(i+j)\bmod n$, because it divides so amusingly by parity. As Hall and
 Paige showed in 1955, $\Bbb Z_n$ has transversals only when $n$ is odd, and
-their counts are OEIS \.{A006717}: 15, 133, 2025, 37851 for $n=5,7,9,11$. This
+their counts are \pdfURL{OEIS \.{A006717}}{https://oeis.org/A006717}: 15,
+133, 2025, 37851 for $n=5,7,9,11$. This
 program counts exactly those. The skeleton follows the story just told.
 @c
 package main
