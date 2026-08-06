@@ -40,9 +40,9 @@ import (
 	"time"
 )
 
-@<The XCC engine@>
-@<XCC optimization@>
-@<The XCC input phase@>
+@<The engine@>
+@<The optimizer@>
+@<The input phase@>
 
 @ Sparse sets are the whole trick, so here they are in a paragraph. To
 represent a subset $S$ of a universe $U=\{x_0,\ldots,x_{n-1}\}$, keep two
@@ -103,8 +103,8 @@ heartbeat chan string
 pulse     *time.Ticker
 
 
-@** The XCC engine.
-Now the first solver, from the top. The algorithm is Algorithm~X in sparse-set
+@** The engine.
+Now the solver itself, from the top. The algorithm is Algorithm~X in sparse-set
 clothing, and one paragraph suffices to state it. {\it Choose\/} the active
 primary item with the fewest remaining options---if none remains, the partial
 solution is a solution. {\it Cover\/} that item: remove it from the active list
@@ -118,56 +118,56 @@ state and construction; the dance---the public launcher, the recursive
 search, and the chooser; the covering machinery---committing, hiding, and
 the undo apparatus that makes trying reversible; and the small reporting
 offices that hand solutions back to the caller.
-@<The XCC engine@>=
-@<XCC bookkeeping@>
-@<XCC state@>
-@<Creating an XCC solver@>
-@<XCC set accessors@>
-@<XCC interning@>
-@<Launching the XCC dance@>
-@<The XCC search@>
-@<Choosing the XCC item@>
-@<Committing an XCC option@>
+@<The engine@>=
+@<Bookkeeping@>
+@<The solver state@>
+@<Creating a solver@>
+@<Set accessors@>
+@<Interning@>
+@<Launching the dance@>
+@<The search@>
+@<Choosing the item@>
+@<Committing an option@>
 @<Hiding conflicting options@>
-@<Covering an XCC item@>
-@<XCC undo machinery@>
-@<Visiting an XCC solution@>
-@<The XCC heartbeat@>
-@<Reporting an XCC option@>
+@<Covering an item@>
+@<The undo machinery@>
+@<Visiting a solution@>
+@<The heartbeat@>
+@<Reporting an option@>
 
-@ Two small things travel with this engine alone. Each item reserves four
-slots just below its base in |set|---its size, its position, its item number,
-and one spare---and each entry of the save stack remembers an item together
+@ Two small declarations open it. Each item reserves four slots just below
+its base in |set|---its size, its position, its item number, and one
+spare---and each entry of the save stack remembers an item together
 with the size it had before the branch, so that undoing is a matter of writing
 that pair back.
-@<XCC bookkeeping@>=
+@<Bookkeeping@>=
 const primExtra = 4 // set entries reserved below each item's base
 
 type twoints struct {
 	l, r int32
 }
 
-@* XCC state and construction.
+@* State and construction.
 An |XCC| value carries the entire state of one computation. Besides the
 shared blocks we prepared earlier, it owns the matrix arrays---|nd|, |item|,
 |set|, with |second| marking the boundary between primary and secondary items
 --- and the arrays that record the search path: |choice| holds the option
 chosen at each level, and |saved|/|savestack| snapshot sizes for backtracking.
-@<XCC state@>=
+@<The solver state@>=
 type XCC struct {
 	@<Solver knobs@>
 	ctx context.Context
 
-	@<XCC matrix arrays@>
+	@<The matrix arrays@>
 	@<Naming tables@>
 	@<The force stack@>
-	@<XCC backtrack arrays@>
+	@<The backtrack arrays@>
 	@<Cost bookkeeping@>
 	@<Search statistics@>
 	@<Output channels@>
 }
 
-@ @<XCC matrix arrays@>=
+@ @<The matrix arrays@>=
 nd       []node
 lastNode int
 item     []int32
@@ -181,7 +181,7 @@ oactive  int
 baditem  int
 osecond  int
 
-@ @<XCC backtrack arrays@>=
+@ @<The backtrack arrays@>=
 choice    []int32
 saved     []int32
 savestack []twoints
@@ -194,7 +194,7 @@ cancelled. To make a search cancellable, hand it a context before starting:
 refuses a nil context outright---that would otherwise surface as a mysterious
 panic deep in the dance. |Updates| and |Nodes| report the search statistics
 once the |Solutions| channel has been drained.
-@<Creating an XCC solver@>=
+@<Creating a solver@>=
 func NewXCC() *XCC {
 	return &XCC{
 		second:     secondUnset,
@@ -223,7 +223,7 @@ func (s *XCC) Nodes() uint64   { return s.nodes }
 and its item number; the fourth reserved slot is spare. Reading and writing
 them by name keeps the arithmetic of ``two below the base'' from leaking into
 the algorithms.
-@<XCC set accessors@>=
+@<Set accessors@>=
 func (s *XCC) size(x int) int   { return int(s.set[x-1]) }
 func (s *XCC) pos(x int) int    { return int(s.set[x-2]) }
 func (s *XCC) itemNo(x int) int { return int(s.set[x-3]) }
@@ -235,7 +235,7 @@ func (s *XCC) setItemNo(x, v int) { s.set[x-3] = int32(v) }
 @ Interning a name registers it the first time and rejects a duplicate;
 interning a color happily returns the existing id on later sightings, because
 many options may share a color.
-@<XCC interning@>=
+@<Interning@>=
 func (s *XCC) internName(name string) (num int, ok bool) {
 	if _, dup := s.nameIndex[name]; dup {
 		return 0, false
@@ -256,12 +256,12 @@ func (s *XCC) internColor(name string) int {
 	return id
 }
 
-@* The XCC dance.
+@* The dance.
 |Dance| reads the matrix (panicking on malformed input), opens the channels,
 and launches the search in a goroutine; it returns at once, and the goroutine
 closes both channels when it is done, so a |range| over the solutions
 terminates naturally.
-@<Launching the XCC dance@>=
+@<Launching the dance@>=
 func (s *XCC) Dance(rd io.Reader) *Result {
 	s.inputMatrix(rd)
 	@<Launch the search goroutine@>
@@ -280,7 +280,7 @@ go func() {
 	defer close(s.solStream)
 	defer close(s.heartbeat)
 
-	@<Report the XCC input summary@>
+	@<Report the input summary@>
 	if s.PulseInterval > 0 {
 		s.pulse = time.NewTicker(s.PulseInterval)
 		defer s.pulse.Stop()
@@ -290,21 +290,21 @@ go func() {
 		s.search(0)
 	}
 
-	@<Report the XCC totals@>
+	@<Report the totals@>
 }()
 
 return &Result{Solutions: s.solStream, Heartbeat: s.heartbeat}
 
 @ Under |Debug| we bracket the search with the same summary lines the |dlx|
 library prints, down to the fussy singular/plural of ``solutions.''
-@<Report the XCC input summary@>=
+@<Report the input summary@>=
 if s.Debug {
 	fmt.Fprintf(os.Stderr,
 		"(%d options, %d+%d items, %d entries successfully read)\n",
 		s.options, s.osecond, s.itemlen-s.osecond, s.lastNode)
 }
 
-@ @<Report the XCC totals@>=
+@ @<Report the totals@>=
 if s.Debug {
 	plural := "s"
 	if s.count == 1 {
@@ -321,7 +321,7 @@ the best one found so far, and only then asks |chooseItem| where to branch. A
 |false| return, here and below, means ``unwind the entire search''---the
 caller has walked away or cancelled---and it propagates up through every
 level.
-@<The XCC search@>=
+@<The search@>=
 func (s *XCC) search(level int) bool {
 	s.nodes++
 	select {
@@ -380,7 +380,7 @@ that were covered while they waited), and only then scan for the emptiest
 primary item. If the scan pushed new singletons, one of them wins instead. A
 |score| that never improved from |infSize| means no primary item is active at
 all: a solution.
-@<Choosing the XCC item@>=
+@<Choosing the item@>=
 func (s *XCC) chooseItem() (best int, solution bool) {
 	for s.forced != 0 {
 		s.forced--
@@ -418,7 +418,7 @@ for k := 0; k < s.active; k++ {
 	}
 }
 
-@* XCC covering and undoing.
+@* Covering and undoing.
 Committing to option |opt| is where the real covering happens, in two passes
 over the option's nodes. (An option's nodes are contiguous, bracketed by
 spacers whose |itm| is non-positive; starting just past |opt| and following
@@ -427,7 +427,7 @@ every other item of the option out of the active list, so no future choice
 can land on them. The second pass hides the options that now conflict. If any
 primary item would be left uncoverable, we abandon the commit---clearing the
 force stack, whose pending entries died with the branch.
-@<Committing an XCC option@>=
+@<Committing an option@>=
 func (s *XCC) commitOption(opt int) bool {
 	@<Swap the items of |opt| out of the active list@>
 	@<Hide or purify each item of |opt|@>
@@ -539,7 +539,7 @@ if ss <= 1 && check != 0 && u < s.second && s.pos(u) < s.active {
 
 @ Covering the chosen item itself is one bare sparse-set delete on the |item|
 array.
-@<Covering an XCC item@>=
+@<Covering an item@>=
 func (s *XCC) swapOut(x int) {
 	p := s.active - 1
 	s.active = p
@@ -559,7 +559,7 @@ slam them back. Positions and set contents need no repair---the swaps left
 every set a permutation of itself, and a restored size re-admits exactly the
 right entries. The |saved| array remembers how deep the save stack was at each
 level, which also tells |restoreSizes| how many items were active then.
-@<XCC undo machinery@>=
+@<The undo machinery@>=
 func (s *XCC) saveSizes(level int) {
 	s.savestack = ensure(s.savestack, s.saveptr+s.active)
 	for p := 0; p < s.active; p++ {
@@ -579,7 +579,7 @@ func (s *XCC) restoreSizes(level int) {
 	}
 }
 
-@* XCC reporting.
+@* Reporting.
 Reaching a solution, we materialize it from the |choice| stack---one option
 per level---and send it down the channel. The send is the pacing point: if
 the consumer has abandoned the range, or the context is cancelled, the other
@@ -588,7 +588,7 @@ far is also the cheapest one yet---the test at the head of |search| turned
 back every branch that could not beat the incumbent---so recording it as the
 new incumbent needs no comparison. (For a plain |Dance| the running cost is
 always zero and the incumbent is never consulted.)
-@<Visiting an XCC solution@>=
+@<Visiting a solution@>=
 func (s *XCC) visit(level int) bool {
 	s.count++
 	s.incumbent = s.cost
@@ -607,7 +607,7 @@ func (s *XCC) visit(level int) bool {
 @ A heartbeat is strictly best-effort: when the pulse has fired we offer a
 progress line, but if nobody is waiting to receive it we drop it and dance on.
 No part of the search ever blocks on a heartbeat.
-@<The XCC heartbeat@>=
+@<The heartbeat@>=
 func (s *XCC) tick() {
 	if s.pulse == nil {
 		return
@@ -627,7 +627,7 @@ option we walk back to its first node (spacers have non-positive |itm|) and
 then forward, naming each item and appending its color where there is one. The
 result is in the input order of the items, independent of which node we
 started from, so callers can index |opt[0]|, |opt[1]|,~\dots\ positionally.
-@<Reporting an XCC option@>=
+@<Reporting an option@>=
 func (s *XCC) option(p int) Option {
 	for s.nd[p-1].itm > 0 {
 		p-- // move to the option's first node
@@ -665,7 +665,7 @@ second one, |Minimize|, and when it is not in use the search runs the code it
 ran before, one boolean test the poorer. The chapter needs two pieces of
 public vocabulary: the entry point, and the little window through which a
 bound function looks at the search in progress.
-@<XCC optimization@>=
+@<The optimizer@>=
 @<The minimizing entry point@>
 @<The search frame@>
 
@@ -673,7 +673,7 @@ bound function looks at the search in progress.
 starting point---large enough that no sum of |int32| prices over the options
 of one cover can reach it, small enough that adding a bound to it will not
 overflow.
-@<XCC bookkeeping@>=
+@<Bookkeeping@>=
 const infCost = int64(1) << 62 // "no cover found yet"
 
 @ The bound oracle is a knob like the others, and like the others it may be
@@ -798,25 +798,25 @@ knows about {\it this\/} engine's arrays, and here it is, in the order the
 dance driver invokes it. Parsing happens in two phases---the item line, then
 the options---followed by a {\it finalization\/} that lays out the sparse sets
 the dance expects.
-@<The XCC input phase@>=
+@<The input phase@>=
 func (s *XCC) inputMatrix(rd io.Reader) {
 	br := bufio.NewReader(rd)
 	s.readItemNames(br)
 	s.readOptions(br)
 }
 
-@<XCC item-name input@>
-@<XCC option input@>
-@<XCC input finalization@>
+@<Item-name input@>
+@<Option input@>
+@<Input finalization@>
 
 @ The item line is the first line that is neither blank nor a comment. Walking
 it token by token, a lone \.{\|} switches us from primary to secondary items
 (and may appear only once); anything else is a name, checked for the forbidden
 characters \.{:} and \.{\|} and for duplication before it is interned. At the
 end, |lastItm| is the item count plus one, since |names[0]| is unused.
-@<XCC item-name input@>=
+@<Item-name input@>=
 func (s *XCC) readItemNames(br *bufio.Reader) {
-	@<Find the XCC item line@>
+	@<Find the item line@>
 	for buf[p] != 0 {
 		name, next := token(buf, p, false)
 		if name == "|" {
@@ -837,7 +837,7 @@ func (s *XCC) readItemNames(br *bufio.Reader) {
 	s.lastItm = len(s.names) // items + 1 (names[0] is unused)
 }
 
-@ @<Find the XCC item line@>=
+@ @<Find the item line@>=
 var buf []byte
 var p int
 found := false
@@ -857,7 +857,7 @@ if !found {
 
 @ Each remaining line is one option; blanks and comments are skipped, and the
 end of the stream triggers finalization.
-@<XCC option input@>=
+@<Option input@>=
 func (s *XCC) readOptions(br *bufio.Reader) {
 	for {
 		buf, ok := nextLine(br)
@@ -877,16 +877,16 @@ mentions no primary item can never be chosen---committing it would cover
 nothing---so it is quietly unwound, node by node; Knuth's solvers print a
 warning here, and we simply drop it. A real option is sealed with a spacer
 node so the runs stay separable.
-@<XCC option input@>=
+@<Option input@>=
 func (s *XCC) readOption(buf []byte) {
 	spacer := s.lastNode
 	hasPrimary := false
 	for p := skipSpace(buf, 0); buf[p] != 0; {
-		@<Scan one XCC item name and its color@>
+		@<Scan one item name and its color@>
 	}
 
 	if !hasPrimary {
-		@<Unwind the XCC option@>
+		@<Unwind the option@>
 		return
 	}
 	s.nd[spacer].loc = int32(s.lastNode - spacer)
@@ -897,7 +897,7 @@ func (s *XCC) readOption(buf []byte) {
 }
 
 @ A color may follow a name after a colon---but only on a secondary item.
-@<Scan one XCC item name and its color@>=
+@<Scan one item name and its color@>=
 name, next := token(buf, p, true)
 if name == "" {
 	failf("empty item name")
@@ -924,7 +924,7 @@ p = skipSpace(buf, next)
 
 @ Unwinding pops each half-built node and takes back its tally from the
 input-phase slot.
-@<Unwind the XCC option@>=
+@<Unwind the option@>=
 for s.lastNode > spacer {
 	slot := int(s.nd[s.lastNode].itm) << 2
 	s.setSize(slot, s.size(slot)-1)
@@ -936,7 +936,7 @@ for s.lastNode > spacer {
 enough for each item's reserved slots---and |createNode| tallies one more
 node for item |m| there, catching a repeated item within a single option by
 noticing that the item's last-seen position is already inside this option.
-@<XCC option input@>=
+@<Option input@>=
 func (s *XCC) createNode(m, spacer int, hasPrimary *bool) {
 	slot := m << 2
 	s.set = ensure(s.set, slot)
@@ -957,18 +957,18 @@ func (s *XCC) createNode(m, spacer int, hasPrimary *bool) {
 
 @ Finalization converts the coarse input tallies into the dance's real
 layout, in three sweeps over the data.
-@<XCC input finalization@>=
+@<Input finalization@>=
 func (s *XCC) finalize() {
-	@<Lay out the XCC set array@>
-	@<Fill in the XCC item headers@>
-	@<Repoint the XCC nodes@>
+	@<Lay out the set array@>
+	@<Fill in the item headers@>
+	@<Repoint the nodes@>
 }
 
 @ The first sweep assigns each item a compact base in |set|---leaving
 |primExtra| reserved slots below it---and converts the primary/secondary
 boundary into those coordinates. A problem with no \.{\|} in its item line has
 no secondary items, and |second| lands just past the used part of |set|.
-@<Lay out the XCC set array@>=
+@<Lay out the set array@>=
 s.active, s.itemlen = s.lastItm-1, s.lastItm-1
 s.item = ensure(s.item, s.itemlen)
 s.set = ensure(s.set, (s.itemlen<<2)+1) // all input slots readable
@@ -990,7 +990,7 @@ if s.second == secondUnset {
 @ The second sweep, running backward so the input tallies are read before
 their slots are overwritten, fills in each item's size, position, and number
 --- and flags as |baditem| any primary item that ended up with no options.
-@<Fill in the XCC item headers@>=
+@<Fill in the item headers@>=
 for ; k != 0; k-- {
 	base := int(s.item[k-1])
 	if k == s.second {
@@ -1007,7 +1007,7 @@ for ; k != 0; k-- {
 @ The third sweep rewrites every node's |itm| and |loc| from item numbers and
 per-item counts into real |set| indices, and drops each node into its slot.
 After this, the sparse sets are ready to dance.
-@<Repoint the XCC nodes@>=
+@<Repoint the nodes@>=
 for k = 1; k < s.lastNode; k++ {
 	if s.nd[k].itm < 0 {
 		continue
@@ -1026,7 +1026,7 @@ woven from the same source, yet it tangles to a {\it separate\/} file,
 names an auxiliary output rather than the main one. Running |go test| then
 exercises the engine against small problems whose answers we already know.
 
-The shared helper |collect| runs the XCC solver and renders each solution as
+The shared helper |collect| runs the solver and renders each solution as
 one canonical string---the item names within an option sorted, the options
 within a solution sorted, and finally the solutions themselves sorted---so a
 test can compare against an expected value without caring in what order they

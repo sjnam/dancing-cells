@@ -37,8 +37,8 @@ import (
 	"time"
 )
 
-@<The MCC engine@>
-@<The MCC input phase@>
+@<The engine@>
+@<The input phase@>
 
 @ Sparse sets are the whole trick, so here they are in a paragraph. To
 represent a subset $S$ of a universe $U=\{x_0,\ldots,x_{n-1}\}$, keep two
@@ -100,8 +100,9 @@ heartbeat chan string
 pulse     *time.Ticker
 
 
-@** The MCC engine.
-The second solver answers a richer question. In |MCC| a primary item carries a
+@** The engine.
+This solver answers a richer question than plain exact cover does. In |MCC| a
+primary item carries a
 {\it multiplicity\/} $[u..v]$: it must be covered at least $u$ and at most $v$
 times, plain exact cover being the case $[1..1]$. Two numbers travel with each
 such item. Its {\it bound\/} is its residual capacity---how many more times
@@ -124,28 +125,28 @@ The engine unfolds like its sibling, in the same four movements: state and
 construction; the binary dance with its chooser; the branch actions ---
 including and excluding an option, with their shared sparse-set surgery and
 the undo machinery; and the closing reporting offices.
-@<The MCC engine@>=
-@<MCC constants@>
-@<MCC state@>
-@<Creating an MCC solver@>
-@<MCC set accessors@>
-@<MCC interning@>
-@<Launching the MCC dance@>
-@<The MCC search@>
-@<Forced MCC moves@>
-@<Choosing the MCC item@>
-@<Including an MCC option@>
-@<Excluding an MCC option@>
-@<Deactivating an MCC item@>
-@<MCC undo machinery@>
-@<Visiting an MCC solution@>
-@<The MCC heartbeat@>
-@<Reporting an MCC option@>
+@<The engine@>=
+@<Constants@>
+@<The solver state@>
+@<Creating a solver@>
+@<Set accessors@>
+@<Interning@>
+@<Launching the dance@>
+@<The search@>
+@<Forced moves@>
+@<Choosing the item@>
+@<Including an option@>
+@<Excluding an option@>
+@<Deactivating an item@>
+@<The undo machinery@>
+@<Visiting a solution@>
+@<The heartbeat@>
+@<Reporting an option@>
 
-@* MCC state and construction.
+@* State and construction.
 Each MCC item needs two reserved slots more than an XCC item, for its slack
 and bound.
-@<MCC constants@>=
+@<Constants@>=
 const (
 	mccExtra = 5 // set entries below each item base: size, pos, itemNo, slack, bound
 	mccIprop = 5 // input-phase slot spacing
@@ -158,20 +159,20 @@ are literally the same sections---but there is no |oactive|, no |choice|,
 and no |saved|: binary branching records its path in |included| (one option
 per stage, ready for output) and rewinds through a save stack of
 size-and-bound triples.
-@<MCC state@>=
+@<The solver state@>=
 type MCC struct {
 	@<Solver knobs@>
 	ctx context.Context
 
-	@<MCC matrix arrays@>
+	@<The matrix arrays@>
 	@<Naming tables@>
 	@<The force stack@>
-	@<MCC backtrack arrays@>
+	@<The backtrack arrays@>
 	@<Search statistics@>
 	@<Output channels@>
 }
 
-@ @<MCC matrix arrays@>=
+@ @<The matrix arrays@>=
 nd       []node
 lastNode int
 item     []int32
@@ -184,13 +185,13 @@ active   int
 baditem  int
 osecond  int
 
-@ @<MCC backtrack arrays@>=
+@ @<The backtrack arrays@>=
 included  []int32 // option included at each stage, for solution output
 savestack []threeints
 saveptr   int
 
 @ Construction and cancellation retell the |XCC| story.
-@<Creating an MCC solver@>=
+@<Creating a solver@>=
 func NewMCC() *MCC {
 	return &MCC{
 		second:     secondUnset,
@@ -215,7 +216,7 @@ func (m *MCC) Updates() uint64 { return m.updates }
 func (m *MCC) Nodes() uint64   { return m.nodes }
 
 @ The accessor family grows by two, for the |slack| and |bound| slots.
-@<MCC set accessors@>=
+@<Set accessors@>=
 func (m *MCC) size(x int) int   { return int(m.set[x-1]) }
 func (m *MCC) pos(x int) int    { return int(m.set[x-2]) }
 func (m *MCC) itemNo(x int) int { return int(m.set[x-3]) }
@@ -231,7 +232,7 @@ func (m *MCC) setBound(x, v int)  { m.set[x-5] = int32(v) }
 @ Interning is verbatim the |XCC| code with the other receiver; Go gives us no
 graceful way to share a method body between two types, and six small lines are
 cheaper than an abstraction.
-@<MCC interning@>=
+@<Interning@>=
 func (m *MCC) internName(name string) (num int, ok bool) {
 	if _, dup := m.nameIndex[name]; dup {
 		return 0, false
@@ -252,9 +253,9 @@ func (m *MCC) internColor(name string) int {
 	return id
 }
 
-@* The MCC binary dance.
+@* The binary dance.
 Launching, too, is the twin of |XCC|'s |Dance|.
-@<Launching the MCC dance@>=
+@<Launching the dance@>=
 func (m *MCC) Dance(rd io.Reader) *Result {
 	m.inputMatrix(rd)
 
@@ -265,7 +266,7 @@ func (m *MCC) Dance(rd io.Reader) *Result {
 		defer close(m.solStream)
 		defer close(m.heartbeat)
 
-		@<Report the MCC input summary@>
+		@<Report the input summary@>
 		if m.PulseInterval > 0 {
 			m.pulse = time.NewTicker(m.PulseInterval)
 			defer m.pulse.Stop()
@@ -275,20 +276,20 @@ func (m *MCC) Dance(rd io.Reader) *Result {
 			m.search(0)
 		}
 
-		@<Report the MCC totals@>
+		@<Report the totals@>
 	}()
 
 	return &Result{Solutions: m.solStream, Heartbeat: m.heartbeat}
 }
 
-@ @<Report the MCC input summary@>=
+@ @<Report the input summary@>=
 if m.Debug {
 	fmt.Fprintf(os.Stderr,
 		"(%d options, %d+%d items, %d entries successfully read)\n",
 		m.options, m.osecond, m.itemlen-m.osecond, m.lastNode)
 }
 
-@ @<Report the MCC totals@>=
+@ @<Report the totals@>=
 if m.Debug {
 	plural := "s"
 	if m.count == 1 {
@@ -303,7 +304,7 @@ forced item left over from a covering at some shallower node takes absolute
 priority; then the chooser speaks, possibly discovering new forced items of
 its own; and a degree of |infSize| means no primary item remains---a
 solution. Only then do we truly branch.
-@<The MCC search@>=
+@<The search@>=
 func (m *MCC) search(stage int) bool {
 	m.nodes++
 	select {
@@ -372,7 +373,7 @@ whole point of recognizing forced moves, per Solnon's 2023 improvement. Some
 ancestor's |restoreState| will undo its effects when the time comes. Note the
 quiet |true| when the inclusion fails: the branch is dead, but the search as a
 whole goes on.
-@<Forced MCC moves@>=
+@<Forced moves@>=
 func (m *MCC) forcedMove(stage, bi int) bool {
 	opt := int(m.set[bi])
 	m.included = ensure(m.included, stage+1)
@@ -389,7 +390,7 @@ larger size, then leftmost position---a cascade tuned by Knuth's
 experiments. An item whose degree falls to~1 is forced, and, because it may
 still need covering more than once, it is pushed |bound-slack| times so that
 each required covering gets its turn.
-@<Choosing the MCC item@>=
+@<Choosing the item@>=
 func (m *MCC) chooseBest() (best, score int) {
 	score = infSize
 	bestS, bestL := 0, 0
@@ -418,13 +419,13 @@ func (m *MCC) chooseBest() (best, score int) {
 	return best, score
 }
 
-@* The MCC branch actions.
+@* The branch actions.
 Including an option walks its nodes---first rewinding to the option's
 start---and settles accounts with each item in turn via |coverOrCommit|. An
 item found already inactive is fine if secondary (it was purified earlier)
 and impossible if primary. A |false| from anywhere means some item became
 uncoverable and the caller's branch is dead.
-@<Including an MCC option@>=
+@<Including an option@>=
 func (m *MCC) includeOption(opt int) bool {
 	for m.nd[opt-1].itm > 0 {
 		opt--
@@ -453,7 +454,7 @@ slot |p| of |ii|'s set) there are two futures. A primary item first pays one
 unit of bound; if that exhausts it---or if |ii| is secondary---the item is
 finished and leaves the field. Otherwise |ii| still wants more coverings and
 merely drops this option from its set.
-@<Including an MCC option@>=
+@<Including an option@>=
 func (m *MCC) coverOrCommit(ii, cur, p int) bool {
 	if ii < m.second {
 		m.setBound(ii, m.bound(ii)-1)
@@ -519,7 +520,7 @@ m.updates++
 @ Removing a competing option deletes it from every active set it belongs to,
 skipping purified secondary items, and watching---as always---for a
 primary item pushed below its coverable minimum.
-@<Excluding an MCC option@>=
+@<Excluding an option@>=
 func (m *MCC) removeFromOtherSets(optp int) bool {
 	cur := optp
 	for m.nd[cur-1].itm > 0 {
@@ -555,7 +556,7 @@ func (m *MCC) removeFromOtherSets(optp int) bool {
 |cur| without committing it---and differs from |removeFromOtherSets| in one
 detail only: a |false| here is an ordinary ``can't cover,'' reported to a
 caller who is about to backtrack anyway, so the force stack is left in peace.
-@<Excluding an MCC option@>=
+@<Excluding an option@>=
 func (m *MCC) removeOption(cur int) bool {
 	for m.nd[cur-1].itm > 0 {
 		cur--
@@ -586,7 +587,7 @@ func (m *MCC) removeOption(cur int) bool {
 }
 
 @ Deactivating an item is the sparse-set delete on the |item| array once more.
-@<Deactivating an MCC item@>=
+@<Deactivating an item@>=
 func (m *MCC) deactivate(ii int) {
 	m.active--
 	p := m.pos(ii)
@@ -600,7 +601,7 @@ func (m *MCC) deactivate(ii int) {
 So |saveState| snapshots each active item's size and (for primary items) its
 bound, returning a mark for |restoreState| to rewind to---the multiplicity
 analogue of the |XCC| undo machinery.
-@<MCC undo machinery@>=
+@<The undo machinery@>=
 func (m *MCC) saveState() int {
 	mark := m.saveptr
 	m.savestack = ensure(m.savestack, m.saveptr+m.active)
@@ -628,10 +629,10 @@ func (m *MCC) restoreState(mark int) {
 	m.saveptr = mark
 }
 
-@* MCC reporting.
+@* Reporting.
 Emitting a solution reads the |included| stack; the pacing select is the
 same as |XCC|'s.
-@<Visiting an MCC solution@>=
+@<Visiting a solution@>=
 func (m *MCC) visit(stage int) bool {
 	m.count++
 	sol := make([]Option, stage)
@@ -646,7 +647,7 @@ func (m *MCC) visit(stage int) bool {
 	}
 }
 
-@ @<The MCC heartbeat@>=
+@ @<The heartbeat@>=
 func (m *MCC) tick() {
 	if m.pulse == nil {
 		return
@@ -661,7 +662,7 @@ func (m *MCC) tick() {
 	}
 }
 
-@ @<Reporting an MCC option@>=
+@ @<Reporting an option@>=
 func (m *MCC) option(p int) Option {
 	for m.nd[p-1].itm > 0 {
 		p--
@@ -684,7 +685,7 @@ here. It parallels the XCC input phase of \.{ssxcc.w} closely enough that the
 prose below dwells only on what multiplicities change---which is chiefly the
 item line, where a primary item may be written \.{high\|name} or
 \.{low:high\|name}, the bare name meaning $[1..1]$.
-@<The MCC input phase@>=
+@<The input phase@>=
 func (m *MCC) inputMatrix(rd io.Reader) {
 	br := bufio.NewReader(rd)
 	m.readItemNames(br)
@@ -692,9 +693,9 @@ func (m *MCC) inputMatrix(rd io.Reader) {
 }
 
 @<Multiplicity bounds parsing@>
-@<MCC item-name input@>
-@<MCC option input@>
-@<MCC input finalization@>
+@<Item-name input@>
+@<Option input@>
+@<Input finalization@>
 
 @ An item token may be \.{name} (defaulting to $[1..1]$), \.{high\|name}, or
 \.{low:high\|name}; the lone \.{\|} separator between primary and secondary
@@ -744,13 +745,13 @@ if lower > upper {
 }
 name = nm
 
-@ Reading the MCC item line differs from the XCC version in one clause: each
+@ Reading the item line differs from the XCC version in one clause: each
 name arrives through |parseItemSpec|, and its slack ($upper-lower$) and bound
 ($upper$) are stashed at the item's coarse input slot for finalization to
 pick up.
-@<MCC item-name input@>=
+@<Item-name input@>=
 func (m *MCC) readItemNames(br *bufio.Reader) {
-	@<Find the MCC item line@>
+	@<Find the item line@>
 	for buf[p] != 0 {
 		tok, next := token(buf, p, false)
 		if tok == "|" {
@@ -774,7 +775,7 @@ func (m *MCC) readItemNames(br *bufio.Reader) {
 	m.lastItm = len(m.names)
 }
 
-@ @<Find the MCC item line@>=
+@ @<Find the item line@>=
 var buf []byte
 var p int
 found := false
@@ -793,7 +794,7 @@ if !found {
 }
 
 @ Options are read exactly as in the XCC parser, at |mccIprop| spacing.
-@<MCC option input@>=
+@<Option input@>=
 func (m *MCC) readOptions(br *bufio.Reader) {
 	for {
 		buf, ok := nextLine(br)
@@ -808,16 +809,16 @@ func (m *MCC) readOptions(br *bufio.Reader) {
 	m.finalize()
 }
 
-@ @<MCC option input@>=
+@ @<Option input@>=
 func (m *MCC) readOption(buf []byte) {
 	spacer := m.lastNode
 	hasPrimary := false
 	for p := skipSpace(buf, 0); buf[p] != 0; {
-		@<Scan one MCC item name and its color@>
+		@<Scan one item name and its color@>
 	}
 
 	if !hasPrimary {
-		@<Unwind the MCC option@>
+		@<Unwind the option@>
 		return
 	}
 	m.nd[spacer].loc = int32(m.lastNode - spacer)
@@ -827,7 +828,7 @@ func (m *MCC) readOption(buf []byte) {
 	m.nd[m.lastNode].itm = int32(spacer + 1 - m.lastNode)
 }
 
-@ @<Scan one MCC item name and its color@>=
+@ @<Scan one item name and its color@>=
 name, next := token(buf, p, true)
 if name == "" {
 	failf("empty item name")
@@ -852,7 +853,7 @@ if buf[next] == ':' {
 }
 p = skipSpace(buf, next)
 
-@ @<Unwind the MCC option@>=
+@ @<Unwind the option@>=
 for m.lastNode > spacer {
 	slot := int(m.nd[m.lastNode].itm) * mccIprop
 	m.setSize(slot, m.size(slot)-1)
@@ -860,7 +861,7 @@ for m.lastNode > spacer {
 	m.lastNode--
 }
 
-@ @<MCC option input@>=
+@ @<Option input@>=
 func (m *MCC) createNode(num, spacer int, hasPrimary *bool) {
 	slot := num * mccIprop
 	m.set = ensure(m.set, slot)
@@ -879,17 +880,17 @@ func (m *MCC) createNode(num, spacer int, hasPrimary *bool) {
 	m.setPos(slot, m.lastNode)
 }
 
-@ MCC finalization runs the same three sweeps and then retires the items that
+@ Finalization runs the same three sweeps and then retires the items that
 can be seen, already, to play no part.
-@<MCC input finalization@>=
+@<Input finalization@>=
 func (m *MCC) finalize() {
-	@<Lay out the MCC set array@>
-	@<Fill in the MCC item headers@>
-	@<Repoint the MCC nodes@>
+	@<Lay out the set array@>
+	@<Fill in the item headers@>
+	@<Repoint the nodes@>
 	m.deactivateOptionless()
 }
 
-@ @<Lay out the MCC set array@>=
+@ @<Lay out the set array@>=
 m.active, m.itemlen = m.lastItm-1, m.lastItm-1
 m.item = ensure(m.item, m.itemlen)
 m.set = ensure(m.set, m.itemlen*mccIprop+1) // all input slots readable
@@ -914,7 +915,7 @@ a primary item that cannot even reach its {\it lower\/} bound. A primary item
 with lower bound~0 and no options is not trouble at all---it simply never
 appears---so it is stacked for the closing sweep, as is any optionless
 secondary item.
-@<Fill in the MCC item headers@>=
+@<Fill in the item headers@>=
 for ; k != 0; k-- {
 	base := int(m.item[k-1])
 	if k == m.second {
@@ -935,7 +936,7 @@ for ; k != 0; k-- {
 	}
 }
 
-@ @<Repoint the MCC nodes@>=
+@ @<Repoint the nodes@>=
 for k = 1; k < m.lastNode; k++ {
 	if m.nd[k].itm < 0 {
 		continue
@@ -949,7 +950,7 @@ for k = 1; k < m.lastNode; k++ {
 
 @ The closing sweep drains the stack of optionless items, deactivating each so
 the search never has to consider them.
-@<MCC input finalization@>=
+@<Input finalization@>=
 func (m *MCC) deactivateOptionless() {
 	for m.forced != 0 {
 		m.forced--
@@ -1013,7 +1014,7 @@ func TestMCCRicher(t *testing.T) {
 	}
 }
 
-@ Finally, two sanity checks that the MCC engine subsumes the plain one: with
+@ Finally, two sanity checks that this engine subsumes the plain one: with
 default multiplicities it must reproduce ordinary XCC---the same 92
 solutions to 8-queens---and the color machinery must work there too.
 @(ssmcc_test.go@>=
