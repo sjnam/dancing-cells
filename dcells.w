@@ -120,17 +120,20 @@ The small vocabulary that both engines share is collected here:
 @<Bookkeeping constants@>
 @<The node type@>
 @<Solutions and heartbeats@>
+@<The bound's peephole@>
 @<The slice grower@>
 
-@ Two sentinels are shared by both engines. |infSize| is larger than any real
+@ Three sentinels are shared by both engines. |infSize| is larger than any real
 option count, so a chooser that never improves on it has learned that no item
 remains to branch on---which is to say, that the partial solution is a
 solution. |secondUnset| marks an item line that has not yet met its
-\.{\|} separator.
+\.{\|} separator. And |infCost| is worse than any real cover, so that a search
+for the cheapest cover has something to start out beating.
 @<Bookkeeping constants@>=
 const (
 	infSize     = 1 << 30 // "no item to branch on" => a solution
 	secondUnset = 1 << 30 // sentinel for "no primary/secondary boundary yet"
+	infCost     = int64(1) << 62 // "no cover found yet"
 )
 
 @ The options themselves are stored as runs of {\it nodes\/} in the third flat
@@ -160,6 +163,40 @@ type Result struct {
 	Heartbeat <-chan string
 }
 
+
+@ Either engine can be asked for the {\it cheapest\/} cover rather than every
+cover, and a caller who knows something about its own problem can help by
+supplying a lower bound on what finishing the current partial cover must still
+cost. That bound function is handed a |Frame|: a peephole into the search,
+valid only for the duration of the call that receives it.
+
+Through it the caller sees what is left of the problem. |Live| runs over every
+pair (active primary item, surviving option of that item), which is exactly
+the part of the matrix still in play, and it yields all of one item's options
+before moving to the next, so a bound that thinks in rows of a matrix gets
+them a row at a time. |Cost| and |Name| turn the two numbers back into terms
+the caller chose, and |Need| says how many more times an item must still be
+covered---always~1 under |XCC|, but under |MCC| an item may be waiting for
+several more.
+@<The bound's peephole@>=
+type Frame struct{ v frameView }
+
+func (f Frame) Live(yield func(item, opt int) bool) { f.v.eachLive(yield) }
+func (f Frame) Cost(opt int) int                    { return f.v.optionCost(opt) }
+func (f Frame) Name(item int) string                { return f.v.itemName(item) }
+func (f Frame) Need(item int) int                   { return f.v.itemNeed(item) }
+
+@ The peephole looks through whichever engine is dancing, so the four
+questions are asked of an interface that each engine answers for itself. It is
+unexported: a |Frame| is the only way in, and there is no other implementation
+to be had.
+@<The bound's peephole@>=
+type frameView interface {
+	eachLive(yield func(item, opt int) bool)
+	optionCost(opt int) int
+	itemName(item int) string
+	itemNeed(item int) int
+}
 
 @ One generic helper appears on nearly every page: |ensure| returns a slice at
 least |n| long, preserving contents and growing the backing array geometrically

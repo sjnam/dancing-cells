@@ -610,13 +610,21 @@ two groups well takes some judgment.
 cheaply as possible. The item structure is the same as the transversal
 problem's.\par}
 
-@ A note on what is left undone. The bound hook hangs on the XCC engine only.
-MCC, which handles multiplicities, branches in binary, so the place to hang a
-hook is different there and it is still empty. To price a problem that is
-naturally written with multiplicities---the partridge puzzle, say---the same
-apparatus will have to exist on that side too.
+@ Since this was written, the same bound hook has been fitted to the |MCC|
+engine too. Binary branching made the place to hang it delicate. Giving up on
+a branch has to happen where the force stack is empty; otherwise the next node
+finds the leftover entries and adopts them as its own forced moves---and under
+binary branching a forced move is not a branch at all, but the inclusion of
+one option with the alternatives never tried. The answers still look
+plausible; they merely stop being the cheapest. It took a few thousand random
+problems checked against full enumeration to catch it.
 
-And this, that choosing the bound is where the skill lies. How you split the
+|Frame| became common property in the bargain, and |f.Need(item)| now says how
+many more times an item must at least be covered---always~1 under |XCC|, but
+possibly several under |MCC|. That is what opens the way to pricing a problem
+naturally written with multiplicities, the partridge puzzle for one.
+
+@ And this, that choosing the bound is where the skill lies. How you split the
 two groups decides how strong the bound is; one may measure several splittings
 and take the best, or take the largest of several bounds at once. Choosing a
 relaxation is, in the end, not so different from choosing a tune.

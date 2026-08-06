@@ -38,6 +38,7 @@ import (
 )
 
 @<The engine@>
+@<The optimizer@>
 @<The input phase@>
 
 @ Sparse sets are the whole trick, so here they are in a paragraph. To
@@ -168,6 +169,7 @@ type MCC struct {
 	@<Naming tables@>
 	@<The force stack@>
 	@<The backtrack arrays@>
+	@<Cost bookkeeping@>
 	@<Search statistics@>
 	@<Output channels@>
 }
@@ -258,29 +260,34 @@ Launching, too, is the twin of |XCC|'s |Dance|.
 @<Launching the dance@>=
 func (m *MCC) Dance(rd io.Reader) *Result {
 	m.inputMatrix(rd)
-
-	m.solStream = make(chan []Option)
-	m.heartbeat = make(chan string)
-
-	go func() {
-		defer close(m.solStream)
-		defer close(m.heartbeat)
-
-		@<Report the input summary@>
-		if m.PulseInterval > 0 {
-			m.pulse = time.NewTicker(m.PulseInterval)
-			defer m.pulse.Stop()
-		}
-
-		if m.baditem == 0 {
-			m.search(0)
-		}
-
-		@<Report the totals@>
-	}()
-
-	return &Result{Solutions: m.solStream, Heartbeat: m.heartbeat}
+	@<Launch the search goroutine@>
 }
+
+@ The launch is set down as a section rather than a function, because
+|Minimize| in a later chapter wants exactly these lines after it has done its
+own preparation.
+@<Launch the search goroutine@>=
+m.solStream = make(chan []Option)
+m.heartbeat = make(chan string)
+
+go func() {
+	defer close(m.solStream)
+	defer close(m.heartbeat)
+
+	@<Report the input summary@>
+	if m.PulseInterval > 0 {
+		m.pulse = time.NewTicker(m.PulseInterval)
+		defer m.pulse.Stop()
+	}
+
+	if m.baditem == 0 {
+		m.search(0)
+	}
+
+	@<Report the totals@>
+}()
+
+return &Result{Solutions: m.solStream, Heartbeat: m.heartbeat}
 
 @ @<Report the input summary@>=
 if m.Debug {
@@ -301,9 +308,21 @@ if m.Debug {
 
 @ Now the binary dance. After the usual node count, abort check, and pulse, a
 forced item left over from a covering at some shallower node takes absolute
-priority; then the chooser speaks, possibly discovering new forced items of
-its own; and a degree of |infSize| means no primary item remains---a
-solution. Only then do we truly branch.
+priority; then---if we are out for the cheapest cover---we ask whether this
+branch could beat the best one yet; then the chooser speaks, possibly
+discovering new forced items of its own; and a degree of |infSize| means no
+primary item remains---a solution. Only then do we truly branch.
+
+The order of those first two is not a matter of taste. Giving up on a branch
+means returning from the middle of |search|, and that is only safe where the
+force stack is empty---which is exactly where the dispatch loop above leaves
+it. Abandon a branch with entries still on the stack and the {\it next\/}
+node will find them there and take them for its own, and under binary
+branching a forced move is not a branch at all: it includes one option and
+never looks at the alternatives. The search would quietly lose solutions. (Its
+sibling is spared this, because a stale forced item there merely picks the
+item to fan out on, and fanning out on any active primary item is always
+sound.)
 @<The search@>=
 func (m *MCC) search(stage int) bool {
 	m.nodes++
@@ -315,6 +334,7 @@ func (m *MCC) search(stage int) bool {
 	m.tick()
 
 	@<Dispatch a leftover forced item@>
+	@<Give up on this branch if it cannot beat the incumbent@>
 
 	best, score := m.chooseBest()
 	if m.forced != 0 {
@@ -350,12 +370,15 @@ opt := int(m.set[best])
 m.included = ensure(m.included, stage+1)
 m.included[stage] = int32(opt)
 
+@<Price this option@>
+m.cost += price
 if m.includeOption(opt) {
 	if !m.search(stage + 1) {
 		m.saveptr = mark
 		return false
 	}
 }
+m.cost -= price
 if score != 1 {
 	m.restoreState(mark)
 	if m.removeOption(opt) {
@@ -378,10 +401,14 @@ func (m *MCC) forcedMove(stage, bi int) bool {
 	opt := int(m.set[bi])
 	m.included = ensure(m.included, stage+1)
 	m.included[stage] = int32(opt)
+	@<Price this option@>
+	m.cost += price
+	ok := true
 	if m.includeOption(opt) {
-		return m.search(stage + 1)
+		ok = m.search(stage + 1)
 	}
-	return true
+	m.cost -= price
+	return ok
 }
 
 @ The chooser weighs every active primary item by the branching degree
@@ -635,6 +662,7 @@ same as |XCC|'s.
 @<Visiting a solution@>=
 func (m *MCC) visit(stage int) bool {
 	m.count++
+	m.incumbent = m.cost
 	sol := make([]Option, stage)
 	for k := 0; k < stage; k++ {
 		sol[k] = m.option(int(m.included[k]))
@@ -676,6 +704,163 @@ func (m *MCC) option(p int) Option {
 		opt = append(opt, name)
 	}
 	return opt
+}
+
+@** Least-cost covers.
+Multiplicities let a problem say how {\it many}; prices let it say how {\it
+dear}. Put a price on every option and the question stops being ``is there a
+cover?'' and becomes ``what is the cheapest one?''---and the same search
+answers it by branch and bound, exactly as its sibling does. Keep an {\it
+incumbent}, the price of the best cover so far, infinite until the first one
+turns up; at every node ask whether this branch could possibly beat it, and if
+not, turn back. \.{ssxcc.w} tells that story at more length; here we need only
+say where the binary dance differs.
+
+It differs in one pleasant way. The running cost rises only on a {\it left\/}
+branch, where an option is included, and a forced move---which is an inclusion
+with the choosing left out---pays the same way. A {\it right\/} branch merely
+banishes an option and re-enters the same stage, buying nothing and owing
+nothing. So there is exactly one place where the price of an option is added
+and taken back, plus its twin in the forced move.
+
+@ Nothing here disturbs |Dance|. The optimizing entry point is a second one,
+|Minimize|, and when it is not in use the search runs the code it ran before,
+one boolean test the poorer. The |Frame| that a bound function looks through
+belongs to \.{dcells.w}, since both engines offer the same one; what is left
+here is the four answers this engine gives it.
+@<The optimizer@>=
+@<The minimizing entry point@>
+@<Answering the frame@>
+
+@ The bound oracle is a knob like the others, and like the others it may be
+left alone. |Bound| is called at every node of a minimizing search and must
+return a lower bound on the price of {\it completing\/} the partial cover
+before it---never an overestimate, or the search will prune away the answer.
+Returning~0 is always safe and always useless.
+@<Solver knobs@>=
+Bound func(Frame) int // lower bound on the cost still to come; may be nil
+
+@ The private half of the bookkeeping, field for field the same as |XCC|'s.
+Options are numbered $1,2,\ldots$ in the order they were read, |optNo| maps
+each node to the number of the option it belongs to, |optCost| holds the price
+the caller put on each, and |itemBase| bridges the numbers the frame speaks in
+to the bases the dance uses. All three stay nil until |Minimize| builds them,
+which is what |minimizing| really means.
+@<Cost bookkeeping@>=
+minimizing bool
+optNo      []int32 // node -> the option that node belongs to
+optCost    []int32 // option number -> the price the caller put on it
+itemBase   []int32 // item number -> its base in |set|
+cost       int64   // price of the options included so far
+incumbent  int64   // price of the cheapest cover so far
+
+@ |Minimize| reads the same input |Dance| does, prices it, and starts the same
+search. What arrives on |Solutions| is a chain of covers each strictly cheaper
+than the last, so a caller who keeps only the newest ends up holding an
+optimal one. The price list is a function rather than a slice because an
+option's number is an awkward thing for a caller to keep count of: blank
+lines, comments, and options that mention no primary item all pass by without
+consuming a number. So we hand the caller both the number and the option
+itself, in the very shape solutions arrive in, and let it answer.
+@<The minimizing entry point@>=
+func (m *MCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
+	m.inputMatrix(rd)
+	@<Price the options@>
+	m.minimizing, m.incumbent = true, infCost
+	@<Launch the search goroutine@>
+}
+
+@ Pricing is one sweep over the nodes. Real nodes have a positive |itm| and
+spacers do not, so a node whose predecessor is a spacer begins a fresh option:
+we advance the option number, ask the caller what that option is worth, and
+paint the number over the run of nodes that follows.
+@<Price the options@>=
+m.optNo = make([]int32, m.lastNode+1)
+m.optCost = make([]int32, int(m.options)+1)
+o := int32(0)
+for k := 1; k < m.lastNode; k++ {
+	if m.nd[k].itm <= 0 {
+		continue // a spacer between two options
+	}
+	if m.nd[k-1].itm <= 0 {
+		o++
+		m.optCost[o] = int32(cost(int(o), m.option(k)))
+	}
+	m.optNo[k] = o
+}
+@<Index the items by number@>
+
+@ The frame answers questions about an item by its {\it number}, while the
+dance knows items by their {\it base\/} in |set|, so one table has to bridge
+the two. Finalization may have deactivated an item or two by now, which shuffles
+|item|, but every base is still somewhere in it and carries its own number.
+@<Index the items by number@>=
+m.itemBase = make([]int32, m.itemlen+1)
+for k := 0; k < m.itemlen; k++ {
+	base := int(m.item[k])
+	m.itemBase[m.itemNo(base)] = int32(base)
+}
+
+@ Here is the pruning test, spliced into the head of |search|. Returning
+|true| abandons this branch and lets the search go on elsewhere; only
+cancellation returns |false|. The comparison is |>=| rather than |>|, so a
+cover merely tying the incumbent is cut off too---which is why the covers that
+do arrive are strictly improving, and why |visit| may record its cover as the
+new incumbent without comparing anything.
+@<Give up on this branch if it cannot beat the incumbent@>=
+if m.minimizing {
+	rest := int64(0)
+	if m.Bound != nil {
+		rest = int64(m.Bound(Frame{m}))
+	}
+	if m.cost+rest >= m.incumbent {
+		return true
+	}
+}
+
+@ And here is the price of one option, from a node inside it. A plain |Dance|
+never built the tables, so it pays nothing but the test.
+@<Price this option@>=
+price := int64(0)
+if m.minimizing {
+	price = int64(m.optCost[m.optNo[opt]])
+}
+
+@ Now this engine's four answers to the frame. Walking the live part of the
+matrix means walking the active items, skipping the secondary ones---they
+demand nothing of their own---and running along each survivor's set.
+@<Answering the frame@>=
+func (m *MCC) eachLive(yield func(item, opt int) bool) {
+	for k := 0; k < m.active; k++ {
+		x := int(m.item[k])
+		if x >= m.second {
+			continue
+		}
+		i := m.itemNo(x)
+		for c := x; c < x+m.size(x); c++ {
+			if !yield(i, int(m.optNo[int(m.set[c])])) {
+				return
+			}
+		}
+	}
+}
+
+@ Two of the remaining three are plain lookups. The third is the one answer
+that means something different here than it does under |XCC|, and it is the
+reason a bound function can be written for multiplicities at all: an item's
+{\it bound\/} is how many more coverings it will still accept and its {\it
+slack\/} is how many of those it could do without, so the number it truly
+still demands is the difference---and never less than zero.
+@<Answering the frame@>=
+func (m *MCC) optionCost(opt int) int  { return int(m.optCost[opt]) }
+func (m *MCC) itemName(item int) string { return m.names[item] }
+
+func (m *MCC) itemNeed(item int) int {
+	x := int(m.itemBase[item])
+	if x >= m.second {
+		return 0
+	}
+	return max(m.bound(x)-m.slack(x), 0)
 }
 
 @** Reading the DLX input.
@@ -976,6 +1161,7 @@ package dcells
 
 import (
 	"fmt"
+	"math/rand"
 	"strings"
 	"testing"
 )
@@ -1053,6 +1239,174 @@ func TestMCCColors(t *testing.T) {
 	input := "p q r | x y\np q x:A y:B\np r x:A y:A\np x:B\nq x:A\nr y:B\n"
 	if n := countMCC(t, input); n != 2 {
 		t.Errorf("colors: got %d solutions, want 2", n)
+	}
+}
+
+@ Minimization gets a problem small enough to check by hand. Item \.{a} wants
+covering twice, \.{b} and \.{c} once each, and of the six priced options only
+three combinations satisfy all that: $\{ab,ac\}$ at~9, $\{ac,a,b\}$ at~14, and
+$\{ab,a,c\}$ at~15. The prices are keyed by the option's printed form so that
+a returned cover can be added up the same way it was quoted.
+@(ssmcc_test.go@>=
+func priceOfCover(sol []Option, price map[string]int) int {
+	c := 0
+	for _, opt := range sol {
+		c += price[strings.Join(opt, " ")]
+	}
+	return c
+}
+
+func TestMCCMinimize(t *testing.T) {
+	input := "2|a b c\na b\na c\na\nb c\nb\nc\n"
+	price := map[string]int{"a b": 5, "a c": 4, "a": 9, "b c": 2, "b": 1, "c": 1}
+	res := NewMCC().Minimize(strings.NewReader(input),
+		func(_ int, opt Option) int { return price[strings.Join(opt, " ")] })
+	got := -1
+	for sol := range res.Solutions {
+		got = priceOfCover(sol, price)
+	}
+	if got != 9 {
+		t.Errorf("cheapest cover costs %d, want 9", got)
+	}
+}
+
+@ |Need| is what a bound function has here that it does not have under |XCC|,
+so it gets a test of its own: at the root, before anything has been covered,
+each item must still be wanting exactly its lower multiplicity.
+@(ssmcc_test.go@>=
+func TestMCCNeed(t *testing.T) {
+	input := "2|a 1:3|b c\na b\na c\nb\na\nb c\n"
+	seen := map[string]int{}
+	s := NewMCC()
+	s.Bound = func(f Frame) int {
+		if len(seen) == 0 {
+			for i := range f.Live {
+				seen[f.Name(i)] = f.Need(i)
+			}
+		}
+		return 0
+	}
+	r := s.Minimize(strings.NewReader(input), func(_ int, _ Option) int { return 1 })
+	for range r.Solutions {
+	}
+	for name, want := range map[string]int{"a": 2, "b": 1, "c": 1} {
+		if seen[name] != want {
+			t.Errorf("Need(%s) = %d at the root, want %d", name, seen[name], want)
+		}
+	}
+}
+
+@ Here is a bound that is sound whenever no price is negative. An item still
+wanting $k$ more coverings must take $k$ distinct options out of what survives
+in its set, and each of those costs at least the cheapest one there; so
+$k$ times that cheapest is a floor under the item's remaining share, and the
+dearest such floor is a floor under the lot. |Live| hands us one item's
+options at a time, which is exactly the shape this scan wants.
+@(ssmcc_test.go@>=
+func cheapestTimesNeed(f Frame) int {
+	bound, item, low, need := 0, -1, 0, 0
+	flush := func() {
+		if item >= 0 && low*need > bound {
+			bound = low * need
+		}
+	}
+	for i, opt := range f.Live {
+		if i != item {
+			flush()
+			item, low, need = i, f.Cost(opt), f.Need(i)
+		} else if c := f.Cost(opt); c < low {
+			low = c
+		}
+	}
+	flush()
+	return bound
+}
+
+@ And here is the test that earns its keep. Small multiplicity problems are
+generated at random---every non-empty subset of the items is an option unless
+the dice say to leave it out---and the cheapest cover is found twice over: by
+enumerating every cover with |Dance|, and by |Minimize|, with a bound and
+without one. All three must agree, four hundred times running.
+
+This is the shape of test that caught a real bug. Pruning at the wrong point
+in |search| used to leave entries on the force stack, and the next node would
+adopt them as its own forced moves---which under binary branching means
+committing to one option and never trying the others. Every answer stayed
+plausible; they were merely, sometimes, not the cheapest.
+@(ssmcc_test.go@>=
+func randomMCCProblem(rng *rand.Rand) (input string, price map[string]int) {
+	names := []string{"a", "b", "c", "d"}[:3+rng.Intn(2)]
+	var b strings.Builder
+	@<Write a random item line@>
+	@<Write a random priced option for most subsets@>
+	return b.String(), price
+}
+
+@ @<Write a random item line@>=
+for _, name := range names {
+	switch rng.Intn(3) {
+	case 0:
+		fmt.Fprintf(&b, "%s ", name)
+	case 1:
+		fmt.Fprintf(&b, "2|%s ", name)
+	default:
+		fmt.Fprintf(&b, "1:2|%s ", name)
+	}
+}
+b.WriteString("\n")
+
+@ @<Write a random priced option for most subsets@>=
+price = map[string]int{}
+for mask := 1; mask < 1<<len(names); mask++ {
+	if rng.Intn(3) == 0 {
+		continue // leave this one out
+	}
+	var opt []string
+	for i, name := range names {
+		if mask&(1<<i) != 0 {
+			opt = append(opt, name)
+		}
+	}
+	line := strings.Join(opt, " ")
+	price[line] = rng.Intn(40)
+	b.WriteString(line + "\n")
+}
+
+@ @(ssmcc_test.go@>=
+func TestMCCMinimizeMatchesSearch(t *testing.T) {
+	rng := rand.New(rand.NewSource(7))
+	for trial := 0; trial < 400; trial++ {
+		input, price := randomMCCProblem(rng)
+		@<Enumerate every cover and keep the cheapest@>
+		@<Minimize with a bound and without, and compare@>
+	}
+}
+
+@ @<Enumerate every cover and keep the cheapest@>=
+want := -1
+res := NewMCC().Dance(strings.NewReader(input))
+for sol := range res.Solutions {
+	if c := priceOfCover(sol, price); want < 0 || c < want {
+		want = c
+	}
+}
+
+@ @<Minimize with a bound and without, and compare@>=
+for _, bound := range []func(Frame) int{nil, cheapestTimesNeed} {
+	s := NewMCC()
+	s.Bound = bound
+	r := s.Minimize(strings.NewReader(input),
+		func(_ int, opt Option) int { return price[strings.Join(opt, " ")] })
+	got, last := -1, -1
+	for sol := range r.Solutions {
+		got = priceOfCover(sol, price)
+		if last >= 0 && got >= last {
+			t.Fatalf("trial %d: costs not improving (%d after %d)", trial, got, last)
+		}
+		last = got
+	}
+	if got != want {
+		t.Fatalf("trial %d: got %d, want %d\n%s", trial, got, want, input)
 	}
 }
 

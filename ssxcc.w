@@ -662,19 +662,13 @@ and that much comes free.
 
 @ Nothing in this chapter disturbs |Dance|. The optimizing entry point is a
 second one, |Minimize|, and when it is not in use the search runs the code it
-ran before, one boolean test the poorer. The chapter needs two pieces of
-public vocabulary: the entry point, and the little window through which a
-bound function looks at the search in progress.
+ran before, one boolean test the poorer. Only one new name goes out to
+callers, the entry point itself; the |Frame| a bound function looks through
+belongs to \.{dcells.w}, since both engines offer the same one, and what is
+left here is the four answers this engine gives it.
 @<The optimizer@>=
 @<The minimizing entry point@>
-@<The search frame@>
-
-@ An incumbent has to start out worse than any real cover. |infCost| is that
-starting point---large enough that no sum of |int32| prices over the options
-of one cover can reach it, small enough that adding a bound to it will not
-overflow.
-@<Bookkeeping@>=
-const infCost = int64(1) << 62 // "no cover found yet"
+@<Answering the frame@>
 
 @ The bound oracle is a knob like the others, and like the others it may be
 left alone. |Bound| is called at every node of a minimizing search and must
@@ -693,6 +687,7 @@ nil until |Minimize| builds them, which is what |minimizing| really means.
 minimizing bool
 optNo      []int32 // node -> the option that node belongs to
 optCost    []int32 // option number -> the price the caller put on it
+itemBase   []int32 // item number -> its base in |set|
 cost       int64   // price of the options committed so far
 incumbent  int64   // price of the cheapest cover so far
 
@@ -734,6 +729,18 @@ for k := 1; k < s.lastNode; k++ {
 	}
 	s.optNo[k] = o
 }
+@<Index the items by number@>
+
+@ The frame answers questions about an item by its {\it number}, while the
+dance knows items by their {\it base\/} in |set|, so one table has to bridge
+the two. The bases are all sitting in |item| right now, in whatever order
+finalization left them, and each one carries its own number.
+@<Index the items by number@>=
+s.itemBase = make([]int32, s.itemlen+1)
+for k := 0; k < s.itemlen; k++ {
+	base := int(s.item[k])
+	s.itemBase[s.itemNo(base)] = int32(base)
+}
 
 @ Here is the pruning test, spliced into the head of |search|. Returning
 |true| abandons this branch and lets the search go on elsewhere; only
@@ -760,22 +767,15 @@ if s.minimizing {
 	price = int64(s.optCost[s.optNo[opt]])
 }
 
-@ A |Frame| is a peephole into the search, valid only for the duration of the
-|Bound| call that receives it. Through it a bound function can see what is
-left of the problem: |Live| runs over every pair (active primary item,
-surviving option of that item), which is exactly the part of the matrix still
-in play, and |Cost| and |Name| translate the two numbers back into terms the
-caller chose. Since |Live| yields all of one item's options before moving to
-the next, a bound that thinks in rows of a matrix gets them a row at a time.
-@<The search frame@>=
-type Frame struct{ s *XCC }
-
-func (f Frame) Live(yield func(item, opt int) bool) {
-	s := f.s
+@ Here are this engine's four answers to the frame. Walking the live part of
+the matrix means walking the active items, skipping the secondary ones---they
+demand nothing of their own---and running along each survivor's set.
+@<Answering the frame@>=
+func (s *XCC) eachLive(yield func(item, opt int) bool) {
 	for k := 0; k < s.active; k++ {
 		x := int(s.item[k])
 		if x >= s.second {
-			continue // secondary items demand nothing of their own
+			continue
 		}
 		i := s.itemNo(x)
 		for c := x; c < x+s.size(x); c++ {
@@ -786,8 +786,19 @@ func (f Frame) Live(yield func(item, opt int) bool) {
 	}
 }
 
-func (f Frame) Cost(opt int) int     { return int(f.s.optCost[opt]) }
-func (f Frame) Name(item int) string { return f.s.names[item] }
+@ The other three are lookups. An item still active under |XCC| wants covering
+exactly once more, which is the whole of what ``exact'' means here; a
+secondary item wants nothing.
+@<Answering the frame@>=
+func (s *XCC) optionCost(opt int) int { return int(s.optCost[opt]) }
+func (s *XCC) itemName(item int) string { return s.names[item] }
+
+func (s *XCC) itemNeed(item int) int {
+	if int(s.itemBase[item]) < s.second {
+		return 1
+	}
+	return 0
+}
 
 @** Reading the DLX input.
 The {\tt DLX} text format---an item line, then one line per option---is

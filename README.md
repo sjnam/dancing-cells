@@ -74,9 +74,12 @@ for sol := range res.Solutions {
   abandoned, so `Solutions` delivers a strictly improving chain.
 - `xc.Bound = func(f cells.Frame) int { … }` supplies a lower bound on the cost
   of *finishing* the partial cover at each node — never an overestimate. Range
-  over `f.Live` for the surviving (item, option) pairs, and use `f.Cost(opt)`
-  and `f.Name(item)` to read them back. Leaving `Bound` nil prunes on the
-  incumbent alone.
+  over `f.Live` for the surviving (item, option) pairs; `f.Cost(opt)` and
+  `f.Name(item)` read them back, and `f.Need(item)` says how many more times an
+  item must still be covered (always 1 under XCC). Leaving `Bound` nil prunes on
+  the incumbent alone.
+- **Both engines have it.** `NewMCC()` takes the same `Minimize` and `Bound`,
+  and there `Need` can exceed 1 — which is the whole point of having it.
 - `Dance` is untouched by any of this.
 
 ### Input format (DLX)
@@ -535,6 +538,14 @@ for even n it does nothing at all: with no transversal there is never an
 incumbent to beat, and branch-and-*bound* only works once it has something to
 beat.
 
+Fitting the same hook to MCC turned out to be the delicate half. Under binary
+branching, giving up on a branch is only safe where the force stack is empty —
+otherwise the next node adopts the leftover entries as its own forced moves,
+and a forced move there is not a branch at all but the inclusion of one option
+with the alternatives never tried. The answers stay plausible and merely stop
+being the cheapest; it took a few thousand random problems checked against full
+enumeration to catch it.
+
 ## The source is a literate program
 
 The engine is written in the [literate-programming](https://en.wikipedia.org/wiki/Literate_programming)
@@ -545,9 +556,9 @@ program with switches, and so do we:
 
 | Document | What it is |
 | --- | --- |
-| [`dcells.w`](dcells.w) | the common ground — the public API (`Option`, `Result`), the node array both engines dance on, and the `DLX` scanner. Its opening pages tell the sparse-set story. |
+| [`dcells.w`](dcells.w) | the common ground — the public API (`Option`, `Result`, `Frame`), the node array both engines dance on, and the `DLX` scanner. Its opening pages tell the sparse-set story. |
 | [`ssxcc.w`](ssxcc.w) | the **XCC** engine: exact cover with colors, *d*-way branching, and a closing chapter on least-cost covers. Reads start to finish on its own. |
-| [`ssmcc.w`](ssmcc.w) | the **MCC** engine: multiplicities, binary branching. Likewise self-contained. |
+| [`ssmcc.w`](ssmcc.w) | the **MCC** engine: multiplicities, binary branching, and its own chapter on least-cost covers. Likewise self-contained. |
 
 All three tangle into the one Go package `dcells`, so `NewXCC()` and `NewMCC()`
 still come from a single import.
