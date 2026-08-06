@@ -112,6 +112,7 @@ strict superset of `NewXCC` (the partridge example uses it).
 | Five words, 24 letters | `go run ./examples/words examples/words/sgb-words.txt 5` |
 | Cheapest Latin-square transversal | `go run ./examples/transversal -plain 11` |
 | … the same, in English | `go run ./examples/transversal-en -plain 11` |
+| Partridge with a hollow centre | `go run ./examples/hollow -z 16` |
 
 Each example generates the problem as DLX text (or reads it from a file),
 passes it to `Dance`, and consumes the `Solutions` channel — the same pattern as
@@ -495,7 +496,7 @@ letter set and are interchangeable in an answer.
 
 ### Hungarian Dance No. 5
 
-The only example that uses `Minimize` and `Bound`. A *transversal* of a Latin
+The first of two examples that use `Minimize` and `Bound`. A *transversal* of a Latin
 square is one cell per row, per column, and per symbol — three "exactly once"
 constraints, so it is an exact cover with 3n items and n² options. Price every
 cell and the question becomes: which transversal is cheapest?
@@ -546,6 +547,63 @@ with the alternatives never tried. The answers stay plausible and merely stop
 being the cheapest; it took a few thousand random problems checked against full
 enumeration to catch it.
 
+### A Partridge in a Pear Tree
+
+The other `Minimize` example, and the one that puts `Need` to work. The
+[partridge puzzle](examples/partridge) packs *k* copies of the *k*×*k* square,
+*k* = 1…*n*, into a square of side *n*(*n*+1)/2 — the areas match because
+1³+⋯+*n*³ = (1+⋯+*n*)². The smallest order with any solution is 8. Now price it:
+mark off a *z*×*z* zone at the centre of the board and charge 1 for every piece
+that comes to rest **entirely inside** it. A cover of price 0 is a board where
+every piece straddles the zone's edge — a *hollow heart*.
+
+Pencil and paper settle half the question. A piece of side ≤ *n* covering a cell
+reaches at most *n*−1 away from it, so cells at least that far inside the zone
+can only be covered by pieces trapped in the zone. Those *trapped cells* form a
+(*z*−2*n*+2)×(*z*−2*n*+2) block, and it is non-empty as soon as *z* ≥ 2*n*−1:
+
+> A hollow heart is possible only for *z* ≤ 2*n*−2.
+
+The bound is that argument, made dynamic. Sweep `Frame.Live`; for each uncovered
+cell take the cheapest option still covering it; keep those that cost something
+and are pairwise ≥ *n* apart in Chebyshev distance, so no single piece can pay
+for two; sum. It finds cells that start out free and become trapped as options
+die. On the order-8 board (36×36), with a 2-minute cap:
+
+| z | minimum | no bound | `Need` bound | trapped-cell bound |
+| --: | --: | --: | --: | --: |
+| 8 | 0 | 7,347 / 139ms | 7,347 / 1.73s | 7,347 / 1.70s |
+| 12 | 0 | 11,142 / 189ms | 11,142 / 2.60s | 10,691 / 2.47s |
+| 14 | ≤ 1 | — | — | — |
+| 16 | **1** | — | — | **7,923 / 1.91s** |
+
+At *z* ≤ 12 a price-0 cover turns up almost at once, the incumbent drops to 0,
+and every branch dies on `cost + rest >= incumbent` — the bound is pure
+overhead. At *z* = 16 it inverts: two minutes and 6.4M nodes prove nothing
+without the bound, and with it the whole tree collapses in under two seconds,
+because the trapped 2×2 block forces the root bound to 1.
+
+The `Need` bound — *size k still needs t copies but only u of its surviving
+placements are free, so t−u must be paid* — is the one that reads `Frame.Need`,
+which means something only under multiplicities. It is honest to report that it
+does not pay here: whether a piece gets trapped depends on **where** it lands,
+and lumping placements together by size cannot see that. Both bounds ship behind
+`-bound`, so the table above is reproducible.
+
+*z* = 14 = 2*n*−2 stays open: price 1 is found in two seconds, price 0 is
+neither found nor ruled out. It is exactly the largest zone the pencil argument
+permits, and exactly the last one where the bound returns 0 at the root.
+
+The write-up is [`examples/hollow/hollow.w`](examples/hollow/hollow.w).
+
+````console
+$ go run ./examples/hollow -z 16
+갇힌 조각 2개 (노드 7331개, 1.699s)
+갇힌 조각 1개 (노드 7906개, 1.845s)
+...
+갇힌 조각 1개, 노드 7923개, 1.91s
+````
+
 ## The source is a literate program
 
 The engine is written in the [literate-programming](https://en.wikipedia.org/wiki/Literate_programming)
@@ -584,6 +642,7 @@ typeset with `luatex` (kotexgweb).
 | [`examples/words/words.w`](examples/words/words.w) | how *is there a set of five five-letter words covering 24 letters of the alphabet?* turns into a DLX input. Its answer is that colors alone — no multiplicities — pin the word count at exactly five. Carries a MetaPost figure, [`words.mp`](examples/words/words.mp). |
 | [`examples/transversal/transversal.w`](examples/transversal/transversal.w) | *Hungarian Dance No. 5* — the cheapest transversal of a Latin square, branched by dancing cells and bounded by the Hungarian algorithm. Where to find a lower bound, why this one is exact, and where else the trick applies. |
 | [`examples/transversal-en/transversal.w`](examples/transversal-en/transversal.w) | the same document in English (and so typeset with `pdftex`). The two tangle to the same program, differing only in its comments and printed strings. |
+| [`examples/hollow/hollow.w`](examples/hollow/hollow.w) | *A Partridge in a Pear Tree* — how large a hollow can the partridge puzzle keep at its centre. A geometric lower bound that turns a hopeless search into a two-second proof, and a `Need`-based one that honestly does not pay. |
 
 ## Reference CLIs
 

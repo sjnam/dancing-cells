@@ -624,7 +624,10 @@ problems checked against full enumeration to catch it.
 |Frame| became common property in the bargain, and |f.Need(item)| now says how
 many more times an item must at least be covered---always~1 under |XCC|, but
 possibly several under |MCC|. That is what opens the way to pricing a problem
-naturally written with multiplicities, the partridge puzzle for one.
+naturally written with multiplicities, the partridge puzzle for one. That road
+was actually taken in \.{examples/hollow}, where in place of an exact relaxation
+like the Hungarian one the bound merely notices what the geometry has already
+decided.
 
 @ And this, that choosing the bound is where the skill lies. How you split the
 two groups decides how strong the bound is; one may measure several splittings

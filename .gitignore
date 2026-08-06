@@ -59,6 +59,16 @@
 /examples/transversal/transversal.log
 /examples/transversal/transversal.toc
 
+# examples/hollow도 문학적 프로그램이다: hollow.w만 원본이다.
+/examples/hollow/hollow.go
+/examples/hollow/hollow.tex
+/examples/hollow/hollow.idx
+/examples/hollow/hollow.scn
+/examples/hollow/hollow.pdf
+/examples/hollow/hollow.log
+/examples/hollow/hollow.toc
+/examples/hollow/hollow
+
 # 같은 프로그램의 영어판.
 /examples/transversal-en/transversal.go
 /examples/transversal-en/transversal.tex
