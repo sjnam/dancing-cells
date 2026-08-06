@@ -40,8 +40,10 @@ is worth. Dancing cells is the fast one. Covering an item is a handful of array
 swaps, and backing out again is a matter of restoring sizes. Every node
 alternates the two: measure slowly, descend quickly, measure slowly again.
 
-If the thing wants a name, let it be the {\it Hungarian Dance Algorithm}. The
-branching is danced by cells; the bounding is set by Hungary.
+If the thing wants a name, let it be the {\it Hungarian Dance technique}. Not
+an algorithm: no new procedure is invented here. It is a name for where two
+existing algorithms are made to mesh---the branching danced by cells, the
+bounding set by Hungary.
 
 So what shall we solve? A {\it Latin square\/} of order~$n$ fills an
 $n\times n$ grid with $n$ symbols so that no symbol repeats within any row or
@@ -91,7 +93,7 @@ There is no second data structure to build.
 In short: {\it NP-hard, but polynomial one dimension down}. No better floor for
 dancing cells and a Hungarian dance together.
 
-So far as I could find, nobody has put the two together in quite this way.
+@ So far as I could find, nobody has put the two together in quite this way.
 Using the Hungarian method for a branch-and-bound lower bound is an old trick,
 but what I turned up is mostly about the quadratic assignment problem; and
 where the {\tt DLX} line has been given costs and bounds, the bound was not
@@ -539,7 +541,7 @@ if *plain {
 
 @* Did it get faster?
 Odd orders, measured with seed~1. On the left is |Minimize| with the bound
-taken off, on the right the Hungarian Dance Algorithm; nodes are search nodes.
+taken off, on the right the Hungarian Dance technique; nodes are search nodes.
 $$\vbox{\halign{\hfil$#$\quad&\hfil#\quad&\hfil#\quad&\hfil#\quad&\hfil#\quad
 &\hfil#\cr
 \noalign{\hrule\smallskip}
