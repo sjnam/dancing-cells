@@ -23,6 +23,10 @@ with the fewest surviving options and tries them all, a {\it $d$-way\/}
 fan-out. Its sibling {\tt SSMCC} (\.{ssmcc.w}) relaxes ``exactly once'' to a
 range and must branch differently; that is why the two are separate programs
 rather than one program with a switch.
+
+A late chapter adds a second question to the first. Once every option carries
+a price, ``is there a cover?'' becomes ``what is the cheapest cover?'', and
+the same search answers it by branch and bound.
 @c
 package dcells
 
@@ -37,6 +41,7 @@ import (
 )
 
 @<The XCC engine@>
+@<XCC optimization@>
 @<The XCC input phase@>
 
 @ Sparse sets are the whole trick, so here they are in a paragraph. To
@@ -157,6 +162,7 @@ type XCC struct {
 	@<Naming tables@>
 	@<The force stack@>
 	@<XCC backtrack arrays@>
+	@<Cost bookkeeping@>
 	@<Search statistics@>
 	@<Output channels@>
 }
@@ -254,35 +260,40 @@ func (s *XCC) internColor(name string) int {
 |Dance| reads the matrix (panicking on malformed input), opens the channels,
 and launches the search in a goroutine; it returns at once, and the goroutine
 closes both channels when it is done, so a |range| over the solutions
-terminates naturally. A |baditem|---a primary item that ended the input with
-no options at all---makes the whole problem trivially unsolvable, so the
-search is skipped and the channels simply close.
+terminates naturally.
 @<Launching the XCC dance@>=
 func (s *XCC) Dance(rd io.Reader) *Result {
 	s.inputMatrix(rd)
-
-	s.solStream = make(chan []Option)
-	s.heartbeat = make(chan string)
-
-	go func() {
-		defer close(s.solStream)
-		defer close(s.heartbeat)
-
-		@<Report the XCC input summary@>
-		if s.PulseInterval > 0 {
-			s.pulse = time.NewTicker(s.PulseInterval)
-			defer s.pulse.Stop()
-		}
-
-		if s.baditem == 0 {
-			s.search(0)
-		}
-
-		@<Report the XCC totals@>
-	}()
-
-	return &Result{Solutions: s.solStream, Heartbeat: s.heartbeat}
+	@<Launch the search goroutine@>
 }
+
+@ The launch itself is set down as a section rather than a function, because
+|Minimize| in a later chapter wants precisely these lines after it has done
+its own preparation. A |baditem|---a primary item that ended the input with no
+options at all---makes the whole problem trivially unsolvable, so the search
+is skipped and the channels simply close.
+@<Launch the search goroutine@>=
+s.solStream = make(chan []Option)
+s.heartbeat = make(chan string)
+
+go func() {
+	defer close(s.solStream)
+	defer close(s.heartbeat)
+
+	@<Report the XCC input summary@>
+	if s.PulseInterval > 0 {
+		s.pulse = time.NewTicker(s.PulseInterval)
+		defer s.pulse.Stop()
+	}
+
+	if s.baditem == 0 {
+		s.search(0)
+	}
+
+	@<Report the XCC totals@>
+}()
+
+return &Result{Solutions: s.solStream, Heartbeat: s.heartbeat}
 
 @ Under |Debug| we bracket the search with the same summary lines the |dlx|
 library prints, down to the fussy singular/plural of ``solutions.''
@@ -304,10 +315,12 @@ if s.Debug {
 }
 
 @ The search is one recursive function. At each node it counts a step, gives
-the context a chance to abort, and offers a heartbeat; then it asks
-|chooseItem| where to branch. A |false| return, here and below, means ``unwind
-the entire search''---the caller has walked away or cancelled---and it
-propagates up through every level.
+the context a chance to abort, and offers a heartbeat; then---if we are out
+for the cheapest cover rather than every cover---it weighs the branch against
+the best one found so far, and only then asks |chooseItem| where to branch. A
+|false| return, here and below, means ``unwind the entire search''---the
+caller has walked away or cancelled---and it propagates up through every
+level.
 @<The XCC search@>=
 func (s *XCC) search(level int) bool {
 	s.nodes++
@@ -317,6 +330,7 @@ func (s *XCC) search(level int) bool {
 	default:
 	}
 	s.tick()
+	@<Give up on this branch if it cannot beat the incumbent@>
 
 	best, solution := s.chooseItem()
 	if solution {
@@ -334,7 +348,9 @@ untouched: those are exactly the candidates to try. We snapshot all the active
 sizes once, then loop: pick a candidate, commit it, recurse, restore the
 sizes, and go around again. Note that |restoreSizes| runs whether or not the
 commit succeeded---a failed |commitOption| leaves partial damage that must be
-undone just the same.
+undone just the same. The running total |s.cost| rises and falls with the
+choice, so that at every node it holds exactly the price of the options
+committed above it.
 @<Cover |best| and try each of its options in turn@>=
 s.swapOut(best)
 s.oactive = s.active
@@ -344,12 +360,15 @@ s.choice = ensure(s.choice, level+1)
 for c := best; c < best+s.size(best); c++ {
 	opt := int(s.set[c])
 	s.choice[level] = int32(opt)
+	@<Price this option@>
+	s.cost += price
 	if s.commitOption(opt) {
 		if !s.search(level + 1) {
 			return false
 		}
 	}
 	s.restoreSizes(level)
+	s.cost -= price
 }
 
 @ Which item shall we branch on? Christine Solnon and Knuth added a wrinkle to
@@ -564,10 +583,15 @@ func (s *XCC) restoreSizes(level int) {
 Reaching a solution, we materialize it from the |choice| stack---one option
 per level---and send it down the channel. The send is the pacing point: if
 the consumer has abandoned the range, or the context is cancelled, the other
-arm of the select fires and the whole search unwinds.
+arm of the select fires and the whole search unwinds. A cover that gets this
+far is also the cheapest one yet---the test at the head of |search| turned
+back every branch that could not beat the incumbent---so recording it as the
+new incumbent needs no comparison. (For a plain |Dance| the running cost is
+always zero and the incumbent is never consulted.)
 @<Visiting an XCC solution@>=
 func (s *XCC) visit(level int) bool {
 	s.count++
+	s.incumbent = s.cost
 	sol := make([]Option, level)
 	for k := 0; k < level; k++ {
 		sol[k] = s.option(int(s.choice[k]))
@@ -618,6 +642,152 @@ func (s *XCC) option(p int) Option {
 	}
 	return opt
 }
+
+@** Least-cost covers.
+Many a problem has more exact covers than anyone cares to look at, and the
+interesting question is not {\it which\/} but {\it how cheap}: put a price on
+every option and ask for a cover of least total price. Minimum-cost
+assignment, minimum-weight perfect matching, cheapest set partitioning---each
+is this question wearing a hat, and each is exact cover with a price list
+stapled on.
+
+Branch and bound answers it. Keep an {\it incumbent}, the price of the best
+cover so far, infinite until the first one turns up. At every node ask whether
+this branch could possibly beat it; if not, turn back. Half of that sum is
+known exactly---the options committed above this node have a price---and for
+the other half the caller may supply a {\it lower bound\/} on what finishing
+the cover must still cost. With no such oracle the incumbent alone still
+prunes, since a partial cover already dearer than a finished one is hopeless,
+and that much comes free.
+
+@ Nothing in this chapter disturbs |Dance|. The optimizing entry point is a
+second one, |Minimize|, and when it is not in use the search runs the code it
+ran before, one boolean test the poorer. The chapter needs two pieces of
+public vocabulary: the entry point, and the little window through which a
+bound function looks at the search in progress.
+@<XCC optimization@>=
+@<The minimizing entry point@>
+@<The search frame@>
+
+@ An incumbent has to start out worse than any real cover. |infCost| is that
+starting point---large enough that no sum of |int32| prices over the options
+of one cover can reach it, small enough that adding a bound to it will not
+overflow.
+@<XCC bookkeeping@>=
+const infCost = int64(1) << 62 // "no cover found yet"
+
+@ The bound oracle is a knob like the others, and like the others it may be
+left alone. |Bound| is called at every node of a minimizing search and must
+return a lower bound on the price of {\it completing\/} the partial cover
+before it---never an overestimate, or the search will prune away the answer.
+Returning~0 is always safe and always useless. At a node that is about to
+turn out to be a solution the frame is empty and any sensible bound is zero.
+@<Solver knobs@>=
+Bound func(Frame) int // lower bound on the cost still to come; may be nil
+
+@ The private half of the bookkeeping. Options are numbered $1,2,\ldots$ in
+the order they were read, |optNo| maps each node to the number of the option
+it belongs to, and |optCost| holds the price the caller put on each. Both stay
+nil until |Minimize| builds them, which is what |minimizing| really means.
+@<Cost bookkeeping@>=
+minimizing bool
+optNo      []int32 // node -> the option that node belongs to
+optCost    []int32 // option number -> the price the caller put on it
+cost       int64   // price of the options committed so far
+incumbent  int64   // price of the cheapest cover so far
+
+@ |Minimize| reads the same input |Dance| does, prices it, and starts the same
+search. What arrives on |Solutions| is a chain of covers each strictly cheaper
+than the last, so a caller who keeps only the newest ends up holding an
+optimal one; a caller who wants to watch the improvement come in can print
+them all. If the problem has no cover at all, nothing arrives.
+
+The price list is a function rather than a slice because an option's number is
+an awkward thing for a caller to keep count of: blank lines, comments, and
+options that mention no primary item all pass by without consuming a number.
+So we hand the caller both the number and the option itself, in the very shape
+solutions arrive in, and let it answer. The number is worth having anyway---it
+is the same handle a |Bound| function will see later.
+@<The minimizing entry point@>=
+func (s *XCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
+	s.inputMatrix(rd)
+	@<Price the options@>
+	s.minimizing, s.incumbent = true, infCost
+	@<Launch the search goroutine@>
+}
+
+@ Pricing is one sweep over the nodes. Real nodes have a positive |itm| and
+spacers do not, so a node whose predecessor is a spacer begins a fresh option:
+we advance the option number, ask the caller what that option is worth, and
+paint the number over the run of nodes that follows.
+@<Price the options@>=
+s.optNo = make([]int32, s.lastNode+1)
+s.optCost = make([]int32, int(s.options)+1)
+o := int32(0)
+for k := 1; k < s.lastNode; k++ {
+	if s.nd[k].itm <= 0 {
+		continue // a spacer between two options
+	}
+	if s.nd[k-1].itm <= 0 {
+		o++
+		s.optCost[o] = int32(cost(int(o), s.option(k)))
+	}
+	s.optNo[k] = o
+}
+
+@ Here is the pruning test, spliced into the head of |search|. Returning
+|true| abandons this branch and lets the search go on elsewhere; only
+cancellation returns |false|. The comparison is |>=| rather than |>|, so a
+cover merely tying the incumbent is cut off too---which is why the covers that
+do arrive are strictly improving.
+@<Give up on this branch if it cannot beat the incumbent@>=
+if s.minimizing {
+	rest := int64(0)
+	if s.Bound != nil {
+		rest = int64(s.Bound(Frame{s}))
+	}
+	if s.cost+rest >= s.incumbent {
+		return true
+	}
+}
+
+@ And here is the price of one option, looked up twice per branch---once on
+the way down, once on the way back---from a node inside it. A plain |Dance|
+never built the tables, so it pays nothing but the test.
+@<Price this option@>=
+price := int64(0)
+if s.minimizing {
+	price = int64(s.optCost[s.optNo[opt]])
+}
+
+@ A |Frame| is a peephole into the search, valid only for the duration of the
+|Bound| call that receives it. Through it a bound function can see what is
+left of the problem: |Live| runs over every pair (active primary item,
+surviving option of that item), which is exactly the part of the matrix still
+in play, and |Cost| and |Name| translate the two numbers back into terms the
+caller chose. Since |Live| yields all of one item's options before moving to
+the next, a bound that thinks in rows of a matrix gets them a row at a time.
+@<The search frame@>=
+type Frame struct{ s *XCC }
+
+func (f Frame) Live(yield func(item, opt int) bool) {
+	s := f.s
+	for k := 0; k < s.active; k++ {
+		x := int(s.item[k])
+		if x >= s.second {
+			continue // secondary items demand nothing of their own
+		}
+		i := s.itemNo(x)
+		for c := x; c < x+s.size(x); c++ {
+			if !yield(i, int(s.optNo[int(s.set[c])])) {
+				return
+			}
+		}
+	}
+}
+
+func (f Frame) Cost(opt int) int     { return int(f.s.optCost[opt]) }
+func (f Frame) Name(item int) string { return f.s.names[item] }
 
 @** Reading the DLX input.
 The {\tt DLX} text format---an item line, then one line per option---is
@@ -946,36 +1116,52 @@ func TestMultiCharColorAndLongNames(t *testing.T) {
 @ A sterner exercise encodes the $n$-queens problem as exact cover---rows
 and columns as primary items, the two diagonal families as secondary---and
 checks the solution counts against their known values (4, 40, and 92 for
-$n=6,7,8$). The two-digit |itoa| keeps the generated item names short and
-aligned.
+$n=6,7,8$). Generating the board is kept apart from counting its covers,
+because the minimization tests below want the same board at a different price.
 @(ssxcc_test.go@>=
+func nQueensInput(n int) string {
+	var b strings.Builder
+	@<Write the $n$-queens item line@>
+	@<Write the $n$-queens options@>
+	return b.String()
+}
+
+@ Rows and columns are the primary items; the two diagonal families, which a
+queen may leave uncovered, are secondary. The two-digit |itoa| keeps the
+generated names short and aligned.
+@<Write the $n$-queens item line@>=
+for i := 0; i < n; i++ {
+	b.WriteString(itoa("r", i))
+}
+for j := 0; j < n; j++ {
+	b.WriteString(itoa("c", j))
+}
+b.WriteString("|")
+for k := 0; k < 2*n-1; k++ {
+	b.WriteString(itoa(" a", k))
+}
+for k := 0; k < 2*n-1; k++ {
+	b.WriteString(itoa(" b", k))
+}
+b.WriteString("\n")
+
+@ One option per square, naming the row, the column, and the two diagonals
+that meet there---in that order, which the pricing below relies on.
+@<Write the $n$-queens options@>=
+for i := 0; i < n; i++ {
+	for j := 0; j < n; j++ {
+		b.WriteString(itoa("r", i))
+		b.WriteString(itoa("c", j))
+		b.WriteString(itoa("a", i+j))
+		b.WriteString(itoa("b", i-j+n-1))
+		b.WriteString("\n")
+	}
+}
+
+@ @(ssxcc_test.go@>=
 func nQueensCount(t *testing.T, n int) int {
 	t.Helper()
-	var b strings.Builder
-	for i := 0; i < n; i++ {
-		b.WriteString(itoa("r", i))
-	}
-	for j := 0; j < n; j++ {
-		b.WriteString(itoa("c", j))
-	}
-	b.WriteString("|")
-	for k := 0; k < 2*n-1; k++ {
-		b.WriteString(itoa(" a", k))
-	}
-	for k := 0; k < 2*n-1; k++ {
-		b.WriteString(itoa(" b", k))
-	}
-	b.WriteString("\n")
-	for i := 0; i < n; i++ {
-		for j := 0; j < n; j++ {
-			b.WriteString(itoa("r", i))
-			b.WriteString(itoa("c", j))
-			b.WriteString(itoa("a", i+j))
-			b.WriteString(itoa("b", i-j+n-1))
-			b.WriteString("\n")
-		}
-	}
-	res := NewXCC().Dance(strings.NewReader(b.String()))
+	res := NewXCC().Dance(strings.NewReader(nQueensInput(n)))
 	n2 := 0
 	for range res.Solutions {
 		n2++
@@ -994,6 +1180,119 @@ func TestQueens(t *testing.T) {
 			t.Errorf("%d-queens: got %d, want %d", n, got, want)
 		}
 	}
+}
+
+@ Minimization gets a problem small enough to check by hand. Over the items
+|a|, |b|, |c| there are five priced options and exactly three covers:
+$\{abc\}$ at~10, $\{ab\}+\{c\}$ at~3, and $\{a\}+\{bc\}$ at~7. The prices are
+keyed by the option's printed form so that the test can add up a returned
+cover the same way it quoted the price in the first place. Whatever order the
+search stumbles on them in, what arrives must be strictly cheaper each time,
+and the last must cost~3.
+@(ssxcc_test.go@>=
+func TestMinimize(t *testing.T) {
+	input := "a b c\na b c\na b\nc\na\nb c\n"
+	price := map[string]int{"a b c": 10, "a b": 1, "c": 2, "a": 4, "b c": 3}
+	res := NewXCC().Minimize(strings.NewReader(input),
+		func(_ int, opt Option) int { return price[strings.Join(opt, " ")] })
+	var seen []int
+	for sol := range res.Solutions {
+		c := 0
+		for _, opt := range sol {
+			c += price[strings.Join(opt, " ")]
+		}
+		seen = append(seen, c)
+	}
+	@<Check that the covers improve, ending at 3@>
+}
+
+@ @<Check that the covers improve, ending at 3@>=
+if len(seen) == 0 {
+	t.Fatal("no cover found")
+}
+for i := 1; i < len(seen); i++ {
+	if seen[i] >= seen[i-1] {
+		t.Fatalf("costs not strictly decreasing: %v", seen)
+	}
+}
+if got := seen[len(seen)-1]; got != 3 {
+	t.Errorf("cheapest cover costs %d, want 3", got)
+}
+
+@ A sterner test prices the $n$-queens board: a queen costs the square of her
+distance from the main diagonal, so the cheapest placement is the one that
+hugs it. Enumerating all 92 solutions for $n=8$ and taking the least gives the
+answer to beat; |Minimize| must reach the same number both with a bound
+function and without one.
+@(ssxcc_test.go@>=
+func queenPrice(opt Option) int {
+	d := digits(opt[0]) - digits(opt[1]) // the row item, then the column item
+	if d < 0 {
+		d = -d
+	}
+	return d * d
+}
+
+func digits(name string) int { return int(name[1]-'0')*10 + int(name[2]-'0') }
+
+func coverPrice(sol []Option) int {
+	c := 0
+	for _, opt := range sol {
+		c += queenPrice(opt)
+	}
+	return c
+}
+
+@ Here is a lower bound that is sound for any prices that are not negative:
+every item still active must be covered by one of its surviving options, so
+the cheapest of those is a floor under that item's share---and the dearest
+such floor is a floor under the lot. |Live| hands us one item's options at a
+time, which is exactly the shape this scan wants.
+@(ssxcc_test.go@>=
+func cheapestPerItem(f Frame) int {
+	bound, item, low := 0, -1, 0
+	for i, opt := range f.Live {
+		if i != item {
+			bound = max(bound, low)
+			item, low = i, f.Cost(opt)
+		} else if c := f.Cost(opt); c < low {
+			low = c
+		}
+	}
+	return max(bound, low)
+}
+
+func minCostQueens(n int, bound func(Frame) int) (price int, nodes uint64) {
+	s := NewXCC()
+	s.Bound = bound
+	res := s.Minimize(strings.NewReader(nQueensInput(n)),
+		func(_ int, opt Option) int { return queenPrice(opt) })
+	price = -1
+	for sol := range res.Solutions {
+		price = coverPrice(sol)
+	}
+	return price, s.Nodes()
+}
+
+@ @(ssxcc_test.go@>=
+func TestMinimizeQueens(t *testing.T) {
+	const n = 8
+	want := -1
+	res := NewXCC().Dance(strings.NewReader(nQueensInput(n)))
+	for sol := range res.Solutions {
+		if c := coverPrice(sol); want < 0 || c < want {
+			want = c
+		}
+	}
+	plain, nodes := minCostQueens(n, nil)
+	if plain != want {
+		t.Errorf("Minimize found %d, want %d", plain, want)
+	}
+	bounded, fewer := minCostQueens(n, cheapestPerItem)
+	if bounded != want {
+		t.Errorf("Minimize with a bound found %d, want %d", bounded, want)
+	}
+	t.Logf("%d nodes without a bound, %d with one", nodes, fewer)
 }
 
 @** Index.

@@ -54,6 +54,31 @@ d e g
   `Solutions` paces it. `WithContext(ctx)` aborts the search when `ctx` is
   cancelled (and lets you stop after the first solution without leaking).
 
+### Least-cost covers (`Minimize`)
+
+When every option carries a price and you want the cheapest cover rather than
+every cover, use `Minimize` instead of `Dance`:
+
+```go
+xc := cells.NewXCC()
+res := xc.Minimize(strings.NewReader(input), func(o int, opt cells.Option) int {
+    return price(opt) // o is the option's number, 1, 2, … in input order
+})
+for sol := range res.Solutions {
+    // each cover is strictly cheaper than the one before; the last is optimal
+}
+```
+
+- The price function is called once per option, right after the input is read.
+- Branch and bound: a branch that cannot beat the best cover so far is
+  abandoned, so `Solutions` delivers a strictly improving chain.
+- `xc.Bound = func(f cells.Frame) int { … }` supplies a lower bound on the cost
+  of *finishing* the partial cover at each node — never an overestimate. Range
+  over `f.Live` for the surviving (item, option) pairs, and use `f.Cost(opt)`
+  and `f.Name(item)` to read them back. Leaving `Bound` nil prunes on the
+  incumbent alone.
+- `Dance` is untouched by any of this.
+
 ### Input format (DLX)
 
 The first non-comment line lists item names: primary items, then `|`, then
@@ -474,7 +499,7 @@ program with switches, and so do we:
 | Document | What it is |
 | --- | --- |
 | [`dcells.w`](dcells.w) | the common ground — the public API (`Option`, `Result`), the node array both engines dance on, and the `DLX` scanner. Its opening pages tell the sparse-set story. |
-| [`ssxcc.w`](ssxcc.w) | the **XCC** engine: exact cover with colors, *d*-way branching. Reads start to finish on its own. |
+| [`ssxcc.w`](ssxcc.w) | the **XCC** engine: exact cover with colors, *d*-way branching, and a closing chapter on least-cost covers. Reads start to finish on its own. |
 | [`ssmcc.w`](ssmcc.w) | the **MCC** engine: multiplicities, binary branching. Likewise self-contained. |
 
 All three tangle into the one Go package `dcells`, so `NewXCC()` and `NewMCC()`
