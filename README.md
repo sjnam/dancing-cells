@@ -111,7 +111,6 @@ strict superset of `NewXCC` (the partridge example uses it).
 | Word search | `go run ./examples/wordsearch examples/wordsearch/movie.txt 13 13` |
 | Five words, 24 letters | `go run ./examples/words examples/words/sgb-words.txt 5` |
 | Cheapest Latin-square transversal | `go run ./examples/transversal -plain 11` |
-| … the same, in English | `go run ./examples/transversal-en -plain 11` |
 | Partridge with a hollow centre | `go run ./examples/hollow -z 16` |
 
 Each example generates the problem as DLX text (or reads it from a file),
@@ -652,7 +651,6 @@ typeset with `luatex` (kotexgweb).
 | --- | --- |
 | [`examples/words/words.w`](examples/words/words.w) | how *is there a set of five five-letter words covering 24 letters of the alphabet?* turns into a DLX input. Its answer is that colors alone — no multiplicities — pin the word count at exactly five. Carries a MetaPost figure, [`words.mp`](examples/words/words.mp). |
 | [`examples/transversal/transversal.w`](examples/transversal/transversal.w) | *Hungarian Dance No. 5* — the cheapest transversal of a Latin square, branched by dancing cells and bounded by the Hungarian algorithm. Where to find a lower bound, why this one is exact, and where else the trick applies. |
-| [`examples/transversal-en/transversal.w`](examples/transversal-en/transversal.w) | the same document in English (and so typeset with `pdftex`). The two tangle to the same program, differing only in its comments and printed strings. |
 | [`examples/hollow/hollow.w`](examples/hollow/hollow.w) | *A Partridge in a Pear Tree* — how large a hollow can the partridge puzzle keep at its centre. A geometric lower bound that turns a hopeless search into a two-second proof, and a `Need`-based one that honestly does not pay. |
 
 ## Reference CLIs
