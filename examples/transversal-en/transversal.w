@@ -9,7 +9,7 @@
 @s Rand int
 @s Time int
 
-@* Hungarian Dance No.\thinspace5.
+@* Hungarian Dance Technique.
 This program began with Brahms. Somewhere in the headlong $\rm F\sharp$ minor
 of the fifth Hungarian Dance a thought arrived: what would happen if {\it
 dancing cells\/} and the {\it Hungarian algorithm\/} were put on the same

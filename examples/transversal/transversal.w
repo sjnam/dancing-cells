@@ -10,7 +10,7 @@
 @s Rand int
 @s Time int
 
-@* Hungarian Dance No.\thinspace5.
+@* 헝가리 무곡 기법.
 브람스의 헝가리 무곡 5번을 듣다가 이 프로그램이 시작되었다. 그 유명한
 $\rm F\sharp$단조의 몰아치는 가락을 듣다가 문득 이런 생각이 들었다. {\it 춤추는
 칸\/}(dancing cells)과 {\it 헝가리안 알고리즘\/}을 한자리에 세우면 어떻게
