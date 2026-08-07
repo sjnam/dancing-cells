@@ -585,8 +585,7 @@ relaxation is so loose that at even orders of $\Bbb Z_n$ it almost always does
 have one. A worthless problem gets a worthless bound.
 
 @* Where else to dance it.
-The reason this does not end as a one-tune amusement is that the floors it
-works on can be described in a single sentence.
+The floors this works on can be described in a single sentence.
 $$\vbox{\hsize=0.86\hsize\noindent\it Split the primary items into two groups.
 If every option covers exactly one item from each group, then the assignment
 problem between those two groups is a relaxation.}$$
@@ -594,7 +593,36 @@ Every other item may be forgotten. The more you forget the weaker the bound
 gets, but it stays a {\it valid\/} bound, and the Hungarian algorithm solves
 that relaxation exactly. A surprising number of problems have this shape.
 
-@ A handful of them.
+@ Before listing them, though, it is better to know this toy's ceiling. The
+minimum-cost transversal is far too easy to write as an integer program. Give
+every cell a 0--1 variable and say ``sums to one'' for every row, every column
+and every symbol, and that is the whole model---and written that way, its LP
+relaxation is nearly tight. For fun I fed the same square and the same prices
+to a general integer programming solver: it finished $n=27$ in a second or so,
+and hardly branched at all. That is exactly where this program spends two
+minutes.
+
+The reason is the quality of the relaxation, and that is the thing worth
+carrying away. We throw an entire axis {\it away}. Measured with the symbols
+forgotten, the value sits some forty percent below the optimum. The LP
+relaxation keeps all three groups and drops only integrality, so it falls short
+by less than ten. That the Hungarian algorithm solves our relaxation {\it
+exactly\/} and that our relaxation is {\it good\/} turn out to be two different
+statements. Earlier I called the bound strong; I was measuring it against a
+version of itself whose bound was zero.
+
+@ So the question of where to use this is better asked the other way round:
+{\it where does the LP go slack once the problem is written as an integer
+program?} Problems where colors or multiplicities make writing that program a
+nuisance in the first place; problems that want every solution enumerated
+rather than the cheapest one; and problems where the answer is held not by a
+relaxation but by the geometry. The last of those is what
+\.{examples/hollow} does. The bound there is no exact relaxation at all---it
+merely notices what the shape of the board has already settled---and it turns a
+computation that would not finish into two seconds.
+
+@ A handful of problems with this shape, all the same. Ask the question above
+of any of them first.
 \smallskip
 {\parindent=2em
 \item{1.} {\it Minimum-cost $n$-queens.} A queen uses one row and one column;
@@ -603,14 +631,17 @@ swapping its homely bound for a Hungarian one would sharpen it at once.
 \item{2.} {\it Minimum-cost 3-dimensional matching.} What this program solves
 is the special case; keep any two axes of the general one and the assignment
 problem is there. One may even take all three choices of two, and use the
-largest of the three bounds.
+largest of the three bounds. This is also where the ceiling above bites
+hardest: all three together are still worth less than the one LP relaxation.
 \item{3.} {\it Timetabling.} An option uses one teacher and one period; forget
 the rooms and the classes. School timetables and exam invigilation have the
 same shape.
 \item{4.} {\it Crew scheduling as set partitioning.} This is the framework the
 airlines actually use, and bounding it by an assignment relaxation is a stock
 move in that trade. Here an option takes several items at once, so choosing the
-two groups well takes some judgment.
+two groups well takes some judgment. Worth noting too that the trade is bound
+tightly to column generation and the LP: there is something to learn there, but
+nothing to win.
 \item{5.} {\it Latin square completion.} Filling in a partly completed board as
 cheaply as possible. The item structure is the same as the transversal
 problem's.\par}
@@ -636,5 +667,14 @@ decided.
 two groups decides how strong the bound is; one may measure several splittings
 and take the best, or take the largest of several bounds at once. Choosing a
 relaxation is, in the end, not so different from choosing a tune.
+
+What this essay leaves behind, then, is not a fast program but an arrangement.
+As Brahms set someone else's tunes in a frame of his own, so here two
+algorithms that already existed are set in one frame; how well the frame sings
+depends on the tune laid over it. Over Latin squares it did not sing
+especially well. The floor where it earns its keep is somewhere else.
+
+\vfill
+\centerline{\it I am listening to Brahms's Hungarian Dance No.\thinspace5 as I write this.}
 
 @* Index.

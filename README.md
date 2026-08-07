@@ -539,6 +539,17 @@ for even n it does nothing at all: with no transversal there is never an
 incumbent to beat, and branch-and-*bound* only works once it has something to
 beat.
 
+And the ceiling, which the write-up now states plainly: those ratios are
+measured against the *same program with its bound switched off*, not against
+the state of the art. Minimum-cost transversal is almost too easy to write as
+an integer program, and written that way its LP relaxation is nearly tight — a
+general MILP solver clears n = 27 in about a second and barely branches, where
+this program spends two minutes. Ours throws a whole axis away and lands some
+40% below the optimum; the LP keeps all three and falls short by under 10%.
+That the Hungarian algorithm solves our relaxation *exactly* and that our
+relaxation is *good* turn out to be different statements. The technique is a
+frame worth knowing, but this is not the floor where it earns its keep.
+
 Fitting the same hook to MCC turned out to be the delicate half. Under binary
 branching, giving up on a branch is only safe where the force stack is empty —
 otherwise the next node adopts the leftover entries as its own forced moves,
