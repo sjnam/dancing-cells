@@ -151,7 +151,6 @@ if strings.IndexFunc(w, func(c rune) bool { return c < 'a' || c > 'z' }) >= 0 {
 @ 아이템은 이렇게 넷이다. 그러므로 아이템 줄은
 `\.{a b c \dots\ z 빠진쌍 겹침 \| 겹친글자}'가 된다.
 \smallskip
-{\parindent2em
 \item{$\bullet$} 알파벳 스물여섯 자 \.{a}부터 \.{z}까지. 모두 주
 아이템이므로 저마다 정확히 한 번 덮인다.
 \item{$\bullet$} \.{빠진쌍}. 주 아이템. 쓰이지 않는 두 글자를 지목하는 옵션이
@@ -160,7 +159,6 @@ if strings.IndexFunc(w, func(c rune) bool { return c < 'a' || c > 'z' }) >= 0 {
 밝히는 옵션이 딱 하나 뽑히게 만든다.
 \item{$\bullet$} \.{겹친글자}. 부 아이템이며 색을 받는다. 두 번 쓰인 글자가
 무엇인지를 여러 옵션이 서로 합의하게 만든다.
-}
 
 @ 옵션은 다섯 갈래다. 글자집합을 $S$라 하자.
 \smallskip
