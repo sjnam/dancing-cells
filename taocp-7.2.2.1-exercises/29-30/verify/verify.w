@@ -6,7 +6,7 @@
 @s matrix int
 @s trace int
 
-@** Backtrack trees to order.
+@* Introduction.
 Algorithm~X, in \S7.2.2.1 of {\sl The Art of Computer Programming}, solves exact
 cover problems by backtracking. At step X3 it looks over the items not yet
 covered and picks one whose \.{LEN}---the number of options still available to
