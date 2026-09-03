@@ -53,7 +53,7 @@ converse is easy, so the perfect rows are exactly those tables. There are
 $\varphi(n)$ of them for each $n$, one per primitive root, and the amazing row
 of the exercise is the one belonging to the smallest primitive root of~13.
 
-The audit itself is the companion document \.{report.md} in the directory above.
+The audit itself is the companion document \.{README.md} in the directory above.
 
 @ The program has four things to say, and a flag chooses which.
 @c

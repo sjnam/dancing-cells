@@ -45,7 +45,7 @@ readings live here behind a flag, so the difference can be measured instead of
 argued about.
 
 The audit itself, with the numbers this program produced, is the companion
-document \.{report.md} in the directory above.
+document \.{README.md} in the directory above.
 
 @ Answer 29 builds the matrix by recursion on $T$. A leaf becomes one column with
 no rows---an item that no option can cover, so the search dies there at once.

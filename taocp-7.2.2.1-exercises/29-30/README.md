@@ -60,12 +60,12 @@ exactly that tree?**
 ## 2. The construction of answer 29
 
 > If $T$ has only a root node, let there be one column, no rows. Otherwise let
-> $T$ have $d \ge 1$ subtrees $T_1, \ldots, T_d$, and assume that we've
-> constructed matrices with rows $R_j$ and columns $C_j$ for each $T_j$. Let
-> $C = C_1 \cup \cdots \cup C_d$. The matrix for $T$ is obtained by appending
-> three new columns $\{0, 1, 2\}$ and the following new rows: (i) '`0 1 2` and
-> all columns of $C \setminus C_j$', for $1 \le j \le d$; (ii) '$j$ and all
-> columns of $C$', for $j \in \{0, 1\}$. The matrix for the example tree has 15
+> $T$ have $d \ge 1$ subtrees $T\_1, \ldots, T\_d$, and assume that we've
+> constructed matrices with rows $R\_j$ and columns $C\_j$ for each $T\_j$. Let
+> $C = C\_1 \cup \cdots \cup C\_d$. The matrix for $T$ is obtained by appending
+> three new columns $\{0, 1, 2\}$ and the following new rows: (i) `0 1 2` and
+> all columns of $C \setminus C\_j$, for $1 \le j \le d$; (ii) $j$ and all
+> columns of $C$, for $j \in \{0, 1\}$. The matrix for the example tree has 15
 > columns and 14 rows.
 
 ### 2.1 Reproducing the printed matrix
@@ -102,17 +102,17 @@ At a node with $d$ subtrees, count `LEN` in the new matrix:
 | `2` | $d$ | the $d$ type-(i) rows, and nothing else |
 | `0` | $d + 1$ | all type-(i) rows, plus type (ii) with $j = 0$ |
 | `1` | $d + 1$ | all type-(i) rows, plus type (ii) with $j = 1$ |
-| $c \in C_j$ | $L_j(c) + d + 1$ | see below |
+| $c \in C\_j$ | $L\_j(c) + d + 1$ | see below |
 
-Here $L_j(c)$ abbreviates the count of $c$ inside $T_j$'s own matrix. The rest
+Here $L\_j(c)$ abbreviates the count of $c$ inside $T\_j$'s own matrix. The rest
 of its tally is the $d - 1$ type-(i) rows with $j' \ne j$, which all contain
-$C_j$, plus both type-(ii) rows.
+$C\_j$, plus both type-(ii) rows.
 
-Since $L_j(c) \ge 0$, no column of $C$ can fall below $d + 1$. So **column `2`
+Since $L\_j(c) \ge 0$, no column of $C$ can fall below $d + 1$. So **column `2`
 is always the strict minimum**, and the exercise's requirement — that a unique
 item attain the minimum whenever step X3 is reached — holds automatically.
 
-The margin is thin exactly where it matters. For a leaf, $L_j(c) = 0$, giving
+The margin is thin exactly where it matters. For a leaf, $L\_j(c) = 0$, giving
 $d + 1$, just one more than $d$. Manufacturing that margin is the whole purpose
 of the two type-(ii) rows: without them, `0`, `1`, and `2` would all have
 `LEN` $= d$ and the minimum would not be unique.
@@ -124,15 +124,15 @@ inflate two counts.
 ### 2.3 The recursion lands exactly right
 
 Branching on column `2` offers exactly the $d$ type-(i) rows. Choosing the
-$j$th covers `0`, `1`, `2`, and $C \setminus C_j$. Then
+$j\text{th}$ covers `0`, `1`, `2`, and $C \setminus C\_j$. Then
 
 - the other type-(i) rows contain `0`, so they go;
 - both type-(ii) rows contain `0` or `1`, so they go;
-- rows of $R_{j'}$ for $j' \ne j$ touch $C_{j'}$, which lies inside
-  $C \setminus C_j$, so they go;
-- rows of $R_j$ live entirely inside $C_j$, so they **survive intact**.
+- rows of $R\_{j'}$ for $j' \ne j$ touch $C\_{j'}$, which lies inside
+  $C \setminus C\_j$, so they go;
+- rows of $R\_j$ live entirely inside $C\_j$, so they **survive intact**.
 
-What remains is precisely the matrix for $T_j$. The induction goes through
+What remains is precisely the matrix for $T\_j$. The induction goes through
 cleanly. At the bottom, one column with no rows gives `LEN` $= 0$, and step X4
 finds an empty list and backtracks at once — that is a leaf of $T$. Hence the
 whole problem is **unsolvable**, as required.
@@ -168,13 +168,13 @@ In none of these runs, at any step X3, did two columns share the minimum.
 ### 3.1 As printed
 
 > Yes, assuming that duplicate options are permitted. Use the previous
-> construction, but change '$C \setminus C_j$' to '$C$' if $T_j$ is a solution
+> construction, but change $C \setminus C\_j$ to $C$ if $T\_j$ is a solution
 > node. (Without duplicate options, no two solution nodes can be siblings.)
 
 The altered type-(i) row covers `0 1 2` together with all of $C$, leaving
 nothing — which is to say, a solution. And the `LEN` arithmetic survives: for a
-solution leaf $T_j$, every $c \in C_j$ now appears in all $d$ type-(i) rows,
-giving `LEN` $= L_j(c) + d + 2$, still above $d$. Column `2` remains the unique
+solution leaf $T\_j$, every $c \in C\_j$ now appears in all $d$ type-(i) rows,
+giving `LEN` $= L\_j(c) + d + 2$, still above $d$. Column `2` remains the unique
 minimum.
 
 ### 3.2 The counterexample
@@ -230,10 +230,10 @@ shape equals T: true
 ### 3.4 The erratum is a simplification, not a patch
 
 What stands out is that the erratum **deletes** the rule
-$C \setminus C_j \to C$ altogether — and solution leaves are still handled
+$C \setminus C\_j \to C$ altogether — and solution leaves are still handled
 correctly. A solution leaf *is* a root node marked as a solution, considered as
-a subtree, so under the new rule its matrix is empty; hence $C_j = \varnothing$,
-and $C \setminus C_j$ **automatically** equals $C$. The special case the printed
+a subtree, so under the new rule its matrix is empty; hence $C\_j = \varnothing$,
+and $C \setminus C\_j$ **automatically** equals $C$. The special case the printed
 answer spelled out by hand falls out of the base case for free.
 
 A side effect is smaller matrices: one column fewer per solution leaf.
