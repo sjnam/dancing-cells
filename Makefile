@@ -7,8 +7,9 @@
 #
 # examples/words, examples/transversal and examples/hollow are literate programs
 # too (in Korean), typeset with luatex since kotexgweb needs it.
-# taocp-7.2.2.1-exercises holds an audit per exercise; 29-30/verify checks two of
-# Knuth's answers and is in English, so it goes through pdftex like the library.
+# taocp-7.2.2.1-exercises holds one audit per exercise, each with a verify.w that
+# checks Knuth's answer.  They are in English, so they go through pdftex like the
+# library documents; to add another, put its number in EXERCISES below.
 #
 # GTANGLE/GWEAVE are named to avoid GNU Make's built-in TANGLE/WEAVE variables
 # (which point at the CWEB tools).
@@ -23,7 +24,9 @@ MPTOPDF ?= mptopdf
 WORDS := examples/words
 TRANS   := examples/transversal
 HOLLOW  := examples/hollow
-EX2930  := taocp-7.2.2.1-exercises/29-30/verify
+AUDITS  := taocp-7.2.2.1-exercises
+EXERCISES := 29-30 104
+VERIFY  := $(foreach e,$(EXERCISES),$(AUDITS)/$(e)/verify)
 LIB   := dcells ssxcc ssmcc
 
 .PHONY: all build test vet tangle pdf clean
@@ -56,13 +59,16 @@ $(HOLLOW)/hollow.go: $(HOLLOW)/hollow.w
 	cd $(HOLLOW) && $(GTANGLE) hollow.w
 	gofmt -w $(HOLLOW)/hollow.go
 
-$(EX2930)/verify.go: $(EX2930)/verify.w
-	cd $(EX2930) && $(GTANGLE) verify.w
-	gofmt -w $(EX2930)/verify.go
+# A static pattern rule, not an implicit one: the generic `%.pdf: %.w` below
+# would otherwise win for these targets and leave its output in the wrong
+# directory.
+$(addsuffix /verify.go,$(VERIFY)): %/verify.go: %/verify.w
+	cd $* && $(GTANGLE) verify.w
+	gofmt -w $@
 
 tangle: dcells.go ssxcc.go ssmcc.go $(WORDS)/words.go \
         $(TRANS)/transversal.go $(HOLLOW)/hollow.go \
-        $(EX2930)/verify.go
+        $(addsuffix /verify.go,$(VERIFY))
 
 build: tangle
 	$(GO) build ./...
@@ -75,7 +81,7 @@ vet: tangle
 
 # Typeset the literate documents (two passes resolve the cross-references).
 pdf: $(addsuffix .pdf,$(LIB)) $(WORDS)/words.pdf $(TRANS)/transversal.pdf \
-     $(HOLLOW)/hollow.pdf $(EX2930)/verify.pdf
+     $(HOLLOW)/hollow.pdf $(addsuffix /verify.pdf,$(VERIFY))
 
 %.pdf: %.w
 	$(GWEAVE) $<
@@ -99,22 +105,22 @@ $(HOLLOW)/hollow.pdf: $(HOLLOW)/hollow.w
 	cd $(HOLLOW) && $(LUATEX) hollow.tex
 	cd $(HOLLOW) && $(LUATEX) hollow.tex
 
-$(EX2930)/verify.pdf: $(EX2930)/verify.w
-	cd $(EX2930) && $(GWEAVE) verify.w
-	cd $(EX2930) && $(PDFTEX) verify.tex
-	cd $(EX2930) && $(PDFTEX) verify.tex
+$(addsuffix /verify.pdf,$(VERIFY)): %/verify.pdf: %/verify.w
+	cd $* && $(GWEAVE) verify.w
+	cd $* && $(PDFTEX) verify.tex
+	cd $* && $(PDFTEX) verify.tex
 
 # clean removes everything the .w files generate, tangled Go included;
-# `make` (or `make tangle`) puts the Go sources back.  The one thing it spares
-# is $(EX2930)/verify.pdf, which is committed so that the audit can be read
-# without GWEB installed.
+# `make` (or `make tangle`) puts the Go sources back.  The one exception is the
+# verify.pdf files, which are committed so that the audits can be read without
+# GWEB installed.
 clean:
 	rm -f ssxcc_test.go ssmcc_test.go
 	rm -f $(addsuffix .tex,$(LIB)) $(addsuffix .pdf,$(LIB)) \
 	      $(addsuffix .idx,$(LIB)) $(addsuffix .scn,$(LIB)) \
 	      $(addsuffix .log,$(LIB)) $(addsuffix .toc,$(LIB)) $(addsuffix .dvi,$(LIB))
 	rm -f $(WORDS)/words.go $(TRANS)/transversal.go \
-	      $(HOLLOW)/hollow.go $(EX2930)/verify.go
+	      $(HOLLOW)/hollow.go $(addsuffix /verify.go,$(VERIFY))
 	rm -f $(WORDS)/words.tex $(WORDS)/words.pdf $(WORDS)/words.idx \
 	      $(WORDS)/words.scn $(WORDS)/words.log $(WORDS)/words.toc \
 	      $(WORDS)/words.1 $(WORDS)/words.mpx $(WORDS)/words-1.pdf
@@ -123,5 +129,6 @@ clean:
 	      $(TRANS)/transversal.log $(TRANS)/transversal.toc
 	rm -f $(HOLLOW)/hollow.tex $(HOLLOW)/hollow.pdf $(HOLLOW)/hollow.idx \
 	      $(HOLLOW)/hollow.scn $(HOLLOW)/hollow.log $(HOLLOW)/hollow.toc
-	rm -f $(EX2930)/verify.tex $(EX2930)/verify.idx \
-	      $(EX2930)/verify.scn $(EX2930)/verify.log $(EX2930)/verify.toc
+	rm -f $(addsuffix /verify.tex,$(VERIFY)) $(addsuffix /verify.idx,$(VERIFY)) \
+	      $(addsuffix /verify.scn,$(VERIFY)) $(addsuffix /verify.log,$(VERIFY)) \
+	      $(addsuffix /verify.toc,$(VERIFY))
