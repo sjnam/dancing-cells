@@ -198,11 +198,11 @@ of 13. This is an elision in the exposition, not a gap in the mathematics.
 
 The chain ends at $R^{x\_{k-1}} \equiv k$, which says that $x$ is the table of
 indices to base $R$. The converse takes one line: if
-$x\_{k-1} = \operatorname{ind}\_R k$ then
+$x\_{k-1} = \mathrm{ind}\_R k$ then
 
-$$y_{jr} = \operatorname{ind}_R(jr \bmod p) = x_{j-1} + \operatorname{ind}_R r,$$
+$$y_{jr} = \mathrm{ind}_R(jr \bmod p) = x_{j-1} + \mathrm{ind}_R r,$$
 
-so $x \equiv x^{(r)}$ with $c\_r = \operatorname{ind}\_R r$.
+so $x \equiv x^{(r)}$ with $c\_r = \mathrm{ind}\_R r$.
 
 So *perfect* and *table of discrete logarithms* are the same condition, and the
 perfect rows can be counted: one per primitive root modulo $p$, hence

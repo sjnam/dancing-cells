@@ -232,7 +232,7 @@ shape equals T: true
 What stands out is that the erratum **deletes** the rule
 $C \setminus C\_j \to C$ altogether — and solution leaves are still handled
 correctly. A solution leaf *is* a root node marked as a solution, considered as
-a subtree, so under the new rule its matrix is empty; hence $C\_j = \varnothing$,
+a subtree, so under the new rule its matrix is empty; hence $C\_j = \emptyset$,
 and $C \setminus C\_j$ **automatically** equals $C$. The special case the printed
 answer spelled out by hand falls out of the base case for free.
 
