@@ -7,6 +7,8 @@
 #
 # examples/words, examples/transversal and examples/hollow are literate programs
 # too (in Korean), typeset with luatex since kotexgweb needs it.
+# taocp-7.2.2.1-exercises holds an audit per exercise; 29-30/verify checks two of
+# Knuth's answers and is in English, so it goes through pdftex like the library.
 #
 # GTANGLE/GWEAVE are named to avoid GNU Make's built-in TANGLE/WEAVE variables
 # (which point at the CWEB tools).
@@ -21,6 +23,7 @@ MPTOPDF ?= mptopdf
 WORDS := examples/words
 TRANS   := examples/transversal
 HOLLOW  := examples/hollow
+EX2930  := taocp-7.2.2.1-exercises/29-30/verify
 LIB   := dcells ssxcc ssmcc
 
 .PHONY: all build test vet tangle pdf clean
@@ -53,8 +56,13 @@ $(HOLLOW)/hollow.go: $(HOLLOW)/hollow.w
 	cd $(HOLLOW) && $(GTANGLE) hollow.w
 	gofmt -w $(HOLLOW)/hollow.go
 
+$(EX2930)/verify.go: $(EX2930)/verify.w
+	cd $(EX2930) && $(GTANGLE) verify.w
+	gofmt -w $(EX2930)/verify.go
+
 tangle: dcells.go ssxcc.go ssmcc.go $(WORDS)/words.go \
-        $(TRANS)/transversal.go $(HOLLOW)/hollow.go
+        $(TRANS)/transversal.go $(HOLLOW)/hollow.go \
+        $(EX2930)/verify.go
 
 build: tangle
 	$(GO) build ./...
@@ -67,7 +75,7 @@ vet: tangle
 
 # Typeset the literate documents (two passes resolve the cross-references).
 pdf: $(addsuffix .pdf,$(LIB)) $(WORDS)/words.pdf $(TRANS)/transversal.pdf \
-     $(HOLLOW)/hollow.pdf
+     $(HOLLOW)/hollow.pdf $(EX2930)/verify.pdf
 
 %.pdf: %.w
 	$(GWEAVE) $<
@@ -91,6 +99,11 @@ $(HOLLOW)/hollow.pdf: $(HOLLOW)/hollow.w
 	cd $(HOLLOW) && $(LUATEX) hollow.tex
 	cd $(HOLLOW) && $(LUATEX) hollow.tex
 
+$(EX2930)/verify.pdf: $(EX2930)/verify.w
+	cd $(EX2930) && $(GWEAVE) verify.w
+	cd $(EX2930) && $(PDFTEX) verify.tex
+	cd $(EX2930) && $(PDFTEX) verify.tex
+
 # clean removes everything the .w files generate, tangled Go included;
 # `make` (or `make tangle`) puts the Go sources back.
 clean:
@@ -99,7 +112,7 @@ clean:
 	      $(addsuffix .idx,$(LIB)) $(addsuffix .scn,$(LIB)) \
 	      $(addsuffix .log,$(LIB)) $(addsuffix .toc,$(LIB)) $(addsuffix .dvi,$(LIB))
 	rm -f $(WORDS)/words.go $(TRANS)/transversal.go \
-	      $(HOLLOW)/hollow.go
+	      $(HOLLOW)/hollow.go $(EX2930)/verify.go
 	rm -f $(WORDS)/words.tex $(WORDS)/words.pdf $(WORDS)/words.idx \
 	      $(WORDS)/words.scn $(WORDS)/words.log $(WORDS)/words.toc \
 	      $(WORDS)/words.1 $(WORDS)/words.mpx $(WORDS)/words-1.pdf
@@ -108,3 +121,5 @@ clean:
 	      $(TRANS)/transversal.log $(TRANS)/transversal.toc
 	rm -f $(HOLLOW)/hollow.tex $(HOLLOW)/hollow.pdf $(HOLLOW)/hollow.idx \
 	      $(HOLLOW)/hollow.scn $(HOLLOW)/hollow.log $(HOLLOW)/hollow.toc
+	rm -f $(EX2930)/verify.tex $(EX2930)/verify.pdf $(EX2930)/verify.idx \
+	      $(EX2930)/verify.scn $(EX2930)/verify.log $(EX2930)/verify.toc

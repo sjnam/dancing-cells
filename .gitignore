@@ -65,3 +65,13 @@
 /examples/hollow/hollow.log
 /examples/hollow/hollow.toc
 /examples/hollow/hollow
+
+# 연습문제 검증 프로그램도 문학적 프로그램이다: verify.w만 원본이다.
+/taocp-7.2.2.1-exercises/*/verify/verify.go
+/taocp-7.2.2.1-exercises/*/verify/verify.tex
+/taocp-7.2.2.1-exercises/*/verify/verify.idx
+/taocp-7.2.2.1-exercises/*/verify/verify.scn
+/taocp-7.2.2.1-exercises/*/verify/verify.pdf
+/taocp-7.2.2.1-exercises/*/verify/verify.log
+/taocp-7.2.2.1-exercises/*/verify/verify.toc
+/taocp-7.2.2.1-exercises/*/verify/ex29
