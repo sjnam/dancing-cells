@@ -7,8 +7,6 @@
 #
 # examples/words, examples/transversal and examples/hollow are literate programs
 # too (in Korean), typeset with luatex since kotexgweb needs it.
-# examples/transversal-en is the same program told again in English, so it goes
-# through pdftex like the rest.
 #
 # GTANGLE/GWEAVE are named to avoid GNU Make's built-in TANGLE/WEAVE variables
 # (which point at the CWEB tools).
@@ -22,7 +20,6 @@ MPTOPDF ?= mptopdf
 
 WORDS := examples/words
 TRANS   := examples/transversal
-TRANSEN := examples/transversal-en
 HOLLOW  := examples/hollow
 LIB   := dcells ssxcc ssmcc
 
@@ -52,17 +49,12 @@ $(TRANS)/transversal.go: $(TRANS)/transversal.w
 	cd $(TRANS) && $(GTANGLE) transversal.w
 	gofmt -w $(TRANS)/transversal.go
 
-$(TRANSEN)/transversal.go: $(TRANSEN)/transversal.w
-	cd $(TRANSEN) && $(GTANGLE) transversal.w
-	gofmt -w $(TRANSEN)/transversal.go
-
 $(HOLLOW)/hollow.go: $(HOLLOW)/hollow.w
 	cd $(HOLLOW) && $(GTANGLE) hollow.w
 	gofmt -w $(HOLLOW)/hollow.go
 
 tangle: dcells.go ssxcc.go ssmcc.go $(WORDS)/words.go \
-        $(TRANS)/transversal.go $(TRANSEN)/transversal.go \
-        $(HOLLOW)/hollow.go
+        $(TRANS)/transversal.go $(HOLLOW)/hollow.go
 
 build: tangle
 	$(GO) build ./...
@@ -75,7 +67,7 @@ vet: tangle
 
 # Typeset the literate documents (two passes resolve the cross-references).
 pdf: $(addsuffix .pdf,$(LIB)) $(WORDS)/words.pdf $(TRANS)/transversal.pdf \
-     $(TRANSEN)/transversal.pdf $(HOLLOW)/hollow.pdf
+     $(HOLLOW)/hollow.pdf
 
 %.pdf: %.w
 	$(GWEAVE) $<
@@ -94,11 +86,6 @@ $(TRANS)/transversal.pdf: $(TRANS)/transversal.w
 	cd $(TRANS) && $(LUATEX) transversal.tex
 	cd $(TRANS) && $(LUATEX) transversal.tex
 
-$(TRANSEN)/transversal.pdf: $(TRANSEN)/transversal.w
-	cd $(TRANSEN) && $(GWEAVE) transversal.w
-	cd $(TRANSEN) && $(PDFTEX) transversal.tex
-	cd $(TRANSEN) && $(PDFTEX) transversal.tex
-
 $(HOLLOW)/hollow.pdf: $(HOLLOW)/hollow.w
 	cd $(HOLLOW) && $(GWEAVE) hollow.w
 	cd $(HOLLOW) && $(LUATEX) hollow.tex
@@ -111,7 +98,7 @@ clean:
 	rm -f $(addsuffix .tex,$(LIB)) $(addsuffix .pdf,$(LIB)) \
 	      $(addsuffix .idx,$(LIB)) $(addsuffix .scn,$(LIB)) \
 	      $(addsuffix .log,$(LIB)) $(addsuffix .toc,$(LIB)) $(addsuffix .dvi,$(LIB))
-	rm -f $(WORDS)/words.go $(TRANS)/transversal.go $(TRANSEN)/transversal.go \
+	rm -f $(WORDS)/words.go $(TRANS)/transversal.go \
 	      $(HOLLOW)/hollow.go
 	rm -f $(WORDS)/words.tex $(WORDS)/words.pdf $(WORDS)/words.idx \
 	      $(WORDS)/words.scn $(WORDS)/words.log $(WORDS)/words.toc \
@@ -119,8 +106,5 @@ clean:
 	rm -f $(TRANS)/transversal.tex $(TRANS)/transversal.pdf \
 	      $(TRANS)/transversal.idx $(TRANS)/transversal.scn \
 	      $(TRANS)/transversal.log $(TRANS)/transversal.toc
-	rm -f $(TRANSEN)/transversal.tex $(TRANSEN)/transversal.pdf \
-	      $(TRANSEN)/transversal.idx $(TRANSEN)/transversal.scn \
-	      $(TRANSEN)/transversal.log $(TRANSEN)/transversal.toc
 	rm -f $(HOLLOW)/hollow.tex $(HOLLOW)/hollow.pdf $(HOLLOW)/hollow.idx \
 	      $(HOLLOW)/hollow.scn $(HOLLOW)/hollow.log $(HOLLOW)/hollow.toc

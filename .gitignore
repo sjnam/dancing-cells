@@ -65,12 +65,3 @@
 /examples/hollow/hollow.log
 /examples/hollow/hollow.toc
 /examples/hollow/hollow
-
-# 같은 프로그램의 영어판.
-/examples/transversal-en/transversal.go
-/examples/transversal-en/transversal.tex
-/examples/transversal-en/transversal.idx
-/examples/transversal-en/transversal.scn
-/examples/transversal-en/transversal.pdf
-/examples/transversal-en/transversal.log
-/examples/transversal-en/transversal.toc
