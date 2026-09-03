@@ -105,7 +105,9 @@ $(EX2930)/verify.pdf: $(EX2930)/verify.w
 	cd $(EX2930) && $(PDFTEX) verify.tex
 
 # clean removes everything the .w files generate, tangled Go included;
-# `make` (or `make tangle`) puts the Go sources back.
+# `make` (or `make tangle`) puts the Go sources back.  The one thing it spares
+# is $(EX2930)/verify.pdf, which is committed so that the audit can be read
+# without GWEB installed.
 clean:
 	rm -f ssxcc_test.go ssmcc_test.go
 	rm -f $(addsuffix .tex,$(LIB)) $(addsuffix .pdf,$(LIB)) \
@@ -121,5 +123,5 @@ clean:
 	      $(TRANS)/transversal.log $(TRANS)/transversal.toc
 	rm -f $(HOLLOW)/hollow.tex $(HOLLOW)/hollow.pdf $(HOLLOW)/hollow.idx \
 	      $(HOLLOW)/hollow.scn $(HOLLOW)/hollow.log $(HOLLOW)/hollow.toc
-	rm -f $(EX2930)/verify.tex $(EX2930)/verify.pdf $(EX2930)/verify.idx \
+	rm -f $(EX2930)/verify.tex $(EX2930)/verify.idx \
 	      $(EX2930)/verify.scn $(EX2930)/verify.log $(EX2930)/verify.toc

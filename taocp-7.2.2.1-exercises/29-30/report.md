@@ -320,7 +320,9 @@ erratum's construction:
 One program did the work, kept in [`verify/`](verify/). It is a GWEB literate
 program — [`verify.w`](verify/verify.w) is the source, and `gtangle` produces
 the Go from it — so the reasoning above can be read alongside the code that
-justifies it. The program does four things.
+justifies it. The typeset document, [`verify.pdf`](verify/verify.pdf), is
+committed beside the source, so it can be read without installing GWEB. The
+program does four things.
 
 1. **Builds the matrix** from a tree. A `-errata` flag swaps between the
    printed answer 30 and the corrected one.
@@ -347,7 +349,7 @@ cd taocp-7.2.2.1-exercises/29-30/verify && go build -o ex29 .
 ./ex29 -mode ssxcc -errata -spec '((.*.)(*.*))'   # cross-check
 ```
 
-`make pdf` typesets the literate document itself. In a tree spec, `.` is an
+`make pdf` regenerates `verify.pdf` from `verify.w`. In a tree spec, `.` is an
 ordinary leaf, `*` a leaf designated a solution, and parentheses an internal
 node; the example tree of exercise 29 is `((...)(...))`.
 
