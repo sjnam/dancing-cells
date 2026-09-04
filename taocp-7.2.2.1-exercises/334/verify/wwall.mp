@@ -10,7 +10,7 @@
 % The lists below run farthest first, and plain overpainting does the rest.
 
 color lit, dark, pale;
-u    := 0.55bp;                   % small enough for the text block
+u    := 0.42bp;                   % small enough for the text block
 lit  := (.97, .90, .58);        % a face turned towards the light
 dark := (.60, .49, .08);        % one turned away
 pale := white;
@@ -50,13 +50,13 @@ back := image(
   backcube(1,5,3); backcube(2,3,2); backcube(3,1,1); backcube(4,1,3); backcube(1,4,1); backcube(3,2,2); backcube(1,5,2); backcube(2,3,1); backcube(3,3,3);
   backcube(4,1,2); backcube(2,4,2); backcube(3,2,1); backcube(1,5,1); backcube(4,1,1); backcube(5,1,3); backcube(5,1,2); backcube(2,5,1); backcube(5,1,1););
 
-gap := 20bp;
+gap := 16bp;
 pair d;  d := (xpart urcorner front + gap - xpart llcorner back, 0);
 draw front;
 draw back shifted d;
 
 defaultfont := "cmr10";
-defaultscale := .85;
+defaultscale := .8;
 label.bot(btex from the front etex,
   (.5[xpart llcorner front, xpart urcorner front], ypart llcorner front - 9bp));
 label.bot(btex from behind and below etex,
