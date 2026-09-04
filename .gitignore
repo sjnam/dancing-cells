@@ -70,9 +70,12 @@
 # 다만 verify.pdf는 예외로 저장소에 넣는다 --- 이 검증은 저자에게 보낼 것이고,
 # 읽는 이에게 GWEB를 깔라고 할 수는 없다. verify 디렉터리에는 .w와 .pdf뿐이다.
 /taocp-7.2.2.1-exercises/*/verify/verify.go
-/taocp-7.2.2.1-exercises/*/verify/verify.tex
-/taocp-7.2.2.1-exercises/*/verify/verify.idx
-/taocp-7.2.2.1-exercises/*/verify/verify.scn
-/taocp-7.2.2.1-exercises/*/verify/verify.log
-/taocp-7.2.2.1-exercises/*/verify/verify.toc
+/taocp-7.2.2.1-exercises/*/verify/*.tex
+/taocp-7.2.2.1-exercises/*/verify/*.idx
+/taocp-7.2.2.1-exercises/*/verify/*.scn
+/taocp-7.2.2.1-exercises/*/verify/*.log
+/taocp-7.2.2.1-exercises/*/verify/*.toc
+/taocp-7.2.2.1-exercises/*/verify/*.1
+/taocp-7.2.2.1-exercises/*/verify/verify
 /taocp-7.2.2.1-exercises/*/verify/ex29
+/taocp-7.2.2.1-exercises/*/verify/v

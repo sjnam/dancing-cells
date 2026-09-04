@@ -1,9 +1,13 @@
-# TAOCP 7.2.2.1, Exercises 29 and 30: An Audit
+# TAOCP 7.2.2.1, Exercises 29 and 30: A Careful Reading
 
 Written 3 September 2026, against Volume 4B, Addison-Wesley, first printing,
 2022.
 
-## Verdict
+This is one reader's response to the request on Knuth's [news
+page](https://www-cs-faculty.stanford.edu/~knuth/news.html): read an exercise
+and its answer very carefully, then report back.
+
+## What I found
 
 | Item | Finding |
 | --- | --- |
@@ -40,6 +44,9 @@ determined entirely by which item wins the `LEN` contest at each step.
 Exercises 29 and 30 turn that correspondence around. **Given any tree at all,
 can we manufacture an exact cover problem whose Algorithm X backtrack tree is
 exactly that tree?**
+
+![The tree of exercise 29, with the columns the construction gives to each
+node](backtrack.png)
 
 ### Exercise 29 [26]
 

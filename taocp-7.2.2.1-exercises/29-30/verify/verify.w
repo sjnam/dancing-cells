@@ -1,3 +1,5 @@
+\input luamplib.sty
+
 \def\title{Backtrack Trees to Order}
 
 @s Builder int
@@ -33,18 +35,26 @@ certain leaves have been distinguished from the others and designated as
 \par}
 \smallskip
 
+@ Here is the tree the exercise draws, with the columns that the construction
+of answer 29 hands to each of its nodes: one to every leaf, three more to every
+interior node. That is where the fifteen columns of the printed matrix come
+from, and the shape of the tree is the shape of the search.
+
+$$\mplibcode input backtrack; \endmplibcode$$
+
 @ Knuth answers yes to both, by explicit construction. This program checks him.
 
-I wrote it in September 2026 while auditing the two exercises, and it turned up
-one thing worth reporting: answer 30, as printed in the 2022 first edition,
-breaks on exactly one tree---the one-node tree whose root is marked a solution.
+I wrote it in September 2026 while reading the two exercises carefully, and
+it turned up one thing worth reporting: answer 30, as printed in the 2022
+first edition, breaks on exactly one tree---the one-node tree whose root is
+marked a solution.
 Knuth had already caught that. His file of changes to Volume~4B carries the
 correction, dated 22 March 2023, and it does more than patch the corner: it
 deletes a special rule that the corrected base case now supplies for free. Both
-readings live here behind a flag, so the difference can be measured instead of
+versions live here behind a flag, so the difference can be measured instead of
 argued about.
 
-The audit itself, with the numbers this program produced, is the companion
+These notes, with the numbers this program produced, are the companion
 document \.{README.md} in the directory above.
 
 @ Answer 29 builds the matrix by recursion on $T$. A leaf becomes one column with
@@ -240,7 +250,7 @@ type matrix struct {
 }
 
 @ Two globals steer the recursion: the next column number to hand out, and which
-reading of answer 30 to follow. Both are set once per matrix and never touched
+version of answer 30 to follow. Both are set once per matrix and never touched
 during a search, so their being globals costs nothing and saves threading them
 through every call.
 @<Declarations@>=
@@ -250,7 +260,7 @@ var errata bool // follow the erratum rather than the printed answer 30
 @ Here is the recursion itself. The base case is the one line of answer 29---one
 column, no rows---except under the erratum, where a leaf marked as a solution
 gets no column either. That single early return is the whole of the correction,
-and \S3.4 of the audit explains why it suffices: with $C_j$ empty,
+and \S3.4 of the notes explains why it suffices: with $C_j$ empty,
 $C\setminus C_j$ is $C$, which is exactly what the printed answer asked for by
 hand.
 @<Functions@>=
@@ -403,7 +413,7 @@ if empty {
 @ Step X3, the heart of the matter. Exercise 29 asks that a {\it unique\/} item
 attain the minimum every time we get here, so as well as finding the minimum I
 count how many columns share it. Any tie is a failure of the construction, and
-in the whole audit there was never one.
+in all this checking there was never one.
 @<Choose the item of minimum \.{LEN}@>=
 best, least, ties := -1, 1<<30, 0
 for c := range cols {
@@ -641,8 +651,8 @@ for range res.Solutions {
 fmt.Printf("ssxcc: %d solutions, %d nodes  (agrees: %v)\n",
 	got, xc.Nodes(), got == want)
 
-@ The exhaustive sweep is the verdict. Every ordered tree up to a given size,
-every way of designating its leaves, both readings of answer 30. Ten nodes gives
+@ The exhaustive sweep settles it. Every ordered tree up to a given size,
+every way of designating its leaves, both versions of answer 30. Ten nodes gives
 258,564 pairs; the printed answer fails on one of them and the erratum on none.
 @<Try every small tree@>=
 total, bad := 0, 0

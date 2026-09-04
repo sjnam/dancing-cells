@@ -1,9 +1,13 @@
-# TAOCP 7.2.2.1, Exercise 104: An Audit
+# TAOCP 7.2.2.1, Exercise 104: A Careful Reading
 
 Written 3 September 2026, against Volume 4B, Addison-Wesley, first printing,
 2022, and the errata file as of that date.
 
-## Verdict
+This is one reader's response to the request on Knuth's [news
+page](https://www-cs-faculty.stanford.edu/~knuth/news.html): read an exercise
+and its answer very carefully, then report back.
+
+## What I found
 
 | Item | Finding |
 | --- | --- |
@@ -89,6 +93,9 @@ agrees: true
 ```
 
 ### 2.2 The amazing row
+
+![The amazing row read as a path on the twelve pitch classes, from 0 to
+6](allinterval.png)
 
 ```text
 the amazing row [0 1 4 2 9 5 11 3 8 10 7 6]

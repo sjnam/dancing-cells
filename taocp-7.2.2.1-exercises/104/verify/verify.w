@@ -1,4 +1,5 @@
 \input amssym
+\input luamplib.sty
 
 \def\title{Every rth Element}
 
@@ -40,6 +41,13 @@ $x_{n-1}\ldots x_1x_0$. I have quoted the statement as amended on 15~September
 2025; the first printing said ``whenever $k$ is not a multiple of~$p$'' in place
 of the parenthesis about $x_n$.
 
+@ Here is the amazing row itself, read as a path on the twelve pitch classes.
+It starts at $0$ and finishes at $6$, which answer 103(a) says every
+all-interval row must do; the eleven steps between are eleven different
+intervals, which is what part~(a) of this exercise asks one to prove.
+
+$$\mplibcode input allinterval; \endmplibcode$$
+
 @ I wrote this program in September 2026 to check the exercise and its answer.
 Everything in both turned out to be right, so what follows is corroboration
 rather than correction: the printed sequence $x^{(5)}$ is right index for index,
@@ -53,7 +61,7 @@ converse is easy, so the perfect rows are exactly those tables. There are
 $\varphi(n)$ of them for each $n$, one per primitive root, and the amazing row
 of the exercise is the one belonging to the smallest primitive root of~13.
 
-The audit itself is the companion document \.{README.md} in the directory above.
+These notes are the companion document \.{README.md} in the directory above.
 
 @ The program has four things to say, and a flag chooses which.
 @c

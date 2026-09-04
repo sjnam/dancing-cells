@@ -7,9 +7,10 @@
 #
 # examples/words, examples/transversal and examples/hollow are literate programs
 # too (in Korean), typeset with luatex since kotexgweb needs it.
-# taocp-7.2.2.1-exercises holds one audit per exercise, each with a verify.w that
-# checks Knuth's answer.  They are in English, so they go through pdftex like the
-# library documents; to add another, put its number in EXERCISES below.
+# taocp-7.2.2.1-exercises holds one careful reading of an exercise per
+# directory, each with a verify.w that checks Knuth's answer.  They are in
+# English but go through luatex, because one of them draws its figure with
+# luamplib; to add another, put its number in EXERCISES below.
 #
 # GTANGLE/GWEAVE are named to avoid GNU Make's built-in TANGLE/WEAVE variables
 # (which point at the CWEB tools).
@@ -20,13 +21,18 @@ GWEAVE  ?= gweave
 PDFTEX  ?= pdftex
 LUATEX  ?= luatex
 MPTOPDF ?= mptopdf
+MPOST   ?= mpost
+RSVG    ?= rsvg-convert
+MAGICK  ?= magick
 
 WORDS := examples/words
 TRANS   := examples/transversal
 HOLLOW  := examples/hollow
-AUDITS  := taocp-7.2.2.1-exercises
-EXERCISES := 29-30 104
-VERIFY  := $(foreach e,$(EXERCISES),$(AUDITS)/$(e)/verify)
+EXDIR   := taocp-7.2.2.1-exercises
+EXERCISES := 29-30 104 151-152
+FIGS    := $(EXDIR)/29-30/backtrack.png $(EXDIR)/104/allinterval.png \
+           $(EXDIR)/151-152/loop8x12.png
+VERIFY  := $(foreach e,$(EXERCISES),$(EXDIR)/$(e)/verify)
 LIB   := dcells ssxcc ssmcc
 
 .PHONY: all build test vet tangle pdf clean
@@ -81,7 +87,7 @@ vet: tangle
 
 # Typeset the literate documents (two passes resolve the cross-references).
 pdf: $(addsuffix .pdf,$(LIB)) $(WORDS)/words.pdf $(TRANS)/transversal.pdf \
-     $(HOLLOW)/hollow.pdf $(addsuffix /verify.pdf,$(VERIFY))
+     $(HOLLOW)/hollow.pdf $(addsuffix /verify.pdf,$(VERIFY)) $(FIGS)
 
 %.pdf: %.w
 	$(GWEAVE) $<
@@ -105,15 +111,36 @@ $(HOLLOW)/hollow.pdf: $(HOLLOW)/hollow.w
 	cd $(HOLLOW) && $(LUATEX) hollow.tex
 	cd $(HOLLOW) && $(LUATEX) hollow.tex
 
+# A static pattern rule, not an implicit one: the generic `%.pdf: %.w` above
+# would otherwise win for these targets and leave its output in the wrong
+# directory.  These go through luatex because one of them draws its figure
+# with luamplib.
 $(addsuffix /verify.pdf,$(VERIFY)): %/verify.pdf: %/verify.w
 	cd $* && $(GWEAVE) verify.w
-	cd $* && $(PDFTEX) verify.tex
-	cd $* && $(PDFTEX) verify.tex
+	cd $* && $(LUATEX) verify.tex
+	cd $* && $(LUATEX) verify.tex
+
+# A figure that both verify.w and README.md show is drawn once, in MetaPost:
+# luamplib runs the .mp while the document is typeset, and mpost runs it again
+# on its own to make the picture the README displays.  Arguments: the exercise
+# directory, the figure name, and how wide the raster should be.
+define figure
+$$(EXDIR)/$(1)/$(2).png: $$(EXDIR)/$(1)/verify/$(2).mp
+	cd $$(EXDIR)/$(1)/verify && \
+	  $$(MPOST) -s 'outputformat="svg"' '\input $(2); end.' </dev/null
+	$$(RSVG) -w $(3) $$(EXDIR)/$(1)/verify/$(2).1 -o $$@
+	$$(MAGICK) $$@ -bordercolor white -border 16 $$@
+	rm -f $$(EXDIR)/$(1)/verify/$(2).1 $$(EXDIR)/$(1)/verify/$(2).log
+$$(EXDIR)/$(1)/verify/verify.pdf: $$(EXDIR)/$(1)/verify/$(2).mp
+endef
+$(eval $(call figure,29-30,backtrack,900))
+$(eval $(call figure,104,allinterval,700))
+$(eval $(call figure,151-152,loop8x12,1800))
 
 # clean removes everything the .w files generate, tangled Go included;
 # `make` (or `make tangle`) puts the Go sources back.  The one exception is the
-# verify.pdf files, which are committed so that the audits can be read without
-# GWEB installed.
+# verify.pdf files, which are committed so that they can be read without GWEB
+# installed.
 clean:
 	rm -f ssxcc_test.go ssmcc_test.go
 	rm -f $(addsuffix .tex,$(LIB)) $(addsuffix .pdf,$(LIB)) \
@@ -132,3 +159,4 @@ clean:
 	rm -f $(addsuffix /verify.tex,$(VERIFY)) $(addsuffix /verify.idx,$(VERIFY)) \
 	      $(addsuffix /verify.scn,$(VERIFY)) $(addsuffix /verify.log,$(VERIFY)) \
 	      $(addsuffix /verify.toc,$(VERIFY))
+	rm -f $(EXDIR)/*/verify/*.1 $(EXDIR)/*/verify/*.log
