@@ -1,0 +1,30 @@
+% Written by metapost version 3.00
+begingroup save _p,_r,_s,_n; picture _p; _p=nullpicture;
+string _n[];
+vardef _s(expr _t,_f,_m,_x,_y)(text _c)=
+  addto _p also _t infont _f scaled _m shifted (_x,_y) _c; enddef;
+_n0="cmr10";
+_s("from",_n0,1.00000,0.0000,0.0000,);
+_s("the",_n0,1.00000,23.5506,0.0000,);
+_s("fron",_n0,1.00000,40.7085,0.0000,);
+_s("t",_n0,1.00000,57.8941,0.0000,);
+setbounds _p to (0,0.0000)--(61.7685,0.0000)--
+ (61.7685,6.9185)--(0,6.9185)--cycle;
+_p endgroup
+mpxbreak
+begingroup save _p,_r,_s,_n; picture _p; _p=nullpicture;
+string _n[];
+vardef _s(expr _t,_f,_m,_x,_y)(text _c)=
+  addto _p also _t infont _f scaled _m shifted (_x,_y) _c; enddef;
+_n0="cmr10";
+_s("from",_n0,1.00000,0.0000,0.0000,);
+_s("b",_n0,1.00000,23.5506,0.0000,);
+_s("ehind",_n0,1.00000,29.3622,0.0000,);
+_s("and",_n0,1.00000,56.4828,0.0000,);
+_s("b",_n0,1.00000,75.8546,0.0000,);
+_s("elo",_n0,1.00000,81.6662,0.0000,);
+_s("w",_n0,1.00000,93.5660,0.0000,);
+setbounds _p to (0,0.0000)--(100.7613,0.0000)--
+ (100.7613,6.9185)--(0,6.9185)--cycle;
+_p endgroup
+mpxbreak

@@ -31,7 +31,7 @@ HOLLOW  := examples/hollow
 EXDIR   := taocp-7.2.2.1-exercises
 EXERCISES := 29-30 104 151-152 334
 FIGS    := $(EXDIR)/29-30/backtrack.png $(EXDIR)/104/allinterval.png \
-           $(EXDIR)/151-152/loop8x12.png
+           $(EXDIR)/151-152/loop8x12.png $(EXDIR)/334/wwall.png
 VERIFY  := $(foreach e,$(EXERCISES),$(EXDIR)/$(e)/verify)
 LIB   := dcells ssxcc ssmcc
 
@@ -129,13 +129,14 @@ $$(EXDIR)/$(1)/$(2).png: $$(EXDIR)/$(1)/verify/$(2).mp
 	cd $$(EXDIR)/$(1)/verify && \
 	  $$(MPOST) -s 'outputformat="svg"' '\input $(2); end.' </dev/null
 	$$(RSVG) -w $(3) $$(EXDIR)/$(1)/verify/$(2).1 -o $$@
-	$$(MAGICK) $$@ -bordercolor white -border 16 $$@
+	$$(MAGICK) $$@ -trim +repage -bordercolor white -border 16 $$@
 	rm -f $$(EXDIR)/$(1)/verify/$(2).1 $$(EXDIR)/$(1)/verify/$(2).log
 $$(EXDIR)/$(1)/verify/verify.pdf: $$(EXDIR)/$(1)/verify/$(2).mp
 endef
 $(eval $(call figure,29-30,backtrack,900))
 $(eval $(call figure,104,allinterval,700))
 $(eval $(call figure,151-152,loop8x12,1800))
+$(eval $(call figure,334,wwall,1500))
 
 # clean removes everything the .w files generate, tangled Go included;
 # `make` (or `make tangle`) puts the Go sources back.  The one exception is the

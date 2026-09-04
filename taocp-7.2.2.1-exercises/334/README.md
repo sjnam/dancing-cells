@@ -43,6 +43,13 @@ use:
 
 $$(x, y, z) \mapsto (30x - 42y,\ 14x + 10y + 45z)\,u$$
 
+Here is one of the façades this reading finds. From the front it cannot be told
+from the W-wall of Fig. 75; from behind you can see straight through it, and
+the two cubies doing the cheating.
+
+![One W-wall façade, drawn from the front and then from behind and
+below](wwall.png)
+
 ## 2. What the projection fixes
 
 The three axes go to (30, 14), (−42, 10) and (0, 45): z straight up, x to the

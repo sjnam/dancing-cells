@@ -1,3 +1,5 @@
+\input luamplib.sty
+
 \datethis
 \def\title{Hollywood Soma}
 
@@ -17,6 +19,12 @@ The whole thing turns on one sentence of the exercise: the pictures use the
 skew projection $(x,y,z)\mapsto(30x-42y,\,14x+10y+45z)u$. That fixes which
 cubies you can see and which ones hide behind them, and everything else
 follows.
+
+Here is one of the fa\c cades this program finds, drawn from in front and then
+from behind and below. From the front it cannot be told from the W-wall; from
+behind you can see the daylight through it, and the two cubies that are doing
+the cheating.
+$$\mplibcode input wwall; \endmplibcode$$
 
 @c
 package main
