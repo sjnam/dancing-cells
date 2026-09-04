@@ -507,10 +507,7 @@ answer cheaper, so it is a valid lower bound — and a strong one, because it is
 the exact optimum of a subproblem rather than an estimate. Branching by dancing
 cells, bounding by Hungarian: the write-up, which began with Brahms, calls it
 the *Hungarian Dance technique* — a name for where two existing algorithms are
-made to mesh, not a new procedure. It exists in two languages —
-[Korean](examples/transversal/transversal.w) and
-[English](examples/transversal-en/transversal.w) — telling the same program
-twice.
+made to mesh, not a new procedure.
 
 ````console
 $ go run ./examples/transversal -plain 9
