@@ -29,10 +29,10 @@ WORDS := examples/words
 TRANS   := examples/transversal
 HOLLOW  := examples/hollow
 EXDIR   := taocp-7.2.2.1-exercises
-EXERCISES := 29-30 55 104 129 147 151-152 305-306 320 334
+EXERCISES := 29-30 55 104 129 147 151-152 305-306 320 323 334
 FIGS    := $(EXDIR)/29-30/backtrack.png $(EXDIR)/104/allinterval.png \
            $(EXDIR)/151-152/loop8x12.png $(EXDIR)/320/convex56.png \
-           $(EXDIR)/334/wwall.png
+           $(EXDIR)/323/tetraskews.png $(EXDIR)/334/wwall.png
 VERIFY  := $(foreach e,$(EXERCISES),$(EXDIR)/$(e)/verify)
 LIB   := dcells ssxcc ssmcc
 
@@ -138,6 +138,7 @@ $(eval $(call figure,29-30,backtrack,900))
 $(eval $(call figure,104,allinterval,700))
 $(eval $(call figure,151-152,loop8x12,1800))
 $(eval $(call figure,320,convex56,1500))
+$(eval $(call figure,323,tetraskews,1400))
 $(eval $(call figure,334,wwall,1500))
 
 # clean removes everything the .w files generate, tangled Go included;
