@@ -12,16 +12,16 @@ and its answer very carefully, then report back.
 | Item | Finding |
 | --- | --- |
 | Exercises 305 and 306 (statements) | No error. |
-| Answer 305, the coordinate scheme | Correct, and the four printed placements are one piece. |
-| Answer 305(a), 4 · 183 and "each piece has exactly four such options" | Reproduced exactly. |
-| Answer 305(a), "eight classes … whose large squares form a symmetric shape" | Right, under a reading the text does not state. |
-| Answer 305(b), 501484 = 2 · 4 + 4 · 125369, and the 164 | Reproduced exactly. |
+| Answer 305, the coordinates | Right; its four placements are one piece. |
+| Answer 305(a), 4 · 183, and four options per piece | Reproduced exactly. |
+| Answer 305(a), the eight symmetric-shape classes | Right; see section 4. |
+| Answer 305(b), 501484 and the 164 | Reproduced exactly. |
 | Answer 305(c), 288 = 2 · 4 + 4 · 70 | Reproduced exactly. |
 | Answer 305(d), 2 · 2696, 2 · 95, 2 · 3 | Reproduced exactly. |
 | Answer 305(e), 69120 and 157398 | Reproduced exactly. |
-| Answer 306, (0, 0, 4 · 9, 8 · 8) | Reproduced exactly, once two unstated restrictions are honoured. |
+| Answer 306, (0, 0, 4 · 9, 8 · 8) | Right; two restrictions go unsaid. |
 | Answer 306, six spurious classes and eleven solutions | Reproduced exactly. |
-| Answer 306, "five of the eleven … don't have this defect" | Right, under a reading the text does not state. |
+| Answer 306, five of eleven without the defect | Right; see section 9. |
 
 Every number in both answers came out. Two of them came out only after working
 out what a phrase had to mean; those are sections 4 and 9 below, and they are
@@ -71,8 +71,10 @@ are different pieces.
 The check that this is the right set is the one the answer hands over. It
 prints four placements of "the leftmost piece":
 
-$$\{13, 15, 12, 23\},\quad \{33, 53, 23, 32\},\quad \{33, 31, 34, 23\},\quad
-\{31, 11, 41, 32\}.$$
+$$
+\{13, 15, 12, 23\},\quad \{33, 53, 23, 32\},\quad
+\{33, 31, 34, 23\},\quad \{31, 11, 41, 32\}.
+$$
 
 They are indeed the four quarter turns of a single piece, and that piece is one
 of my ten.
@@ -126,7 +128,7 @@ as drawn in the box is left-right or top-bottom symmetric.
 
 To be sure, I recovered all six printed pictures cell by cell:
 
-```
+```text
 #####      ##.##      .#.#.      ###        #.#        .#.
 ..#..      .#.#.      .#.#.      ###        #.#        ###
 ..#..      .#.#.      ##.##      .#.        #.#        ###
@@ -138,7 +140,7 @@ frame, so both readings agree on them; but only the narrow reading gives eight.
 The five classes whose large squares are symmetric about a *diagonal* are not
 among the answer's eight — for example
 
-```
+```text
 .##
 ###
 ###
@@ -151,7 +153,7 @@ is carried to itself by the main diagonal, but by nothing else.
 | | Answer | Here |
 | --- | --- | --- |
 | (b) 4 × 5, options | — | 396 |
-| (b) solutions | 501484 = 2 · 4 + 4 · 125369 | **501,484**: 4 classes of 2, 125,369 of 4 |
+| (b) solutions | 2 · 4 + 4 · 125369 | **501,484**: 4 of 2, 125,369 of 4 |
 | (c) 2 × 10, options | — | 240 |
 | (c) solutions | 288 = 2 · 4 + 4 · 70 | **288**: 4 classes of 2, 70 of 4 |
 
@@ -168,16 +170,17 @@ as many arrangements as its stabilizer allows, never simply the group order.
 
 The upper layer has to fill a rectangle of twenty small squares, which is
 tilted 45° relative to the large grid. Answer 305 gives its corners, and they
-check out as rectangles in the small-square lattice: 4 × 5 for part (d), 2 × 10
-for both cases of part (e).
+check out as rectangles in the small-square lattice: {47, 74, 8b, b8} is 4 × 5
+for part (d), and {34, 43, cd, dc} and {45, 54, de, ed} are each 2 × 10 for the
+two cases of part (e).
 
 | | Answer | Here |
 | --- | --- | --- |
-| (d) 7 × 7, corners {47, 74, 8b, b8} | 2 · 2696, all asymmetric | **5,392**, 2,696 classes of 2, none symmetric |
+| (d) 7 × 7 | 2 · 2696, all asymmetric | **5,392**, 2,696 classes of 2 |
 | (d) fitting a 5 × 5 box | 2 · 95 | **190** |
 | (d) the printed symmetric shape | 2 · 3 | **6** |
-| (e) 8 × 8, corners {34, 43, cd, dc} | 69120 = 2 · 4 + 4 · 17278 | **69,120**: 4 classes of 2, 17,278 of 4 |
-| (e) 9 × 9, corners {45, 54, de, ed} | 157398 = 2 · 75 + 4 · 39312 | **157,398**: 75 classes of 2, 39,312 of 4 |
+| (e) 8 × 8 | 2 · 4 + 4 · 17278 | **69,120**: 4 classes of 2, 17,278 of 4 |
+| (e) 9 × 9 | 2 · 75 + 4 · 39312 | **157,398**: 75 classes of 2, 39,312 of 4 |
 
 The "2 · 3" needed pinning down. Fourteen distinct large-square shapes among
 the 5,392 arrangements are symmetric, and three of them are realised by exactly
@@ -186,7 +189,7 @@ read the upper layer off the printed picture instead — the ten white dominoes
 of its 5 × 4 grid — and searched for arrangements with that upper layer. There
 are 37, and exactly one has a symmetric large-square shape:
 
-```
+```text
 .###.
 ####.
 #####

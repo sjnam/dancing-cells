@@ -12,13 +12,13 @@ and its answer very carefully, then report back.
 | Item | Finding |
 | --- | --- |
 | Exercise 55 (statement) | No error. |
-| Answer 55, the lower bound | Correct, and its argument checks out cell by cell. |
+| Answer 55, the lower bound | Correct; the argument checks out cell by cell. |
 | Answer 55, the 18-clue puzzle for (28a) | Genuine. One of exactly 189. |
 | Answer 55, "18 clues impossible" for (28b) | Confirmed. |
 | Answer 55, "19 clues impossible" for (28b) | Confirmed. |
 | Answer 55, the 20-clue puzzle for (28b) | Genuine. One of exactly 648. |
-| Answer 55, the transfer to (28c) | Confirmed, and answer 43's formula holds as printed. |
-| Answer 55, "the 2043 subsets" | Confirmed: the minimal unavoidable sets of at most 18 cells number exactly 2043. |
+| Answer 55, the transfer to (28c) | Confirmed; answer 43's formula holds. |
+| Answer 55, "the 2043 subsets" | Confirmed: they are the minimal ones. |
 
 Everything in the answer is right. What this reading adds is a different route
 to the negative half — the part where the answer says only that a SAT instance
@@ -71,7 +71,7 @@ very uniform:
 | --- | --- | --- |
 | minimal unavoidable sets of 6 cells | 81 | 162 |
 | of 7, 8, 9, 10, 11 cells | 0 | 0 |
-| completions when one is blanked | exactly 2, every time | exactly 2, every time |
+| completions when one is blanked | always exactly 2 | always exactly 2 |
 
 Each was tested on its own terms, without reference to the search that found
 it: blank the six cells, give all seventy-five others, and count the ways to
@@ -125,7 +125,7 @@ and that is *all* of them. The printed puzzles confirm the shape:
 ## 6. Why (28a) needs 18 and (28b) needs 20
 
 The two squares are indistinguishable so far: same bound, same nine groups,
-same nine usable pairs per group, same 9<sup>9</sup> candidates. The answer
+same nine usable pairs per group, same $9^9$ candidates. The answer
 says only that (28b)'s SAT instance came back unsatisfiable. The difference is
 this:
 
@@ -207,15 +207,18 @@ failed to find Knuth's own puzzles, and it finds both.
 The answer closes with a parenthesis: the constructions for (28b) apply to
 (28c) through the isotopism of answer 43. Answer 43 gives it as
 
-$$c'_{ij} = b'_{(i\pi)(j\pi^-)}\pi, \qquad (i\_1, i\_0)\_3\pi = (i\_1, (i\_0+i\_1) \bmod 3)\_3$$
+$$
+c'_{ij} = b'_{(i\pi)(j\pi^-)}\pi, \qquad
+(i\_1, i\_0)\_3\pi = (i\_1, (i\_0+i\_1) \bmod 3)\_3
+$$
 
 with $\pi$ on the row index, its inverse on the column index, and $\pi$ again on
 the digit. Rather than trust a reading of that, the program searches for the
 isotopism among the permutations a sudoku allows. It finds
 
-* rows `[0 1 2 5 3 4 7 8 6]`, which is $\pi^{-1}$;
-* columns `[0 1 2 4 5 3 8 6 7]`, which is $\pi$;
-* digits `[0 1 2 4 5 3 8 6 7]`, which is $\pi$ again.
+- rows `[0 1 2 5 3 4 7 8 6]`, which is $\pi^{-1}$;
+- columns `[0 1 2 4 5 3 8 6 7]`, which is $\pi$;
+- digits `[0 1 2 4 5 3 8 6 7]`, which is $\pi$ again.
 
 Rewritten, that is exactly the printed formula, and the program also checks the
 formula in that shape directly. The constructions then carry over: the nine

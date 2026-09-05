@@ -17,7 +17,7 @@ and its answer very carefully, then report back.
 | Answer 147(b), the catalogue | 23 of its 24 lines reproduce exactly. |
 | Answer 147(b), the 2×2×4 line | Four of its six entries disagree. |
 | Answer 147(b), the closing parenthesis | Both near misses confirmed. |
-| The cube names in answer 147(a) | Correct, but only under a handedness the text never states. |
+| The cube names in answer 147(a) | Right, under an unstated handedness. |
 
 Almost everything comes out. The two arrays the answer prints are genuine
 bricks; the factor of 720 is exact; the remark that a repeated face colour only
@@ -144,18 +144,22 @@ smaller claims —
 | 1 × 2 × 2 | 3 solutions, two bricks with 8 and 16 automorphisms | 3, same |
 | 1 × 2 × 3 | unique, ab × cc × dd, 8 automorphisms | same |
 | 2 × 2 × 2 | 26 = 48/24 + 48/8 + 48/4 + 48/8 | 26, same |
-| 2 × 2 × 2 face colours | MacMahon ab × cd × ef, Kowalewski aa × bb × cd, Winter and the fourth aa × bc × de | same |
+| 2 × 2 × 2 face colours | the four patterns named below | same |
 | no 3 × 3 × 3 brick | — | 0 solutions |
-| a 3 × 3 × 3 less a corner | from 26 of the 30 | 66 solutions, all 26 cells |
-| less the middle cube and the one above it | from 25 of the 30 | 80 solutions, all 25 cells |
-| a repeated face colour is only ever on parallel faces | — | holds in every solution of every case |
+| a 3 × 3 × 3 less a corner | from 26 of 30 | 66, all 26 cells |
+| less the middle cube and the one above | from 25 of 30 | 80, all 25 cells |
+| a repeated face colour only on parallel faces | — | holds everywhere |
+
+The four patterns of face colours on a 2 × 2 × 2 brick are MacMahon's
+`ab × cd × ef`, Kowalewski's `aa × bb × cd`, and `aa × bc × de` for both
+Winter's brick and the fourth one.
 
 The catalogue lists no case beyond 2 × 3 × 5. That is right: 2 × 2 × 6 and
 2 × 2 × 7 both fit inside thirty cubes, and both have no solutions at all.
 
 ### The 2 × 2 × 4 line
 
-```
+```text
                     the answer     here
 aa x bb x cc      (0,  0, 1, 0)  (0,  0, 1, 0)
 aa x bb x cd      (0,  0, 1, 0)  (0,  0, 1, 0)
