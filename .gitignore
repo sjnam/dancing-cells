@@ -75,6 +75,7 @@
 /taocp-7.2.2.1-exercises/*/verify/*.scn
 /taocp-7.2.2.1-exercises/*/verify/*.log
 /taocp-7.2.2.1-exercises/*/verify/*.toc
+/taocp-7.2.2.1-exercises/*/verify/*.mpx
 /taocp-7.2.2.1-exercises/*/verify/*.1
 /taocp-7.2.2.1-exercises/*/verify/verify
 /taocp-7.2.2.1-exercises/*/verify/ex29
