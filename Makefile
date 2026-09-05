@@ -29,7 +29,7 @@ WORDS := examples/words
 TRANS   := examples/transversal
 HOLLOW  := examples/hollow
 EXDIR   := taocp-7.2.2.1-exercises
-EXERCISES := 29-30 55 104 147 151-152 305-306 320 334
+EXERCISES := 29-30 55 104 129 147 151-152 305-306 320 334
 FIGS    := $(EXDIR)/29-30/backtrack.png $(EXDIR)/104/allinterval.png \
            $(EXDIR)/151-152/loop8x12.png $(EXDIR)/320/convex56.png \
            $(EXDIR)/334/wwall.png
