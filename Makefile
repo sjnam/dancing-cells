@@ -29,9 +29,10 @@ WORDS := examples/words
 TRANS   := examples/transversal
 HOLLOW  := examples/hollow
 EXDIR   := taocp-7.2.2.1-exercises
-EXERCISES := 29-30 55 104 147 151-152 305-306 334
+EXERCISES := 29-30 55 104 147 151-152 305-306 320 334
 FIGS    := $(EXDIR)/29-30/backtrack.png $(EXDIR)/104/allinterval.png \
-           $(EXDIR)/151-152/loop8x12.png $(EXDIR)/334/wwall.png
+           $(EXDIR)/151-152/loop8x12.png $(EXDIR)/320/convex56.png \
+           $(EXDIR)/334/wwall.png
 VERIFY  := $(foreach e,$(EXERCISES),$(EXDIR)/$(e)/verify)
 LIB   := dcells ssxcc ssmcc
 
@@ -136,6 +137,7 @@ endef
 $(eval $(call figure,29-30,backtrack,900))
 $(eval $(call figure,104,allinterval,700))
 $(eval $(call figure,151-152,loop8x12,1800))
+$(eval $(call figure,320,convex56,1500))
 $(eval $(call figure,334,wwall,1500))
 
 # clean removes everything the .w files generate, tangled Go included;
@@ -160,4 +162,4 @@ clean:
 	rm -f $(addsuffix /verify.tex,$(VERIFY)) $(addsuffix /verify.idx,$(VERIFY)) \
 	      $(addsuffix /verify.scn,$(VERIFY)) $(addsuffix /verify.log,$(VERIFY)) \
 	      $(addsuffix /verify.toc,$(VERIFY))
-	rm -f $(EXDIR)/*/verify/*.1 $(EXDIR)/*/verify/*.log
+	rm -f $(EXDIR)/*/verify/*.1 $(EXDIR)/*/verify/*.log $(EXDIR)/*/verify/*.mpx
