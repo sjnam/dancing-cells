@@ -140,8 +140,8 @@ $N = 20$, 30 and 40, with no failures.
 ## 7. O'Beirne's parity, and which five
 
 Now the pretty part. Answer 320 says that exactly five tetraboloes, namely
-$\{E, G, J, K, L\}$, "have an odd number of unmatched $\sqrt2$ sides in each
-direction", and concludes that $a + c$ and $b + d$ must be odd.
+$\lbrace E, G, J, K, L\rbrace$, "have an odd number of unmatched $\sqrt2$
+sides in each direction", and concludes that $a + c$ and $b + d$ must be odd.
 
 A halfsquare's hypotenuse is its cell's diagonal, and it is unmatched when the
 other half of that cell is not in the piece. Counting those for each of the

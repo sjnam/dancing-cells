@@ -154,7 +154,8 @@ and dividing by the stabilizer order $s$ gives
 
 $$
 |O \cap W(h)| \;=\;
-\frac{24 \cdot \#\{g \in H : g^{-1} h g \text{ is weak for } p\}}{s}.
+\frac{24 \cdot \bigl| \lbrace g \in H :
+  g^{-1} h g \text{ is weak for } p \rbrace \bigr|}{s}.
 $$
 
 For the half-turn, which is central, the numerator is $24 \cdot 12 = 288$, so
@@ -225,8 +226,8 @@ here by a factor of two, so an error in either would have shown.
 ## 8. Weak symmetry under a top-down reflection
 
 These are the three reflections that fix no triangle. The model gives each
-orbit $\{t, \tau(t)\}$ one patch item, read through $\tau$ from the second
-triangle so that both report the same value.
+orbit $\lbrace t, \tau(t)\rbrace$ one patch item, read through $\tau$ from
+the second triangle so that both report the same value.
 
 By section 4 each weak-but-not-strong class contributes 96 placements and each
 strong class 48:

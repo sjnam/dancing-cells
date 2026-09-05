@@ -100,9 +100,9 @@ rather than out of a table.
 ## 4. The dual, and the tetromino types
 
 Sliding a shape by $(1,1)$ is an involution on the ten tetraskews. It fixes
-**four** of them and swaps the other **six** in three pairs — which is answer
-323's "$K \leftrightarrow L$, $S \leftrightarrow Z$, $U \leftrightarrow V$ are
-swapped", with the other four left alone.
+**four** of them and swaps the other **six** in three pairs — which is what
+answer 323 records as $K \leftrightarrow L$, $S \leftrightarrow Z$,
+$U \leftrightarrow V$ swapped, with the other four left alone.
 
 That also recovers the multiset the answer names. Forget the skew and a
 tetraskew becomes a tetromino; the dual fixes a piece exactly when the piece is

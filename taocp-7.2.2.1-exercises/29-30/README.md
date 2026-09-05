@@ -70,10 +70,10 @@ node](backtrack.png)
 > $T$ have $d \ge 1$ subtrees $T\_1, \ldots, T\_d$, and assume that we've
 > constructed matrices with rows $R\_j$ and columns $C\_j$ for each $T\_j$. Let
 > $C = C\_1 \cup \cdots \cup C\_d$. The matrix for $T$ is obtained by appending
-> three new columns $\{0, 1, 2\}$ and the following new rows: (i) `0 1 2` and
-> all columns of $C \setminus C\_j$, for $1 \le j \le d$; (ii) $j$ and all
-> columns of $C$, for $j \in \{0, 1\}$. The matrix for the example tree has 15
-> columns and 14 rows.
+> three new columns $\lbrace 0, 1, 2\rbrace$ and the following new rows:
+> (i) `0 1 2` and all columns of $C \setminus C\_j$, for $1 \le j \le d$;
+> (ii) $j$ and all columns of $C$, for $j \in \lbrace 0, 1\rbrace$. The matrix
+> for the example tree has 15 columns and 14 rows.
 
 ### 2.1 Reproducing the printed matrix
 

@@ -72,8 +72,8 @@ The check that this is the right set is the one the answer hands over. It
 prints four placements of "the leftmost piece":
 
 $$
-\{13, 15, 12, 23\},\quad \{33, 53, 23, 32\},\quad
-\{33, 31, 34, 23\},\quad \{31, 11, 41, 32\}.
+\lbrace 13, 15, 12, 23\rbrace,\quad \lbrace 33, 53, 23, 32\rbrace,\quad
+\lbrace 33, 31, 34, 23\rbrace,\quad \lbrace 31, 11, 41, 32\rbrace.
 $$
 
 They are indeed the four quarter turns of a single piece, and that piece is one
@@ -107,9 +107,10 @@ secondary one, and nothing else changes.
 ## 4. Part (a), and what "a symmetric shape" means
 
 Part (a) is a 5 × 5 box with the small squares of every option restricted to
-one of the four blades $\{34,45\}$, $\{47,56\}$, $\{76,65\}$, $\{63,54\}$ — a
-pinwheel turning about the middle of the box. Only four pieces are used, so the
-piece items are secondary; the eight small squares are the primary ones.
+one of the four blades $\lbrace 34,45\rbrace$, $\lbrace 47,56\rbrace$,
+$\lbrace 76,65\rbrace$, $\lbrace 63,54\rbrace$ — a pinwheel turning about the
+middle of the box. Only four pieces are used, so the piece items are secondary;
+the eight small squares are the primary ones.
 
 | | Answer | Here |
 | --- | --- | --- |

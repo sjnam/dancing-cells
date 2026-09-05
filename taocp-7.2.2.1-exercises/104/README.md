@@ -32,9 +32,9 @@ the smallest primitive root of 13.
 ## 1. What the exercise asks
 
 An $n$-tone row is a permutation $x = x\_0x\_1\ldots x\_{n-1}$ of
-$\{0, 1, \ldots, n-1\}$. Two rows are *equivalent* when they differ by a
-transposition, that is, when $x'\_k = (x\_k + d) \bmod n$ for some fixed $d$.
-Exercise 103 studies rows whose $n - 1$ adjacent intervals
+$\lbrace 0, 1, \ldots, n-1\rbrace$. Two rows are *equivalent* when they differ
+by a transposition, that is, when $x'\_k = (x\_k + d) \bmod n$ for some fixed
+$d$. Exercise 103 studies rows whose $n - 1$ adjacent intervals
 $(x\_k - x\_{k-1}) \bmod n$ are all different — the *all-interval* rows.
 
 Exercise 104 assumes $n + 1 = p$ is prime and defines "every $r\text{th}$ element":
@@ -135,8 +135,8 @@ multiple of $p$, so $x^{(r)}$ is always a genuine $n$-tone row.
 > $y\_{r^2} = x\_{(r^2-1) \bmod p} \equiv x\_{r-1} + c\_r \equiv 2c\_r$;
 > $y\_{r^3} = x\_{(r^3-1) \bmod p} \equiv x\_{(r^2-1) \bmod p} + c\_r \equiv 3c\_r$;
 > etc. Let $r$ be primitive modulo $p$, so that
-> $\{r \bmod p, \ldots, r^n \bmod p\} = \{1, \ldots, p-1\}$, and let $R = r^d$
-> where $c\_r d \bmod n = 1$. Then we've proved
+> $\lbrace r \bmod p, \ldots, r^n \bmod p\rbrace = \lbrace 1, \ldots, p-1\rbrace$,
+> and let $R = r^d$ where $c\_r d \bmod n = 1$. Then we've proved
 > $R^{x\_{(r^k-1) \bmod p}} \equiv (r^k \bmod p)$ (modulo $p$) for
 > $1 \le k \le n$; that is, $R^{x\_{k-1}} \equiv k$.
 >
@@ -163,7 +163,7 @@ Every step holds.
   intervals give $(k+1)l \equiv k(l+1)$, that is $l \equiv k \pmod p$; and
   $1 \le k, l \le n < p$, so $k = l$. The $n - 1$ intervals are therefore
   distinct, and none is zero because $x$ is a permutation, so they are exactly
-  $\{1, \ldots, n-1\}$.
+  $\lbrace 1, \ldots, n-1\rbrace$.
 
 ### 3.2 The one step left implicit
 
@@ -174,8 +174,9 @@ It is true, and the reason is the clause immediately before it. Because $r$ is
 primitive, $(r^k - 1) \bmod p$ runs through all of $0, \ldots, n-1$ as $k$ runs
 through $1, \ldots, n$; so the left sides of
 $x\_{(r^k-1) \bmod p} \equiv k c\_r$ exhaust the permutation $x$, forcing the
-values $k c\_r \bmod n$ to exhaust $\{0, \ldots, n-1\}$, which happens only when
-$c\_r$ generates the additive group — that is, when $\gcd(c\_r, n) = 1$.
+values $k c\_r \bmod n$ to exhaust $\lbrace 0, \ldots, n-1\rbrace$, which
+happens only when $c\_r$ generates the additive group — that is, when
+$\gcd(c\_r, n) = 1$.
 
 The restriction to primitive $r$ is doing real work here, and dropping it would
 break the step. For the amazing row, $c\_r$ turns out to be the index of $r$, so
