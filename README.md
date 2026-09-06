@@ -718,22 +718,22 @@ literate program in `verify/verify.w`, with `verify/verify.pdf` beside it so it
 can be read without installing GWEB. Nothing is claimed that the program does
 not check.
 
-| Exercise | Subject | What came out |
+| Exercise | What the news page asks | What came out |
 | --- | --- | --- |
-| [29, 30](taocp-7.2.2.1-exercises/029-030) | search trees of Algorithm X | answer 30 is broken by the one-node tree |
-| [55](taocp-7.2.2.1-exercises/055) | symmetric sudoku squares | confirmed, and the hard half done more cheaply |
-| [104](taocp-7.2.2.1-exercises/104) | all-interval *n*-tone rows | confirmed |
-| [129](taocp-7.2.2.1-exercises/129) | MacMahon triangles in a hexagon | **281,618 should be 294,457** |
-| [147](taocp-7.2.2.1-exercises/147) | MacMahon's thirty painted cubes | one catalogue line of twenty-four differs |
-| [151, 152](taocp-7.2.2.1-exercises/151-152) | path dominoes | confirmed |
-| [305, 306](taocp-7.2.2.1-exercises/305-306) | windmill dominoes | confirmed |
-| [320](taocp-7.2.2.1-exercises/320) | convex polyaboloes | confirmed |
-| [323](taocp-7.2.2.1-exercises/323) | polyskews | the 3648 belongs to a 2 × 22 frame, not 2 × 21 |
-| [334](taocp-7.2.2.1-exercises/334) | Soma walls and cubie sets | three counts do not reproduce |
-| [337](taocp-7.2.2.1-exercises/337) | Lavery's Twice Dice | confirmed |
-| [346](taocp-7.2.2.1-exercises/346) | filling space with tripods | confirmed, and 65/108 improves to 5/8 |
-| [387](taocp-7.2.2.1-exercises/387) | polycube symmetry types | two of the eleven pictures are not minimal |
-| [432](taocp-7.2.2.1-exercises/432) | kakuro | the puzzle called hardest cannot exist |
+| [29, 30](taocp-7.2.2.1-exercises/029-030) | Characterize all search trees that can arise with Algorithm X | answer 30 is broken by the one-node tree |
+| [55](taocp-7.2.2.1-exercises/055) | Determine the fewest clues needed to force highly symmetric sudoku solutions | confirmed, and the hard half done more cheaply |
+| [104](taocp-7.2.2.1-exercises/104) | Construct infinitely many “perfect” *n*-tone rows | confirmed |
+| [129](taocp-7.2.2.1-exercises/129) | Enumerate all the symmetrical solutions to MacMahon's triangle-tiling problem | **281,618 should be 294,457** |
+| [147](taocp-7.2.2.1-exercises/147) | Construct all of the “bricks” that can be made with MacMahon's 30 six-colored cubes | one catalogue line of twenty-four differs |
+| [151, 152](taocp-7.2.2.1-exercises/151-152) | Arrange all of the path dominoes into a single loop | confirmed |
+| [305, 306](taocp-7.2.2.1-exercises/305-306) | Find optimum arrangements of the windmill dominoes | confirmed |
+| [320](taocp-7.2.2.1-exercises/320) | Find all ways to make a convex shape from the fourteen tetraboloes | confirmed |
+| [323](taocp-7.2.2.1-exercises/323) | Find all ways to make a skewed rectangle from the ten tetraskews | the 3648 belongs to a 2 × 22 frame, not 2 × 21 |
+| [334](taocp-7.2.2.1-exercises/334) | Build fake solutions for Soma-cube shapes | three counts do not reproduce |
+| [337](taocp-7.2.2.1-exercises/337) | Design a puzzle that makes several kinds of “dice” from the same bent tricubes | confirmed |
+| [346](taocp-7.2.2.1-exercises/346) | Pack space optimally with small tripods | confirmed, and 65/108 improves to 5/8 |
+| [387](taocp-7.2.2.1-exercises/387) | Classify the types of symmetry that a polycube might have | two of the eleven pictures are not minimal |
+| [432](taocp-7.2.2.1-exercises/432) | Find the most interesting 3×3 kakuro puzzles | the puzzle called hardest cannot exist |
 
 Adding a reading means putting its directory name in `EXERCISES` in the
 [`Makefile`](Makefile), which brings the tangle, typeset and clean rules with
