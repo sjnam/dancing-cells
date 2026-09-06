@@ -1,6 +1,0 @@
-p q r | x y
-p q x:A y:B
-p r x:A y:A
-p x:B
-q x:A
-r y:B
