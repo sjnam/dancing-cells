@@ -174,7 +174,7 @@ $ go run ./examples/langford 4
 
 ````console
 $ cd examples/pentominoes
-$ go run main.go 8x8.dlx
+$ go run pentominoes.go 8x8.dlx
 1:
 Q Q X U U V V V
 Q X X X U V Z Z
@@ -239,7 +239,7 @@ Q . . . . . . .
 
 ````console
 $ cd examples/sudoku
-$ go run main.go puzzles.txt
+$ go run sudoku.go puzzles.txt
 Q[    1]: ..43..2.9..5..9..1.7..6..43..6..2.8719...74...5..83...6.....1.5..35.869..4291.3..
 A[    1]: 864371259325849761971265843436192587198657432257483916689734125713528694542916378
 Q[    2]: .4.1...5.1.7..396.52...8..........17...9.68..8.3.5.62..9..6.5436...8.7..25..971..
@@ -274,7 +274,7 @@ $ cd examples/filomino
 | 24...161..
 | .2...6.6..
 
-$ go run main.go 10x10.filomino.dlx
+$ go run filomino.go 10x10.filomino.dlx
 3 3 3 1 3 3 2 2 3 3
 4 4 1 3 1 3 4 4 4 3
 6 4 4 3 3 1 4 1 2 2
@@ -296,7 +296,7 @@ with random letters, so no two runs print quite the same grid.
 
 ````console
 $ cd examples/wordsearch
-$ go run main.go movie.txt 13 13
+$ go run wordsearch.go movie.txt 13 13
 1:
 봄여름가을겨울그리고봄섬차
 뎷억추의인살밀인스시아오열
@@ -312,7 +312,7 @@ $ go run main.go movie.txt 13 13
 컴가공괴날진빠에물우가지돼
 웰씨공궠물게하대위게하밀은
 
-$ go run main.go mathematicians.txt 15 15
+$ go run wordsearch.go mathematicians.txt 15 15
 1:
 W E I E R S T R A S S T S M H
 A Z L H C A N T O R R J U V R
@@ -692,15 +692,27 @@ same way — and neither should ever be edited by hand. Because `gtangle` emits
 `//line` directives, a Go compiler error points straight back at the line in
 the `.w` file it came from.
 
-Three of the examples are literate programs as well, and they are where the
-*modelling* gets explained rather than the engine. All three are written in
-Korean and typeset with `luatex` (kotexgweb).
+The examples are literate programs as well, and they are where the *modelling*
+gets explained rather than the engine — how a puzzle turns into items and
+options, which items are primary and which secondary, and what the colors are
+made to mean. All eleven are written in Korean, live as
+`examples/<name>/<name>.w`, and are typeset with `luatex` (kotexgweb). Three of
+them carry original work and read as essays; the rest explain one modelling idea
+each.
 
 | Document | What it is |
 | --- | --- |
 | [`examples/words/words.w`](examples/words/words.w) | how *is there a set of five five-letter words covering 24 letters of the alphabet?* turns into a DLX input. Its answer is that colors alone — no multiplicities — pin the word count at exactly five. Carries a MetaPost figure, [`words.mp`](examples/words/words.mp). |
 | [`examples/transversal/transversal.w`](examples/transversal/transversal.w) | *Hungarian Dance No. 5* — the cheapest transversal of a Latin square, branched by dancing cells and bounded by the Hungarian algorithm. Where to find a lower bound, why this one is exact, and where else the trick applies. |
 | [`examples/hollow/hollow.w`](examples/hollow/hollow.w) | *A Partridge in a Pear Tree* — how large a hollow can the partridge puzzle keep at its centre. A geometric lower bound that turns a hopeless search into a two-second proof, and a `Need`-based one that honestly does not pay. |
+| [`examples/queen/queen.w`](examples/queen/queen.w) | *n* queens — the cleanest illustration of primary versus secondary items: rows and columns must be covered exactly once, diagonals at most once. Also why the *order* of the item line matters, since ties in the branching rule go to the leftmost item. |
+| [`examples/langford/langford.w`](examples/langford/langford.w) | Langford pairs — exact cover with nothing else in it: no secondary items, no colors. Its one subtlety is breaking the mirror symmetry, which needs an *odd* value, and the arithmetic that says so. |
+| [`examples/pentominoes/pentominoes.w`](examples/pentominoes/pentominoes.w) | the twelve pentominoes — a problem whose options were generated elsewhere, so the document is about reading a `.dlx` file and its conventions rather than writing one. |
+| [`examples/filomino/filomino.w`](examples/filomino/filomino.w) | Fillomino — secondary items used as the *edges* of a region, which is what makes "two regions of the same size may not touch" fall out for free. |
+| [`examples/zebra/zebra.w`](examples/zebra/zebra.w) | the zebra puzzle — colors as *values*: a secondary item is a blank to be filled, its color is what goes in it, and two clues touching the same blank must agree. Including what the encoding never says (that the five nationalities differ) and why the answer comes out anyway. |
+| [`examples/wordsearch/wordsearch.w`](examples/wordsearch/wordsearch.w) | building a word-search grid — colors as *letters*, so that two words crossing agree on the letter at the crossing with no crossing test written anywhere. |
+| [`examples/sudoku/sudoku.w`](examples/sudoku/sudoku.w) | sudoku, in bulk — trimming the problem with the clues before the search starts, and an ordered fan-in that solves a whole puzzle file across every CPU while printing in input order. |
+| [`examples/partridge/partridge.w`](examples/partridge/partridge.w) | the partridge puzzle — the one example that needs `NewMCC()`, because *k* pieces of size *k* is a multiplicity; plus the box-drawing printer that fits a 36 × 36 tiling into 37 lines. |
 
 ## Careful readings of TAOCP 7.2.2.1
 

@@ -32,6 +32,79 @@
 /xccdc.log
 /xccdc.toc
 
+# examples/ 아래의 프로그램은 모두 문학적 프로그램이다: <이름>/<이름>.w만
+# 원본이고 .go와 조판 결과는 gtangle/gweave가 만들어 낸다.
+/examples/filomino/filomino.go
+/examples/filomino/filomino.tex
+/examples/filomino/filomino.pdf
+/examples/filomino/filomino.idx
+/examples/filomino/filomino.scn
+/examples/filomino/filomino.log
+/examples/filomino/filomino.toc
+/examples/hollow/hollow.go
+/examples/hollow/hollow.tex
+/examples/hollow/hollow.pdf
+/examples/hollow/hollow.idx
+/examples/hollow/hollow.scn
+/examples/hollow/hollow.log
+/examples/hollow/hollow.toc
+/examples/langford/langford.go
+/examples/langford/langford.tex
+/examples/langford/langford.pdf
+/examples/langford/langford.idx
+/examples/langford/langford.scn
+/examples/langford/langford.log
+/examples/langford/langford.toc
+/examples/partridge/partridge.go
+/examples/partridge/partridge.tex
+/examples/partridge/partridge.pdf
+/examples/partridge/partridge.idx
+/examples/partridge/partridge.scn
+/examples/partridge/partridge.log
+/examples/partridge/partridge.toc
+/examples/pentominoes/pentominoes.go
+/examples/pentominoes/pentominoes.tex
+/examples/pentominoes/pentominoes.pdf
+/examples/pentominoes/pentominoes.idx
+/examples/pentominoes/pentominoes.scn
+/examples/pentominoes/pentominoes.log
+/examples/pentominoes/pentominoes.toc
+/examples/queen/queen.go
+/examples/queen/queen.tex
+/examples/queen/queen.pdf
+/examples/queen/queen.idx
+/examples/queen/queen.scn
+/examples/queen/queen.log
+/examples/queen/queen.toc
+/examples/sudoku/sudoku.go
+/examples/sudoku/sudoku.tex
+/examples/sudoku/sudoku.pdf
+/examples/sudoku/sudoku.idx
+/examples/sudoku/sudoku.scn
+/examples/sudoku/sudoku.log
+/examples/sudoku/sudoku.toc
+/examples/transversal/transversal.go
+/examples/transversal/transversal.tex
+/examples/transversal/transversal.pdf
+/examples/transversal/transversal.idx
+/examples/transversal/transversal.scn
+/examples/transversal/transversal.log
+/examples/transversal/transversal.toc
+/examples/wordsearch/wordsearch.go
+/examples/wordsearch/wordsearch.tex
+/examples/wordsearch/wordsearch.pdf
+/examples/wordsearch/wordsearch.idx
+/examples/wordsearch/wordsearch.scn
+/examples/wordsearch/wordsearch.log
+/examples/wordsearch/wordsearch.toc
+/examples/zebra/zebra.go
+/examples/zebra/zebra.tex
+/examples/zebra/zebra.pdf
+/examples/zebra/zebra.idx
+/examples/zebra/zebra.scn
+/examples/zebra/zebra.log
+/examples/zebra/zebra.toc
+
 # examples/words도 문학적 프로그램이다: words.w와 words.mp만 원본이고,
 # 나머지는 gtangle/gweave/mptopdf가 만들어 낸다.
 /examples/words/words.go
@@ -55,23 +128,8 @@
 /wordsearch
 
 # examples/transversal도 문학적 프로그램이다: transversal.w만 원본이다.
-/examples/transversal/transversal.go
-/examples/transversal/transversal.tex
-/examples/transversal/transversal.idx
-/examples/transversal/transversal.scn
-/examples/transversal/transversal.pdf
-/examples/transversal/transversal.log
-/examples/transversal/transversal.toc
 
 # examples/hollow도 문학적 프로그램이다: hollow.w만 원본이다.
-/examples/hollow/hollow.go
-/examples/hollow/hollow.tex
-/examples/hollow/hollow.idx
-/examples/hollow/hollow.scn
-/examples/hollow/hollow.pdf
-/examples/hollow/hollow.log
-/examples/hollow/hollow.toc
-/examples/hollow/hollow
 
 # 연습문제 검증 프로그램도 문학적 프로그램이다: verify.w만 원본이다.
 # 다만 verify.pdf는 예외로 저장소에 넣는다 --- 이 검증은 저자에게 보낼 것이고,

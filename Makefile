@@ -6,8 +6,9 @@
 #   ssmcc.w    the MCC engine (multiplicities, binary branching)
 #   xccdc.w    the XCC engine again, maintaining domain consistency
 #
-# examples/words, examples/transversal and examples/hollow are literate programs
-# too (in Korean), typeset with luatex since kotexgweb needs it.
+# Every program under examples/ is a literate program too, written in Korean and
+# typeset with luatex since kotexgweb needs it; each lives in its own directory
+# as <name>/<name>.w.  To add one, put its directory name in EXAMPLES below.
 # taocp-7.2.2.1-exercises holds one careful reading of an exercise per
 # directory, each with a verify.w that checks Knuth's answer.  They are in
 # English but go through luatex, because one of them draws its figure with
@@ -27,8 +28,10 @@ RSVG    ?= rsvg-convert
 MAGICK  ?= magick
 
 WORDS := examples/words
-TRANS   := examples/transversal
-HOLLOW  := examples/hollow
+EXAMPLES := filomino hollow langford partridge pentominoes queen sudoku \
+            transversal wordsearch zebra
+EXAMPLEGO  := $(foreach e,$(EXAMPLES),examples/$(e)/$(e).go)
+EXAMPLEPDF := $(foreach e,$(EXAMPLES),examples/$(e)/$(e).pdf)
 EXDIR   := taocp-7.2.2.1-exercises
 EXERCISES := 029-030 055 104 129 147 151-152 305-306 320 323 334 337 346 \
              387 432
@@ -67,13 +70,18 @@ $(WORDS)/words.go: $(WORDS)/words.w
 	cd $(WORDS) && $(GTANGLE) words.w
 	gofmt -w $(WORDS)/words.go
 
-$(TRANS)/transversal.go: $(TRANS)/transversal.w
-	cd $(TRANS) && $(GTANGLE) transversal.w
-	gofmt -w $(TRANS)/transversal.go
-
-$(HOLLOW)/hollow.go: $(HOLLOW)/hollow.w
-	cd $(HOLLOW) && $(GTANGLE) hollow.w
-	gofmt -w $(HOLLOW)/hollow.go
+# Every other example is tangled and typeset the same way, so one macro serves
+# them all: examples/<name>/<name>.w makes <name>.go and <name>.pdf in place.
+define example
+examples/$(1)/$(1).go: examples/$(1)/$(1).w
+	cd examples/$(1) && $$(GTANGLE) $(1).w
+	gofmt -w examples/$(1)/$(1).go
+examples/$(1)/$(1).pdf: examples/$(1)/$(1).w
+	cd examples/$(1) && $$(GWEAVE) $(1).w
+	cd examples/$(1) && $$(LUATEX) $(1).tex
+	cd examples/$(1) && $$(LUATEX) $(1).tex
+endef
+$(foreach e,$(EXAMPLES),$(eval $(call example,$(e))))
 
 # A static pattern rule, not an implicit one: the generic `%.pdf: %.w` below
 # would otherwise win for these targets and leave its output in the wrong
@@ -82,8 +90,7 @@ $(addsuffix /verify.go,$(VERIFY)): %/verify.go: %/verify.w
 	cd $* && $(GTANGLE) verify.w
 	gofmt -w $@
 
-tangle: dcells.go ssxcc.go ssmcc.go xccdc.go $(WORDS)/words.go \
-        $(TRANS)/transversal.go $(HOLLOW)/hollow.go \
+tangle: dcells.go ssxcc.go ssmcc.go xccdc.go $(WORDS)/words.go $(EXAMPLEGO) \
         $(addsuffix /verify.go,$(VERIFY))
 
 build: tangle
@@ -96,8 +103,8 @@ vet: tangle
 	$(GO) vet ./...
 
 # Typeset the literate documents (two passes resolve the cross-references).
-pdf: $(addsuffix .pdf,$(LIB)) $(WORDS)/words.pdf $(TRANS)/transversal.pdf \
-     $(HOLLOW)/hollow.pdf $(addsuffix /verify.pdf,$(VERIFY)) $(FIGS)
+pdf: $(addsuffix .pdf,$(LIB)) $(WORDS)/words.pdf $(EXAMPLEPDF) \
+     $(addsuffix /verify.pdf,$(VERIFY)) $(FIGS)
 
 %.pdf: %.w
 	$(GWEAVE) $<
@@ -110,16 +117,6 @@ $(WORDS)/words.pdf: $(WORDS)/words.w $(WORDS)/words.mp
 	cd $(WORDS) && $(GWEAVE) words.w
 	cd $(WORDS) && $(LUATEX) words.tex
 	cd $(WORDS) && $(LUATEX) words.tex
-
-$(TRANS)/transversal.pdf: $(TRANS)/transversal.w
-	cd $(TRANS) && $(GWEAVE) transversal.w
-	cd $(TRANS) && $(LUATEX) transversal.tex
-	cd $(TRANS) && $(LUATEX) transversal.tex
-
-$(HOLLOW)/hollow.pdf: $(HOLLOW)/hollow.w
-	cd $(HOLLOW) && $(GWEAVE) hollow.w
-	cd $(HOLLOW) && $(LUATEX) hollow.tex
-	cd $(HOLLOW) && $(LUATEX) hollow.tex
 
 # A static pattern rule, not an implicit one: the generic `%.pdf: %.w` above
 # would otherwise win for these targets and leave its output in the wrong
@@ -163,16 +160,12 @@ clean:
 	rm -f $(addsuffix .tex,$(LIB)) $(addsuffix .pdf,$(LIB)) \
 	      $(addsuffix .idx,$(LIB)) $(addsuffix .scn,$(LIB)) \
 	      $(addsuffix .log,$(LIB)) $(addsuffix .toc,$(LIB)) $(addsuffix .dvi,$(LIB))
-	rm -f $(WORDS)/words.go $(TRANS)/transversal.go \
-	      $(HOLLOW)/hollow.go $(addsuffix /verify.go,$(VERIFY))
+	rm -f $(WORDS)/words.go $(EXAMPLEGO) $(addsuffix /verify.go,$(VERIFY))
+	rm -f $(foreach x,tex pdf idx scn log toc,\
+	        $(foreach e,$(EXAMPLES),examples/$(e)/$(e).$(x)))
 	rm -f $(WORDS)/words.tex $(WORDS)/words.pdf $(WORDS)/words.idx \
 	      $(WORDS)/words.scn $(WORDS)/words.log $(WORDS)/words.toc \
 	      $(WORDS)/words.1 $(WORDS)/words.mpx $(WORDS)/words-1.pdf
-	rm -f $(TRANS)/transversal.tex $(TRANS)/transversal.pdf \
-	      $(TRANS)/transversal.idx $(TRANS)/transversal.scn \
-	      $(TRANS)/transversal.log $(TRANS)/transversal.toc
-	rm -f $(HOLLOW)/hollow.tex $(HOLLOW)/hollow.pdf $(HOLLOW)/hollow.idx \
-	      $(HOLLOW)/hollow.scn $(HOLLOW)/hollow.log $(HOLLOW)/hollow.toc
 	rm -f $(addsuffix /verify.tex,$(VERIFY)) $(addsuffix /verify.idx,$(VERIFY)) \
 	      $(addsuffix /verify.scn,$(VERIFY)) $(addsuffix /verify.log,$(VERIFY)) \
 	      $(addsuffix /verify.toc,$(VERIFY))
