@@ -214,6 +214,8 @@ the total is even and the answer prints the half.
 
 ## 10. Running it
 
+[`verify.pdf`](verify/verify.pdf)
+
 ```text
 make                            # tangles and builds
 cd taocp-7.2.2.1-exercises/320/verify && go run verify.go

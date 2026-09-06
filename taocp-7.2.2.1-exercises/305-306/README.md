@@ -335,7 +335,7 @@ are.
 
 Everything is an XCC or MCC problem solved with the sparse-set dancing cells
 solver in this repository, except the last step of exercise 306, which is a
-direct search with two prunings. `verify/verify.w` is the literate program.
+direct search with two prunings. [`verify.pdf`](verify/verify.pdf) is the literate program.
 
 | Mode | What it does | Time |
 | --- | --- | --- |

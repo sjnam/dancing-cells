@@ -243,6 +243,8 @@ the labelled arrangements being four to a reflection class.
 
 ## 10. Running it
 
+[`verify.pdf`](verify/verify.pdf)
+
 ```text
 make                            # tangles and builds
 cd taocp-7.2.2.1-exercises/323/verify && go run verify.go

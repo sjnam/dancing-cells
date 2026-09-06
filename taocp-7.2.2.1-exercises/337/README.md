@@ -186,6 +186,8 @@ that $384/24$ is exact.
 
 ## 9. Running it
 
+[`verify.pdf`](verify/verify.pdf)
+
 ```text
 make                            # tangles and builds
 cd taocp-7.2.2.1-exercises/337/verify && go run verify.go

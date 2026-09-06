@@ -465,7 +465,7 @@ the twelve top-down numbers are all correct.
 ## 15. Method
 
 Everything is one XCC problem or another, solved with the sparse-set dancing
-cells solver in this repository. `verify/verify.w` is the literate program;
+cells solver in this repository. [`verify.pdf`](verify/verify.pdf) is the literate program;
 it builds the hexagon, the twelve symmetries, and each of the models above, and
 prints the identities. Its modes:
 
@@ -483,13 +483,13 @@ prints the identities. Its modes:
 | `-mode weak -g both` | section 9 | 1.5 min |
 
 The three long counts were first made with a stand-alone program written while
-working the exercise out; `verify.w` grew afterwards, out of the parts that
+working the exercise out; [`verify.w`](verify/verify.w) grew afterwards, out of the parts that
 turned out to matter. To be sure the two agree I had both print their problems
 (`-dump`) and compared them item for item: same options, same grouping of
 options into orbits, same partition of each orbit's options by patch value. So
 the models are the same problem under different item names, and the long counts
-belong to `verify.w` as much as to the program that first produced them. The
-same goes for the split of section 12: the stand-alone program and `verify.w`
+belong to [`verify.w`](verify/verify.w) as much as to the program that first produced them. The
+same goes for the split of section 12: the stand-alone program and [`verify.w`](verify/verify.w)
 give 616,272 for each of the two configurations of the missing group, so the
 12,839 is not an artefact of either one.
 
