@@ -11,6 +11,11 @@ The library is a **literate program**: its whole source lives in three English
 [`ssxcc.w`](ssxcc.w), and [`ssmcc.w`](ssmcc.w) — see
 [The source is a literate program](#the-source-is-a-literate-program) below.
 
+The engines are also put to work on Knuth's own text:
+[`taocp-7.2.2.1-exercises/`](taocp-7.2.2.1-exercises) holds a careful reading of
+one exercise of TAOCP §7.2.2.1 and its answer per directory. See
+[Careful readings of TAOCP 7.2.2.1](#careful-readings-of-taocp-7221) below.
+
 ## Library
 
 ```go
@@ -132,37 +137,37 @@ $ go run ./examples/langford 4
 - 12 pieces: **O P Q R S T U V W X Y Z**
 
 ````console
-$ cd example/pentominoes
+$ cd examples/pentominoes
 $ go run main.go 8x8.dlx
-Solution: 1
-P P P W U U U Y
-P P W W U T U Y
-Z W W T T T Y Y
-Z Z Z     T X Y
-R R Z     X X X
-V R R S S S X Q
-V R S S Q Q Q Q
-V V V O O O O O
+1:
+Q Q X U U V V V
+Q X X X U V Z Z
+Q R X U U V Z S
+Q R R . . Z Z S
+R R Y . . W S S
+Y Y Y Y W W S T
+P P P W W T T T
+P P O O O O O T
 
-Solution: 2
-W P P P U U U Y
-W W P P U T U Y
-Z W W T T T Y Y
-Z Z Z     T X Y
-R R Z     X X X
-V R R S S S X Q
-V R S S Q Q Q Q
-V V V O O O O O
+2:
+Q Q X U U V V V
+Q X X X U V Z Z
+Q S X U U V Z O
+Q S T . . Z Z O
+S S T . . W W O
+S T T T W W R O
+P P P Y W R R O
+P P Y Y Y Y R R
 
-Solution: 3
-V V V Z W W Q Q
-V Z Z Z R W W Q
-V Z P R R R W Q
-O P P     R X Q
-O P P     X X X
-O U U S S S X T
-O U S S Y T T T
-O U U Y Y Y Y T
+3:
+Q Q X U U V V V
+Q X X X U V Z Z
+Q S X U U V Z Y
+Q S T . . Z Z Y
+S S T . . W Y Y
+S T T T W W R Y
+P P P W W R R R
+P P O O O O O R
 
 ...
 ````
@@ -172,24 +177,24 @@ O U U Y Y Y Y T
 ````console
 $ go run ./examples/queen 8
 1:
-Q . . . . . . .
+. . . Q . . . .
 . . . . . Q . .
 . . . . . . . Q
 . . Q . . . . .
+Q . . . . . . .
 . . . . . . Q .
-. . . Q . . . .
-. Q . . . . . .
 . . . . Q . . .
+. Q . . . . . .
 
 2:
-Q . . . . . . .
-. . . . Q . . .
+. . . Q . . . .
+. Q . . . . . .
 . . . . . . . Q
 . . . . . Q . .
+Q . . . . . . .
 . . Q . . . . .
+. . . . Q . . .
 . . . . . . Q .
-. Q . . . . . .
-. . . Q . . . .
 
 ...
 ````
@@ -250,39 +255,44 @@ $ go run main.go 10x10.filomino.dlx
 
 What is Word search? <https://thewordsearch.com/>
 
+The words are always placed in the same way, but the cells left over are filled
+with random letters, so no two runs print quite the same grid.
+
 ````console
 $ cd examples/wordsearch
 $ go run main.go movie.txt 13 13
-봄게하대위게하밀은마기생충
-돼여힘다장시제국설국열차타
-지변름의인여의변해밀양며신
-가명호가도봄날은간다리생과
-우량장인을원엽가더날파활함
-물생화파괴겨강기휘마이의께
-에인홍물밤골울기적올란발죄
-빠한련과막것극그친인드견와
-진콤낮동의태아구리씨그보벌
-날달투나택시운전사고가녀이
-다컴는억추의인살박쥐봄아카
-웰수다오수정씨자금한절친바
-복스시아오하행산부적의공공
+1:
+봄여름가을겨울그리고봄섬차
+뎷억추의인살밀인스시아오열
+사전운시택양인호며박븃다국
+장횬란장벌쟝여변리쥐마간설
+화것이시와칔의친날생더은엽
+홍의파제죄생변절휘인이날기
+련나부국께활해한기한보봄적
+골는산괠함의뭀금극콤드멼인
+막수행기과발밤자태달올퍔그
+동복적생신견과씨정수오명녀
+투아의충친구낮강원도의힘량
+컴가공괴날진빠에물우가지돼
+웰씨공궠물게하대위게하밀은
 
 $ go run main.go mathematicians.txt 15 15
-H I L B E R T L C A N T O R O
-X O L F W Q F F O H H C R I K
-G T C A T A L A N R E T S D O
-C T Q S M I N K O W S K I R T
-G E S Y L V E S T E R V R A M
-F N A W N O R R E P Y K T M E
-S I A B E L U A D N A L V A L
-J T W E I E R S T R A S S D L
-S U I Z T I W R U H L X C A I
-U D Z E C R E H S I A L G H N
-B O R E L W D N A R T R E B X
-D G R A M T S U I N E B O R F
-R U N G E O J J E N S E N C X
-F F O K R A M E E T I M R E H
-E K N O P P L E S N E H X S N
+1:
+W E I E R S T R A S S T S M H
+A Z L H C A N T O R R J U V R
+O T T E N N E S N E J D I U E
+Y E P E R R O N V R N C N P Q
+S E J T L E I T S A A G E O R
+F F O K R A M P R O E I B R H
+P D H U R W I T Z N K H O E I
+L G D S V K R Z A S Y E R T L
+E N R Y W E K L W L S R F S B
+S I A A B U A O X E T M P E E
+N L M O M T K Z T R E I P V R
+E L A L A N D A U O R T O L T
+H E D C I T B T K B N E N Y I
+X M A M R E H S I A L G K S L
+R V H X L T F F O H H C R I K
 ````
 
 ### Zebra puzzle
@@ -295,7 +305,7 @@ five different colored houses.
 - The painter comes from Japan.
 - The yellow house hosts a diplomat.
 - The coffee-lover's house is green.
-- The Norwegian's house is hte leftmost.
+- The Norwegian's house is the leftmost.
 - The dog's owner is from Spain.
 - The milk drinker lives in the middle house.
 - The violinist drinks orange juice.
@@ -633,19 +643,61 @@ The [`Makefile`](Makefile) drives the GWEB tools:
 ```sh
 make            # gtangle the .w files → .go, then build
 make pdf        # gweave → typeset every document
-make clean      # remove everything the .w files generate
+make clean      # remove the generated files, keeping the committed ones
 ```
 
-Only the `.w` files are checked in — every `.go` and every typeset document is
-generated, so `make` is the first thing to run in a fresh clone. Because `gtangle` emits `//line` directives, a Go compiler error
-points straight back at the line in the `.w` file it came from.
+The `.w` files are the source of truth: every `.go` that has a `.w` beside it,
+and every typeset document, is generated, so `make` is the first thing to run
+in a fresh clone. Two kinds of generated file are checked in anyway — the three
+engine `.go` files, so that the package can be imported without running GWEB
+first, and each exercise reading's `verify.pdf`, so that it can be read the
+same way — and neither should ever be edited by hand. Because `gtangle` emits
+`//line` directives, a Go compiler error points straight back at the line in
+the `.w` file it came from.
 
 Three of the examples are literate programs as well, and they are where the
-*modelling* gets explained rather than the engine. The two Korean ones are
-typeset with `luatex` (kotexgweb).
+*modelling* gets explained rather than the engine. All three are written in
+Korean and typeset with `luatex` (kotexgweb).
 
 | Document | What it is |
 | --- | --- |
 | [`examples/words/words.w`](examples/words/words.w) | how *is there a set of five five-letter words covering 24 letters of the alphabet?* turns into a DLX input. Its answer is that colors alone — no multiplicities — pin the word count at exactly five. Carries a MetaPost figure, [`words.mp`](examples/words/words.mp). |
 | [`examples/transversal/transversal.w`](examples/transversal/transversal.w) | *Hungarian Dance No. 5* — the cheapest transversal of a Latin square, branched by dancing cells and bounded by the Hungarian algorithm. Where to find a lower bound, why this one is exact, and where else the trick applies. |
 | [`examples/hollow/hollow.w`](examples/hollow/hollow.w) | *A Partridge in a Pear Tree* — how large a hollow can the partridge puzzle keep at its centre. A geometric lower bound that turns a hopeless search into a two-second proof, and a `Need`-based one that honestly does not pay. |
+
+## Careful readings of TAOCP 7.2.2.1
+
+Knuth's [news page](https://www-cs-faculty.stanford.edu/~knuth/news.html) asks
+readers to take one exercise, read it and its answer very carefully, and report
+back. [`taocp-7.2.2.1-exercises/`](taocp-7.2.2.1-exercises) holds one such
+reading per directory, written against Volume 4B, first printing, 2022, and
+against the errata file of the day. Section 7.2.2.1 is the dancing-links
+section, so most of them come down to an exact cover problem and the engines
+above do the searching.
+
+Each directory holds the report itself as `README.md` — which is what GitHub
+shows when you open the directory — and the program behind it as a GWEB
+literate program in `verify/verify.w`, with `verify/verify.pdf` beside it so it
+can be read without installing GWEB. Nothing is claimed that the program does
+not check.
+
+| Exercise | Subject | What came out |
+| --- | --- | --- |
+| [29, 30](taocp-7.2.2.1-exercises/029-030) | search trees of Algorithm X | answer 30 is broken by the one-node tree |
+| [55](taocp-7.2.2.1-exercises/055) | symmetric sudoku squares | confirmed, and the hard half done more cheaply |
+| [104](taocp-7.2.2.1-exercises/104) | all-interval *n*-tone rows | confirmed |
+| [129](taocp-7.2.2.1-exercises/129) | MacMahon triangles in a hexagon | **281,618 should be 294,457** |
+| [147](taocp-7.2.2.1-exercises/147) | MacMahon's thirty painted cubes | one catalogue line of twenty-four differs |
+| [151, 152](taocp-7.2.2.1-exercises/151-152) | path dominoes | confirmed |
+| [305, 306](taocp-7.2.2.1-exercises/305-306) | windmill dominoes | confirmed |
+| [320](taocp-7.2.2.1-exercises/320) | convex polyaboloes | confirmed |
+| [323](taocp-7.2.2.1-exercises/323) | polyskews | the 3648 belongs to a 2 × 22 frame, not 2 × 21 |
+| [334](taocp-7.2.2.1-exercises/334) | Soma walls and cubie sets | three counts do not reproduce |
+| [337](taocp-7.2.2.1-exercises/337) | Lavery's Twice Dice | confirmed |
+| [346](taocp-7.2.2.1-exercises/346) | filling space with tripods | confirmed, and 65/108 improves to 5/8 |
+| [387](taocp-7.2.2.1-exercises/387) | polycube symmetry types | two of the eleven pictures are not minimal |
+| [432](taocp-7.2.2.1-exercises/432) | kakuro | the puzzle called hardest cannot exist |
+
+Adding a reading means putting its directory name in `EXERCISES` in the
+[`Makefile`](Makefile), which brings the tangle, typeset and clean rules with
+it, plus one `$(eval $(call figure,...))` line if the reading draws a picture.
