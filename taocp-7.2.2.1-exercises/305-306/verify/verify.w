@@ -1499,4 +1499,4 @@ if len(tight) > 0 {
 		classesOf(yes, g), classesOf(no, g))
 }
 
-@** Index.
+@* Index.

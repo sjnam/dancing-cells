@@ -887,4 +887,4 @@ for range xc.Dance(strings.NewReader(in)).Solutions {
 fmt.Printf("%v %d options, %7d solutions, %2d symmetries, %10d nodes, %s\n",
 	p, nopt, k, p.selfSyms(), xc.Nodes(), time.Since(t0).Round(time.Millisecond))
 
-@** Index.
+@* Index.

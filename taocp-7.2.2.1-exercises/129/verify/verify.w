@@ -1352,4 +1352,4 @@ func idxOf(all []sym, s sym) int {
 	return -1
 }
 
-@** Index.
+@* Index.

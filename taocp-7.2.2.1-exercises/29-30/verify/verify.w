@@ -739,4 +739,4 @@ if !(sameShape(t, tr.shape) && tr.nodes == t.size() &&
 	}
 }
 
-@** Index.
+@* Index.

@@ -981,4 +981,4 @@ verify -set 48 -rows 8 -cols 12 -blankat 4 -loop\cr}}$$
 The second line is the chunk that succeeded. It is deterministic, so it finds
 the same arrangement again; on this machine it took three hours.
 
-@** Index.
+@* Index.

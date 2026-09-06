@@ -693,4 +693,4 @@ if d > best {
 fmt.Printf("  %2dx%2dx%2d  volume %4d: %3d tripods, density %4d/%-4d = %.6f%s\n",
 	X, Y, Z, V, k, k*size, V, d, flag)
 
-@** Index.
+@* Index.

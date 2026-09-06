@@ -947,4 +947,4 @@ fmt.Printf("  the 20-clue puzzle carries over: %d clues, solutions %d\n",
 	q.clues(), q.count(2))
 fmt.Print(q.String())
 
-@** Index.
+@* Index.

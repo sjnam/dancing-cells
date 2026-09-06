@@ -1035,4 +1035,4 @@ for _, p := range [][]vec{pinwheel, mine} {
 		len(p), connected(p), typeName(rot, rotIdx, rotCls, p), show(shift(p)))
 }
 
-@** Index.
+@* Index.
