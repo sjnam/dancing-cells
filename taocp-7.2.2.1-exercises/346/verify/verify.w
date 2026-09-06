@@ -157,22 +157,25 @@ func parse(s string) vec {
 }
 
 @ Every search here asks the same question---is there a packing with $t$
-pieces?---so one wrapper does for all of them. It returns the first solution,
-and says whether it ran out of time rather than out of possibilities.
+pieces?---so one wrapper does for all of them. It waits for one solution and
+stops the search; if the channel closes instead, there was no packing, and
+|ctx.Err| tells which of the two ways that happened---out of possibilities, or
+out of time. Cancelling makes the engine unwind and close the channel, so the
+loop that drains what is left of it always ends.
 
 @<Functions@>=
 func first(r io.Reader, budget time.Duration) (sol []cells.Option, slow bool) {
 	ctx, cancel := context.WithTimeout(context.Background(), budget)
 	defer cancel()
 	res := cells.NewMCC().WithContext(ctx).Dance(r)
-	for s := range res.Solutions {
-		sol = append(sol, s...)
-		cancel()
-		for range res.Solutions {
-		}
-		return sol, false
+	sol, ok := <-res.Solutions
+	if !ok {
+		return nil, ctx.Err() != nil
 	}
-	return nil, ctx.Err() != nil
+	cancel()
+	for range res.Solutions {
+	}
+	return sol, false
 }
 
 @* Part (a): tiling space with $(1,m,n)$-tripods.
