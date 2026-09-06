@@ -24,6 +24,13 @@
 /ssmcc.pdf
 /ssmcc.log
 /ssmcc.toc
+/xccdc_test.go
+/xccdc.tex
+/xccdc.idx
+/xccdc.scn
+/xccdc.pdf
+/xccdc.log
+/xccdc.toc
 
 # examples/words도 문학적 프로그램이다: words.w와 words.mp만 원본이고,
 # 나머지는 gtangle/gweave/mptopdf가 만들어 낸다.

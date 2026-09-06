@@ -4,6 +4,7 @@
 #   dcells.w   the common ground: public API, node array, DLX scanner
 #   ssxcc.w    the XCC engine (d-way branching)
 #   ssmcc.w    the MCC engine (multiplicities, binary branching)
+#   xccdc.w    the XCC engine again, maintaining domain consistency
 #
 # examples/words, examples/transversal and examples/hollow are literate programs
 # too (in Korean), typeset with luatex since kotexgweb needs it.
@@ -38,14 +39,14 @@ FIGS    := $(EXDIR)/029-030/backtrack.png $(EXDIR)/104/allinterval.png \
            $(EXDIR)/387/polycubes.png \
            $(EXDIR)/432/kakuro.png
 VERIFY  := $(foreach e,$(EXERCISES),$(EXDIR)/$(e)/verify)
-LIB   := dcells ssxcc ssmcc
+LIB   := dcells ssxcc ssmcc xccdc
 
 .PHONY: all build test vet tangle pdf clean
 
 all: build
 
 # Regenerate the Go sources from the literate programs when a .w file changes.
-# gtangle on ssxcc.w and ssmcc.w emits the test files alongside the engines.
+# gtangle on the three engines emits their test files alongside them.
 dcells.go: dcells.w
 	$(GTANGLE) $<
 	gofmt -w dcells.go
@@ -57,6 +58,10 @@ ssxcc.go ssxcc_test.go: ssxcc.w
 ssmcc.go ssmcc_test.go: ssmcc.w
 	$(GTANGLE) $<
 	gofmt -w ssmcc.go ssmcc_test.go
+
+xccdc.go xccdc_test.go: xccdc.w
+	$(GTANGLE) $<
+	gofmt -w xccdc.go xccdc_test.go
 
 $(WORDS)/words.go: $(WORDS)/words.w
 	cd $(WORDS) && $(GTANGLE) words.w
@@ -77,14 +82,14 @@ $(addsuffix /verify.go,$(VERIFY)): %/verify.go: %/verify.w
 	cd $* && $(GTANGLE) verify.w
 	gofmt -w $@
 
-tangle: dcells.go ssxcc.go ssmcc.go $(WORDS)/words.go \
+tangle: dcells.go ssxcc.go ssmcc.go xccdc.go $(WORDS)/words.go \
         $(TRANS)/transversal.go $(HOLLOW)/hollow.go \
         $(addsuffix /verify.go,$(VERIFY))
 
 build: tangle
 	$(GO) build ./...
 
-test: tangle ssxcc_test.go ssmcc_test.go
+test: tangle ssxcc_test.go ssmcc_test.go xccdc_test.go
 	$(GO) test ./...
 
 vet: tangle
@@ -154,7 +159,7 @@ $(eval $(call figure,432,kakuro,1500))
 # verify.pdf files, which are committed so that they can be read without GWEB
 # installed.
 clean:
-	rm -f ssxcc_test.go ssmcc_test.go
+	rm -f ssxcc_test.go ssmcc_test.go xccdc_test.go
 	rm -f $(addsuffix .tex,$(LIB)) $(addsuffix .pdf,$(LIB)) \
 	      $(addsuffix .idx,$(LIB)) $(addsuffix .scn,$(LIB)) \
 	      $(addsuffix .log,$(LIB)) $(addsuffix .toc,$(LIB)) $(addsuffix .dvi,$(LIB))

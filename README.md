@@ -6,9 +6,9 @@ dancing-cells counterpart to [`sjnam/dlx`](https://github.com/sjnam/dlx) and
 exposes the same library API, so the dlx example programs port over almost
 unchanged.
 
-The library is a **literate program**: its whole source lives in three English
+The library is a **literate program**: its whole source lives in four English
 [GWEB](https://github.com/sjnam/gweb) documents — [`dcells.w`](dcells.w),
-[`ssxcc.w`](ssxcc.w), and [`ssmcc.w`](ssmcc.w) — see
+[`ssxcc.w`](ssxcc.w), [`ssmcc.w`](ssmcc.w), and [`xccdc.w`](xccdc.w) — see
 [The source is a literate program](#the-source-is-a-literate-program) below.
 
 The engines are also put to work on Knuth's own text:
@@ -54,7 +54,8 @@ d e g
   `Result{ Solutions <-chan []Option, Heartbeat <-chan string }`.
 - An `Option` is `[]string`, the option's item names (a colored secondary item
   appears as `name:c`). The list is always in input order, so `opt[0]`,
-  `opt[1]`, … can be indexed positionally.
+  `opt[1]`, … can be indexed positionally (`NewXCCDC` is the one exception,
+  noted below).
 - The search runs in a goroutine and blocks on each send, so ranging over
   `Solutions` paces it. `WithContext(ctx)` aborts the search when `ctx` is
   cancelled (and lets you stop after the first solution without leaking).
@@ -83,8 +84,9 @@ for sol := range res.Solutions {
   `f.Name(item)` read them back, and `f.Need(item)` says how many more times an
   item must still be covered (always 1 under XCC). Leaving `Bound` nil prunes on
   the incumbent alone.
-- **Both engines have it.** `NewMCC()` takes the same `Minimize` and `Bound`,
-  and there `Need` can exceed 1 — which is the whole point of having it.
+- **`NewMCC()` has it too**, with the same `Minimize` and `Bound`, and there
+  `Need` can exceed 1 — which is the whole point of having it. `NewXCCDC()`
+  does not: it counts covers, it does not price them.
 - `Dance` is untouched by any of this.
 
 ### Input format (DLX)
@@ -101,6 +103,40 @@ branching). Give a multiplicity prefix in the item line: `low:high|name` or
 `high|name` (default `1:1`). For example `2|a` means item `a` must be covered
 exactly twice. With default multiplicities it solves ordinary XCC, so it is a
 strict superset of `NewXCC` (the partridge example uses it).
+
+### Domain consistency (`NewXCCDC`)
+
+`NewXCCDC()` returns an `*XCCDC` that answers the same question `NewXCC()` does,
+with the same `Dance`/`Result`/`Option` API and the same input, but looks much
+further ahead. It maintains **domain consistency**: an option is thrown out as
+soon as *using it* would leave some primary item elsewhere with no option at
+all, and the removals cascade until every item's surviving options are mutually
+supportable. In effect `DLX-PRE` is run again at every node, all the way down.
+
+```go
+dc := cells.NewXCCDC()
+for sol := range dc.Dance(strings.NewReader(input)).Solutions {
+    // the same covers NewXCC() finds, usually after far fewer nodes
+}
+fmt.Println(dc.Nodes(), dc.Updates(), dc.Purges())
+```
+
+Nodes get expensive; there are far fewer of them. Which way that trades is a
+property of the problem, not of the engine — two examples from this repository,
+each solved twice:
+
+| Problem | XCC | XCCDC |
+| --- | --- | --- |
+| `examples/filomino/15x15.filomino.dlx` | 133,639 nodes, 11.1 s | **82 nodes, 54 ms** |
+| `examples/pentominoes/8x8.dlx` | 93,833 nodes, **0.32 s** | 12,295 nodes, 2.0 s |
+
+Two differences from `NewXCC()` are worth knowing. `Purges()` counts the options
+domain consistency removed, and `Debug = true` reports how many of them went
+before the first branch was ever taken. And this engine requires every option to
+begin with a primary item, shifting the nodes at input time if it does not, so
+an option written with secondary items in front is *reported* with its first
+primary item ahead of them; the rest keep their input order. There is no
+`Minimize`.
 
 ## Examples
 
@@ -634,9 +670,10 @@ program with switches, and so do we:
 | [`dcells.w`](dcells.w) | the common ground — the public API (`Option`, `Result`, `Frame`), the node array both engines dance on, and the `DLX` scanner. Its opening pages tell the sparse-set story. |
 | [`ssxcc.w`](ssxcc.w) | the **XCC** engine: exact cover with colors, *d*-way branching, and a closing chapter on least-cost covers. Reads start to finish on its own. |
 | [`ssmcc.w`](ssmcc.w) | the **MCC** engine: multiplicities, binary branching, and its own chapter on least-cost covers. Likewise self-contained. |
+| [`xccdc.w`](xccdc.w) | the **XCC** engine again, this time maintaining domain consistency: witnesses, trigger lists, ages and hints, and a search whose stages each span several levels. Self-contained as well, down to its own node type. |
 
-All three tangle into the one Go package `dcells`, so `NewXCC()` and `NewMCC()`
-still come from a single import.
+All four tangle into the one Go package `dcells`, so `NewXCC()`, `NewMCC()`, and
+`NewXCCDC()` still come from a single import.
 
 The [`Makefile`](Makefile) drives the GWEB tools:
 
@@ -648,7 +685,7 @@ make clean      # remove the generated files, keeping the committed ones
 
 The `.w` files are the source of truth: every `.go` that has a `.w` beside it,
 and every typeset document, is generated, so `make` is the first thing to run
-in a fresh clone. Two kinds of generated file are checked in anyway — the three
+in a fresh clone. Two kinds of generated file are checked in anyway — the four
 engine `.go` files, so that the package can be imported without running GWEB
 first, and each exercise reading's `verify.pdf`, so that it can be read the
 same way — and neither should ever be edited by hand. Because `gtangle` emits
