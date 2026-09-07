@@ -31,8 +31,8 @@ RSVG    ?= rsvg-convert
 MAGICK  ?= magick
 
 WORDS := examples/words
-EXAMPLES := filomino hollow langford partridge pentominoes queen sudoku \
-            transversal wordsearch zebra
+EXAMPLES := domino filomino hollow langford partridge pentominoes queen \
+            sudoku transversal wordsearch zebra
 EXAMPLEGO  := $(foreach e,$(EXAMPLES),examples/$(e)/$(e).go)
 EXAMPLEPDF := $(foreach e,$(EXAMPLES),examples/$(e)/$(e).pdf)
 EXDIR   := taocp-7.2.2.1-exercises

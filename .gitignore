@@ -41,6 +41,13 @@
 
 # examples/ 아래의 프로그램은 모두 문학적 프로그램이다: <이름>/<이름>.w만
 # 원본이고 .go와 조판 결과는 gtangle/gweave가 만들어 낸다.
+/examples/domino/domino.go
+/examples/domino/domino.tex
+/examples/domino/domino.pdf
+/examples/domino/domino.idx
+/examples/domino/domino.scn
+/examples/domino/domino.log
+/examples/domino/domino.toc
 /examples/filomino/filomino.go
 /examples/filomino/filomino.tex
 /examples/filomino/filomino.pdf

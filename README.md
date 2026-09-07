@@ -201,6 +201,7 @@ enumeration at all.
 | Filomino | `go run ./examples/filomino examples/filomino/10x10.filomino.dlx` |
 | Zebra puzzle | `go run ./examples/zebra` |
 | Partridge (multiplicities) | `go run ./examples/partridge 8` |
+| Domino tilings (ZDD) | `go run ./examples/domino -aztec 8` |
 | Word search | `go run ./examples/wordsearch examples/wordsearch/movie.txt 13 13` |
 | Five words, 24 letters | `go run ./examples/words examples/words/sgb-words.txt 5` |
 | Cheapest Latin-square transversal | `go run ./examples/transversal -plain 11` |
@@ -565,6 +566,58 @@ $ go run ./examples/partridge 10
 
 ````
 
+### Counting domino tilings
+
+The one example built on the `zdd` engine, and the one that could not be
+written without it. An 8 × 8 board has 12,988,816 domino tilings, a 12 × 12
+board has 53,060,477,521,960,000, and an Aztec diamond of order *n* has exactly
+2^(*n*(*n*+1)/2) — numbers that no amount of enumeration will reach. The program
+counts them, checks the count against Kasteleyn's product formula (or, for the
+Aztec diamond, against the exact power of two), draws a tiling picked uniformly
+at random from all of them, and finds the heaviest tiling under per-cell
+weights — a maximum-weight perfect matching, done as one walk over the diagram.
+
+````console
+$ go run ./examples/domino -aztec 10
+아즈텍 다이아몬드 차수 10: 칸 220개, 도미노 자리 400개
+덮는 방법: 36,028,797,018,963,968가지
+  다이어그램 마디 1245866개, 탐색 마디 1118227개, 서명 870349개, 적중 247786번
+  2^(n(n+1)/2) = 36,028,797,018,963,968 ... 맞다
+
+고르게 뽑은 덮기 하나 (점수 2400):
+                  ┌───┐
+                ┌─┴─┬─┴─┐
+              ┌─┴─┬─┴─┬─┴─┐
+            ┌─┴─┬─┴─┬─┴─┬─┴─┐
+          ┌─┴─┬─┼─┬─┼─┬─┼─┬─┴─┐
+        ┌─┴─┬─┤ │ │ │ │ │ ├─┬─┴─┐
+      ┌─┼───┤ ├─┴─┼─┼─┼─┼─┤ ├───┼─┐
+    ┌─┤ ├───┼─┴─┬─┤ │ │ │ ├─┼─┬─┤ ├─┐
+  ┌─┤ ├─┼─┬─┼───┤ ├─┼─┴─┼─┤ │ │ ├─┤ ├─┐
+┌─┤ ├─┤ │ │ ├─┬─┴─┤ ├───┤ ├─┼─┼─┤ ├─┤ ├─┐
+│ ├─┤ ├─┼─┴─┤ ├─┬─┴─┼─┬─┴─┤ │ │ ├─┤ ├─┤ │
+└─┤ ├─┤ ├─┬─┴─┤ ├───┤ ├───┼─┴─┼─┤ ├─┤ ├─┘
+  └─┤ ├─┤ ├─┬─┼─┴─┬─┴─┼───┼───┤ ├─┤ ├─┘
+    └─┤ ├─┤ │ ├─┬─┼───┼───┼─┬─┴─┤ ├─┘
+      └─┤ ├─┼─┤ │ ├─┬─┴─┬─┤ ├───┼─┘
+        └─┤ │ ├─┴─┤ ├───┤ ├─┴─┬─┘
+          └─┼─┴─┬─┴─┼───┼─┴─┬─┘
+            └─┬─┴─┬─┴─┬─┴─┬─┘
+              └─┬─┴─┬─┴─┬─┘
+                └─┬─┴─┬─┘
+                  └───┘
+````
+
+Look at the corners of that random tiling: they have frozen into regular
+brickwork while the disorder stays inside a circle in the middle. That is the
+**arctic circle** (Jockusch, Propp and Shor, 1998), and seeing it needs a
+sample drawn uniformly from all 3.6 × 10¹⁶ tilings — which is one walk down the
+diagram, and impossible any other way.
+
+The mutilated chessboard makes the opposite point: `-cut` removes two opposite
+corners, and the answer comes back as zero, with a one-node diagram, in
+milliseconds.
+
 ### Five words that cover 24 letters
 
 `sgb-words.txt` is the Stanford GraphBase list of 5757 five-letter English
@@ -749,13 +802,14 @@ the `.w` file it came from.
 The examples are literate programs as well, and they are where the *modelling*
 gets explained rather than the engine — how a puzzle turns into items and
 options, which items are primary and which secondary, and what the colors are
-made to mean. All eleven are written in Korean, live as
+made to mean. All twelve are written in Korean, live as
 `examples/<name>/<name>.w`, and are typeset with `luatex` (kotexgweb). Three of
 them carry original work and read as essays; the rest explain one modelling idea
 each.
 
 | Document | What it is |
 | --- | --- |
+| [`examples/domino/domino.w`](examples/domino/domino.w) | counting domino tilings with the `zdd` engine — Kasteleyn's formula checked against an exact count, the arctic circle of a uniformly random Aztec-diamond tiling, and a maximum-weight matching found by walking the diagram rather than searching. |
 | [`examples/words/words.w`](examples/words/words.w) | how *is there a set of five five-letter words covering 24 letters of the alphabet?* turns into a DLX input. Its answer is that colors alone — no multiplicities — pin the word count at exactly five. Carries a MetaPost figure, [`words.mp`](examples/words/words.mp). |
 | [`examples/transversal/transversal.w`](examples/transversal/transversal.w) | *Hungarian Dance No. 5* — the cheapest transversal of a Latin square, branched by dancing cells and bounded by the Hungarian algorithm. Where to find a lower bound, why this one is exact, and where else the trick applies. |
 | [`examples/hollow/hollow.w`](examples/hollow/hollow.w) | *A Partridge in a Pear Tree* — how large a hollow can the partridge puzzle keep at its centre. A geometric lower bound that turns a hopeless search into a two-second proof, and a `Need`-based one that honestly does not pay. |
