@@ -6,9 +6,10 @@ dancing-cells counterpart to [`sjnam/dlx`](https://github.com/sjnam/dlx) and
 exposes the same library API, so the dlx example programs port over almost
 unchanged.
 
-The library is a **literate program**: its whole source lives in four English
+The library is a **literate program**: its whole source lives in five English
 [GWEB](https://github.com/sjnam/gweb) documents — [`dcells.w`](dcells.w),
-[`ssxcc.w`](ssxcc.w), [`ssmcc.w`](ssmcc.w), and [`xccdc.w`](xccdc.w) — see
+[`ssxcc.w`](ssxcc.w), [`ssmcc.w`](ssmcc.w), [`xccdc.w`](xccdc.w), and
+[`zdd/zdd.w`](zdd/zdd.w) — see
 [The source is a literate program](#the-source-is-a-literate-program) below.
 
 The engines are also put to work on Knuth's own text:
@@ -137,6 +138,57 @@ begin with a primary item, shifting the nodes at input time if it does not, so
 an option written with secondary items in front is *reported* with its first
 primary item ahead of them; the rest keep their input order. There is no
 `Minimize`.
+
+### Counting without enumerating (`zdd`)
+
+The three engines above hand back solutions one at a time. That is the wrong
+shape for a problem with 10¹⁶ of them, so
+[`zdd/`](zdd) is a fourth engine that returns
+all solutions at once, as a **ZDD** — a decision diagram whose paths are exactly
+the exact covers. It is Knuth's
+[`DLX6`](https://www-cs-faculty.stanford.edu/~knuth/programs/dlx6.w) idea
+(after Nishino, Yasuda, Minato and Nagata, 2017) on sparse sets: the subproblem
+left after some options are chosen depends only on *which items remain*, so a
+search that remembers the subproblems it has solved never solves one twice.
+The diagrams come from [`sjnam/bdd`](https://github.com/sjnam/bdd), a Go
+rendering of Knuth's `BDD15`.
+
+```go
+import zdd "github.com/sjnam/dancing-cells/zdd"
+
+d := zdd.New().Dance(strings.NewReader(input))
+fmt.Println(d.Count())                 // *big.Int — a walk over the diagram
+fmt.Println(d.Nodes())                 // how big the diagram is
+best, weight, _ := d.MaxWeight(w)      // the heaviest cover, without searching
+one, _ := d.Random(rnd)                // uniform over all covers
+for sol := range d.Solutions() { … }   // still one at a time, if you want
+z, root := d.ZDD()                     // the bdd handle, for everything else
+```
+
+Whether this pays is a property of the problem, not of the engine. The cache
+wins by the factor by which the number of solutions exceeds the number of
+*distinct subproblems*:
+
+| Problem | Solutions | Search nodes | Saving |
+| --- | ---: | ---: | ---: |
+| dominoes on 8 × 8 | 12,988,816 | 2,317 | **21,600×** |
+| dominoes on 10 × 10 | 258,584,046,368 | 13,560 | **7.4 × 10⁷** |
+| dominoes on 12 × 12 | 5.3 × 10¹⁶ | 74,049 | **2.8 × 10¹²** |
+| pentominoes 6 × 10 | 9,356 | 2,243,002 | 1.6× |
+| Langford 11 | 17,792 | 162,544 | 1.4× |
+| 8 queens | 92 | 1,122 | 1.1× |
+
+Tilings of a regular region decompose into small independent pieces, so nearly
+every subproblem recurs; the twelve pentominoes are all different, so nearly
+none does, and a cache of 700,000 signatures to save a factor of 1.6 is a bad
+bargain. Use `NewXCC()` for those. Counting all 258 billion tilings of the
+10 × 10 board, on the other hand, takes 36 ms and a 13,161-node diagram, and
+finding the heaviest of them takes another 0.8 ms — neither is reachable by
+enumeration at all.
+
+`zdd` is a package of its own so that the core stays free of dependencies:
+`go get github.com/sjnam/dancing-cells` pulls in nothing, and only an import of
+`.../dancing-cells/zdd` brings in `bdd`.
 
 ## Examples
 
@@ -671,9 +723,11 @@ program with switches, and so do we:
 | [`ssxcc.w`](ssxcc.w) | the **XCC** engine: exact cover with colors, *d*-way branching, and a closing chapter on least-cost covers. Reads start to finish on its own. |
 | [`ssmcc.w`](ssmcc.w) | the **MCC** engine: multiplicities, binary branching, and its own chapter on least-cost covers. Likewise self-contained. |
 | [`xccdc.w`](xccdc.w) | the **XCC** engine again, this time maintaining domain consistency: witnesses, trigger lists, ages and hints, and a search whose stages each span several levels. Self-contained as well, down to its own node type. |
+| [`zdd/zdd.w`](zdd/zdd.w) | the **ZDD** engine: the same search, but memoized on a signature of the remaining items, returning the family of all solutions as a decision diagram. Its own package, and the one document that leans on another library. |
 
-All four tangle into the one Go package `dcells`, so `NewXCC()`, `NewMCC()`, and
-`NewXCCDC()` still come from a single import.
+The first four tangle into the one Go package `dcells`, so `NewXCC()`,
+`NewMCC()`, and `NewXCCDC()` come from a single import; the fifth is the
+package `dcells/zdd` beside it.
 
 The [`Makefile`](Makefile) drives the GWEB tools:
 
@@ -685,7 +739,7 @@ make clean      # remove the generated files, keeping the committed ones
 
 The `.w` files are the source of truth: every `.go` that has a `.w` beside it,
 and every typeset document, is generated, so `make` is the first thing to run
-in a fresh clone. Two kinds of generated file are checked in anyway — the four
+in a fresh clone. Two kinds of generated file are checked in anyway — the five
 engine `.go` files, so that the package can be imported without running GWEB
 first, and each exercise reading's `verify.pdf`, so that it can be read the
 same way — and neither should ever be edited by hand. Because `gtangle` emits

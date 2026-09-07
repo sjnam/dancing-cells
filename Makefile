@@ -5,6 +5,9 @@
 #   ssxcc.w    the XCC engine (d-way branching)
 #   ssmcc.w    the MCC engine (multiplicities, binary branching)
 #   xccdc.w    the XCC engine again, maintaining domain consistency
+#   zdd/zdd.w  the ZDD engine: all solutions as a decision diagram.  It is a
+#              package of its own because it depends on github.com/sjnam/bdd
+#              while the core package depends on nothing.
 #
 # Every program under examples/ is a literate program too, written in Korean and
 # typeset with luatex since kotexgweb needs it; each lives in its own directory
@@ -66,6 +69,10 @@ xccdc.go xccdc_test.go: xccdc.w
 	$(GTANGLE) $<
 	gofmt -w xccdc.go xccdc_test.go
 
+zdd/zdd.go zdd/zdd_test.go: zdd/zdd.w
+	cd zdd && $(GTANGLE) zdd.w
+	gofmt -w zdd/zdd.go zdd/zdd_test.go
+
 $(WORDS)/words.go: $(WORDS)/words.w
 	cd $(WORDS) && $(GTANGLE) words.w
 	gofmt -w $(WORDS)/words.go
@@ -90,26 +97,34 @@ $(addsuffix /verify.go,$(VERIFY)): %/verify.go: %/verify.w
 	cd $* && $(GTANGLE) verify.w
 	gofmt -w $@
 
-tangle: dcells.go ssxcc.go ssmcc.go xccdc.go $(WORDS)/words.go $(EXAMPLEGO) \
+tangle: dcells.go ssxcc.go ssmcc.go xccdc.go zdd/zdd.go \
+        $(WORDS)/words.go $(EXAMPLEGO) \
         $(addsuffix /verify.go,$(VERIFY))
 
 build: tangle
 	$(GO) build ./...
 
-test: tangle ssxcc_test.go ssmcc_test.go xccdc_test.go
+test: tangle ssxcc_test.go ssmcc_test.go xccdc_test.go zdd/zdd_test.go
 	$(GO) test ./...
 
 vet: tangle
 	$(GO) vet ./...
 
 # Typeset the literate documents (two passes resolve the cross-references).
-pdf: $(addsuffix .pdf,$(LIB)) $(WORDS)/words.pdf $(EXAMPLEPDF) \
+pdf: $(addsuffix .pdf,$(LIB)) zdd/zdd.pdf $(WORDS)/words.pdf $(EXAMPLEPDF) \
      $(addsuffix /verify.pdf,$(VERIFY)) $(FIGS)
 
 %.pdf: %.w
 	$(GWEAVE) $<
 	$(PDFTEX) $*.tex
 	$(PDFTEX) $*.tex
+
+# A static pattern rule, so that the generic one above does not claim it and
+# leave its output in the wrong directory.
+zdd/zdd.pdf: zdd/zdd.w
+	cd zdd && $(GWEAVE) zdd.w
+	cd zdd && $(PDFTEX) zdd.tex
+	cd zdd && $(PDFTEX) zdd.tex
 
 # words.mp must be converted first: \pic pulls words-1.pdf into the document.
 $(WORDS)/words.pdf: $(WORDS)/words.w $(WORDS)/words.mp
@@ -156,7 +171,8 @@ $(eval $(call figure,432,kakuro,1500))
 # verify.pdf files, which are committed so that they can be read without GWEB
 # installed.
 clean:
-	rm -f ssxcc_test.go ssmcc_test.go xccdc_test.go
+	rm -f ssxcc_test.go ssmcc_test.go xccdc_test.go zdd/zdd_test.go
+	rm -f $(foreach x,tex pdf idx scn log toc,zdd/zdd.$(x))
 	rm -f $(addsuffix .tex,$(LIB)) $(addsuffix .pdf,$(LIB)) \
 	      $(addsuffix .idx,$(LIB)) $(addsuffix .scn,$(LIB)) \
 	      $(addsuffix .log,$(LIB)) $(addsuffix .toc,$(LIB)) $(addsuffix .dvi,$(LIB))
