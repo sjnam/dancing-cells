@@ -766,6 +766,7 @@ not check.
 | [346](taocp-7.2.2.1-exercises/346) | Pack space optimally with small tripods | confirmed, and 65/108 improves to 5/8 |
 | [387](taocp-7.2.2.1-exercises/387) | Classify the types of symmetry that a polycube might have | two of the eleven pictures are not minimal |
 | [432](taocp-7.2.2.1-exercises/432) | Find the most interesting 3×3 kakuro puzzles | the puzzle called hardest cannot exist |
+| [442](taocp-7.2.2.1-exercises/442) | Enumerate all hitori covers of small grids | every count confirmed; one range entry is wrong |
 
 Adding a reading means putting its directory name in `EXERCISES` in the
 [`Makefile`](Makefile), which brings the tangle, typeset and clean rules with
