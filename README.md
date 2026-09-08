@@ -171,22 +171,25 @@ is Knuth's exercise 7.2.2.1-264; the diagram that comes back is the same one
 either way — a reduced ordered ZDD is fixed by its family and its variable
 order — but on a long thin region the sweep it makes is cheaper.
 
-Whether this pays is a property of the problem, not of the engine. The cache
-wins by the factor by which the number of solutions exceeds the number of
-*distinct subproblems*:
+Whether this pays is a property of the problem, not of the engine. The search
+nodes column is what this engine visits; the saving is that divided into what
+the other engines visit with no cache, estimated for the two largest boards
+since nobody enumerates 5.3 × 10¹⁶ tilings to measure it. The cache wins by
+the factor by which those nodes exceed the number of *distinct subproblems*
+among them:
 
 | Problem | Solutions | Search nodes | Saving |
 | --- | ---: | ---: | ---: |
 | dominoes on 8 × 8 | 12,988,816 | 2,317 | **21,600×** |
 | dominoes on 10 × 10 | 258,584,046,368 | 13,560 | **7.4 × 10⁷** |
-| dominoes on 12 × 12 | 5.3 × 10¹⁶ | 74,049 | **2.8 × 10¹²** |
-| pentominoes 6 × 10 | 9,356 | 2,243,002 | 1.6× |
-| Langford 11 | 17,792 | 162,544 | 1.4× |
-| 8 queens | 92 | 1,122 | 1.1× |
+| dominoes on 12 × 12 | 5.3 × 10¹⁶ | 74,023 | **2.8 × 10¹²** |
+| pentominoes 6 × 10 | 9,356 | 822,828 | 1.5× |
+| Langford 11 | 17,792 | 130,724 | 1.3× |
+| 8 queens | 92 | 869 | 1.1× |
 
 Tilings of a regular region decompose into small independent pieces, so nearly
 every subproblem recurs; the twelve pentominoes are all different, so nearly
-none does, and a cache of 700,000 signatures to save a factor of 1.6 is a bad
+none does, and a cache of 700,000 signatures to save a factor of 1.5 is a bad
 bargain. Use `NewXCC()` for those. Counting all 258 billion tilings of the
 10 × 10 board, on the other hand, takes 36 ms and a 13,161-node diagram, and
 finding the heaviest of them takes another 0.8 ms — neither is reachable by

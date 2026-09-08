@@ -33,26 +33,29 @@ sets}, and families of sets are what ZDDs are for. Our ZDDs come from the
 7.1.4, meet in one program.
 
 @ Whether that pays is a property of the problem, not of the engine, and it is
-worth being blunt about it before anyone reaches for this program. Here is
-what the memo cache saves, measured as search nodes with the cache against
-search nodes without it:
+worth being blunt about it before anyone reaches for this program. The third
+column below is how many search nodes this engine visits; the last is that
+divided into how many the other engines visit with no cache at all. For the
+two largest boards the last column is an estimate, since nobody is going to
+enumerate $5.3\times10^{16}$ tilings to measure it.
 $$\vbox{\halign{\hfil\tt#\quad&\hfil#\hfil\quad&\hfil#\hfil\quad&\hfil#\cr
-\omit\hfil{\rm problem}\hfil&\omit{\rm solutions}\hfil&
-   \omit{\rm nodes, cached}\hfil&\omit{\rm saving}\hfil\cr
+\omit\hfil{\rm problem}\hfil\quad&{\rm solutions}&{\rm search nodes}&
+   {\rm saving}\cr
 \noalign{\smallskip\hrule\smallskip}
 domino 8$\times$8&12{,}988{,}816&2{,}317&21{,}600$\times$\cr
-domino 10$\times$10&258{,}584{,}046{,}368&13{,}562&$7.4\times10^7$\cr
-domino 12$\times$12&$5.3\times10^{16}$&74{,}049&$2.8\times10^{12}$\cr
-pentominoes 6$\times$10&9{,}356&2{,}243{,}002&1.6$\times$\cr
-langford 11&17{,}792&162{,}544&1.4$\times$\cr
-8 queens&92&1{,}122&1.1$\times$\cr}}$$
-The rule behind those numbers is simple: the cache wins by exactly the factor
-by which the number of solutions exceeds the number of {\it distinct
-subproblems}. Tilings of a regular region decompose into small independent
-pieces and have astronomically many solutions, so almost every subproblem
-recurs. The twelve pentominoes are all different, so almost no subproblem
-recurs, and paying for a cache of 700{,}000 signatures to save a factor of 1.6
-is a bad bargain. Use the other engines for those.
+domino 10$\times$10&258{,}584{,}046{,}368&13{,}560&$7.4\times10^7$\cr
+domino 12$\times$12&$5.3\times10^{16}$&74{,}023&$2.8\times10^{12}$\cr
+pentominoes 6$\times$10&9{,}356&822{,}828&1.5$\times$\cr
+langford 11&17{,}792&130{,}724&1.3$\times$\cr
+8 queens&92&869&1.1$\times$\cr}}$$
+The rule behind those numbers is simple: the cache saves whatever the plain
+search would have spent on subproblems it had already solved, so it wins by
+the factor by which the nodes of that search exceed the number of {\it
+distinct\/} subproblems among them. Tilings of a regular region decompose into
+small independent pieces and have astronomically many solutions, so almost
+every subproblem recurs. The twelve pentominoes are all different, so almost
+none does, and paying for a cache of 700{,}000 signatures to save a factor of
+1.5 is a bad bargain. Use the other engines for those.
 
 @ What you get in exchange for building the diagram is the ability to ask
 things afterwards. Counting is a walk over the DAG, so $5.3\times10^{16}$
