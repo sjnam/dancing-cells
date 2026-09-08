@@ -693,7 +693,10 @@ The first four tangle into the one Go package `dcells`, so `NewXCC()`,
 `NewMCC()`, and `NewXCCDC()` come from a single import; the fifth is the
 package `dcells/zdd` beside it.
 
-The [`Makefile`](Makefile) drives the GWEB tools:
+Three Makefiles drive the GWEB tools, one per part of the repository — the
+[library](Makefile), the [examples](examples/Makefile), and the [exercise
+readings](taocp-7.2.2.1-exercises/Makefile). Each stands alone and each has the
+same targets:
 
 ```sh
 make            # gtangle the .w files → .go, then build
@@ -701,8 +704,14 @@ make pdf        # gweave → typeset every document
 make clean      # remove the generated files, keeping the committed ones
 ```
 
+so a fresh clone is set up by
+
+```sh
+make && make -C examples && make -C taocp-7.2.2.1-exercises
+```
+
 The `.w` files are the source of truth: every `.go` that has a `.w` beside it,
-and every typeset document, is generated, so `make` is the first thing to run
+and every typeset document, is generated, so those are the first things to run
 in a fresh clone. Two kinds of generated file are checked in anyway — the five
 engine `.go` files, so that the package can be imported without running GWEB
 first, and each exercise reading's `verify.pdf`, so that it can be read the
@@ -769,6 +778,7 @@ not check.
 | [432](taocp-7.2.2.1-exercises/432) | Find the most interesting 3×3 kakuro puzzles | the puzzle called hardest cannot exist |
 | [442](taocp-7.2.2.1-exercises/442) | Enumerate all hitori covers of small grids | every count confirmed; one range entry is wrong |
 
-Adding a reading means putting its directory name in `EXERCISES` in the
-[`Makefile`](Makefile), which brings the tangle, typeset and clean rules with
-it, plus one `$(eval $(call figure,...))` line if the reading draws a picture.
+Adding a reading means putting its directory name in `EXERCISES` in
+[`taocp-7.2.2.1-exercises/Makefile`](taocp-7.2.2.1-exercises/Makefile), which
+brings the tangle, typeset and clean rules with it, plus one
+`$(eval $(call figure,...))` line if the reading draws a picture.

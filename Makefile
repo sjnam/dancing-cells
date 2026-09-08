@@ -1,5 +1,6 @@
 # Dancing Cells is a literate program: the .w files are the source of truth.
-# `make` tangles them to Go and builds everything; `make pdf` typesets them.
+# This Makefile builds the library and nothing else --- the four documents that
+# tangle into the package `dcells`, and the ZDD engine beside it:
 #
 #   dcells.w   the common ground: public API, node array, DLX scanner
 #   ssxcc.w    the XCC engine (d-way branching)
@@ -9,13 +10,11 @@
 #              package of its own because it depends on github.com/sjnam/bdd
 #              while the core package depends on nothing.
 #
-# Every program under examples/ is a literate program too, written in Korean and
-# typeset with luatex since kotexgweb needs it; each lives in its own directory
-# as <name>/<name>.w.  To add one, put its directory name in EXAMPLES below.
-# taocp-7.2.2.1-exercises holds one careful reading of an exercise per
-# directory, each with a verify.w that checks Knuth's answer.  They are in
-# English but go through luatex, because one of them draws its figure with
-# luamplib; to add another, put its number in EXERCISES below.
+# The programs that use the library have Makefiles of their own, with the same
+# targets, and neither needs this one to have been run first:
+#
+#   examples/Makefile                  the twelve example programs
+#   taocp-7.2.2.1-exercises/Makefile   the careful readings of TAOCP exercises
 #
 # GTANGLE/GWEAVE are named to avoid GNU Make's built-in TANGLE/WEAVE variables
 # (which point at the CWEB tools).
@@ -24,30 +23,9 @@ GO      ?= go
 GTANGLE ?= gtangle
 GWEAVE  ?= gweave
 PDFTEX  ?= pdftex
-LUATEX  ?= luatex
-MPTOPDF ?= mptopdf
-MPOST   ?= mpost
-RSVG    ?= rsvg-convert
-MAGICK  ?= magick
 
-WORDS := examples/words
-EXAMPLES := domino filomino hollow langford partridge pentominoes queen \
-            sudoku transversal wordsearch zebra
-EXAMPLEGO  := $(foreach e,$(EXAMPLES),examples/$(e)/$(e).go)
-EXAMPLEPDF := $(foreach e,$(EXAMPLES),examples/$(e)/$(e).pdf)
-EXDIR   := taocp-7.2.2.1-exercises
-EXERCISES := 029-030 055 104 121 129 147 151-152 262 305-306 320 323 334 \
-             337 346 387 432 442
-FIGS    := $(EXDIR)/029-030/backtrack.png $(EXDIR)/104/allinterval.png \
-           $(EXDIR)/121/tetrads.png \
-           $(EXDIR)/151-152/loop8x12.png $(EXDIR)/262/tilings.png \
-           $(EXDIR)/320/convex56.png \
-           $(EXDIR)/323/tetraskews.png $(EXDIR)/334/wwall.png \
-           $(EXDIR)/337/dice.png $(EXDIR)/346/tripods.png \
-           $(EXDIR)/387/polycubes.png \
-           $(EXDIR)/432/kakuro.png $(EXDIR)/442/hitori.png
-VERIFY  := $(foreach e,$(EXERCISES),$(EXDIR)/$(e)/verify)
-LIB   := dcells ssxcc ssmcc xccdc
+LIB  := dcells ssxcc ssmcc xccdc
+PKGS := . ./zdd
 
 .PHONY: all build test vet tangle pdf clean
 
@@ -75,46 +53,19 @@ zdd/zdd.go zdd/zdd_test.go: zdd/zdd.w
 	cd zdd && $(GTANGLE) zdd.w
 	gofmt -w zdd/zdd.go zdd/zdd_test.go
 
-$(WORDS)/words.go: $(WORDS)/words.w
-	cd $(WORDS) && $(GTANGLE) words.w
-	gofmt -w $(WORDS)/words.go
-
-# Every other example is tangled and typeset the same way, so one macro serves
-# them all: examples/<name>/<name>.w makes <name>.go and <name>.pdf in place.
-define example
-examples/$(1)/$(1).go: examples/$(1)/$(1).w
-	cd examples/$(1) && $$(GTANGLE) $(1).w
-	gofmt -w examples/$(1)/$(1).go
-examples/$(1)/$(1).pdf: examples/$(1)/$(1).w
-	cd examples/$(1) && $$(GWEAVE) $(1).w
-	cd examples/$(1) && $$(LUATEX) $(1).tex
-	cd examples/$(1) && $$(LUATEX) $(1).tex
-endef
-$(foreach e,$(EXAMPLES),$(eval $(call example,$(e))))
-
-# A static pattern rule, not an implicit one: the generic `%.pdf: %.w` below
-# would otherwise win for these targets and leave its output in the wrong
-# directory.
-$(addsuffix /verify.go,$(VERIFY)): %/verify.go: %/verify.w
-	cd $* && $(GTANGLE) verify.w
-	gofmt -w $@
-
-tangle: dcells.go ssxcc.go ssmcc.go xccdc.go zdd/zdd.go \
-        $(WORDS)/words.go $(EXAMPLEGO) \
-        $(addsuffix /verify.go,$(VERIFY))
+tangle: dcells.go ssxcc.go ssmcc.go xccdc.go zdd/zdd.go
 
 build: tangle
-	$(GO) build ./...
+	$(GO) build $(PKGS)
 
 test: tangle ssxcc_test.go ssmcc_test.go xccdc_test.go zdd/zdd_test.go
-	$(GO) test ./...
+	$(GO) test $(PKGS)
 
 vet: tangle
-	$(GO) vet ./...
+	$(GO) vet $(PKGS)
 
 # Typeset the literate documents (two passes resolve the cross-references).
-pdf: $(addsuffix .pdf,$(LIB)) zdd/zdd.pdf $(WORDS)/words.pdf $(EXAMPLEPDF) \
-     $(addsuffix /verify.pdf,$(VERIFY)) $(FIGS)
+pdf: $(addsuffix .pdf,$(LIB)) zdd/zdd.pdf
 
 %.pdf: %.w
 	$(GWEAVE) $<
@@ -128,66 +79,11 @@ zdd/zdd.pdf: zdd/zdd.w
 	cd zdd && $(PDFTEX) zdd.tex
 	cd zdd && $(PDFTEX) zdd.tex
 
-# words.mp must be converted first: \pic pulls words-1.pdf into the document.
-$(WORDS)/words.pdf: $(WORDS)/words.w $(WORDS)/words.mp
-	cd $(WORDS) && $(MPTOPDF) words.mp
-	cd $(WORDS) && $(GWEAVE) words.w
-	cd $(WORDS) && $(LUATEX) words.tex
-	cd $(WORDS) && $(LUATEX) words.tex
-
-# A static pattern rule, not an implicit one: the generic `%.pdf: %.w` above
-# would otherwise win for these targets and leave its output in the wrong
-# directory.  These go through luatex because one of them draws its figure
-# with luamplib.
-$(addsuffix /verify.pdf,$(VERIFY)): %/verify.pdf: %/verify.w
-	cd $* && $(GWEAVE) verify.w
-	cd $* && $(LUATEX) verify.tex
-	cd $* && $(LUATEX) verify.tex
-
-# A figure that both verify.w and README.md show is drawn once, in MetaPost:
-# luamplib runs the .mp while the document is typeset, and mpost runs it again
-# on its own to make the picture the README displays.  Arguments: the exercise
-# directory, the figure name, and how wide the raster should be.
-define figure
-$$(EXDIR)/$(1)/$(2).png: $$(EXDIR)/$(1)/verify/$(2).mp
-	cd $$(EXDIR)/$(1)/verify && \
-	  $$(MPOST) -s 'outputformat="svg"' '\input $(2); end.' </dev/null
-	$$(RSVG) -w $(3) $$(EXDIR)/$(1)/verify/$(2).1 -o $$@
-	$$(MAGICK) $$@ -trim +repage -bordercolor white -border 16 $$@
-	rm -f $$(EXDIR)/$(1)/verify/$(2).1 $$(EXDIR)/$(1)/verify/$(2).log
-$$(EXDIR)/$(1)/verify/verify.pdf: $$(EXDIR)/$(1)/verify/$(2).mp
-endef
-$(eval $(call figure,029-030,backtrack,900))
-$(eval $(call figure,104,allinterval,700))
-$(eval $(call figure,121,tetrads,1500))
-$(eval $(call figure,151-152,loop8x12,1800))
-$(eval $(call figure,262,tilings,1600))
-$(eval $(call figure,320,convex56,1500))
-$(eval $(call figure,323,tetraskews,1400))
-$(eval $(call figure,334,wwall,1500))
-$(eval $(call figure,337,dice,1100))
-$(eval $(call figure,346,tripods,1300))
-$(eval $(call figure,387,polycubes,1400))
-$(eval $(call figure,432,kakuro,1500))
-$(eval $(call figure,442,hitori,1200))
-
-# clean removes everything the .w files generate, tangled Go included;
-# `make` (or `make tangle`) puts the Go sources back.  The one exception is the
-# verify.pdf files, which are committed so that they can be read without GWEB
-# installed.
+# clean removes everything the .w files generate here; `make` puts the Go
+# sources back.  The five engine .go files are checked in, so that the package
+# can be imported without running GWEB first, and are left alone.
 clean:
 	rm -f ssxcc_test.go ssmcc_test.go xccdc_test.go zdd/zdd_test.go
 	rm -f $(foreach x,tex pdf idx scn log toc,zdd/zdd.$(x))
-	rm -f $(addsuffix .tex,$(LIB)) $(addsuffix .pdf,$(LIB)) \
-	      $(addsuffix .idx,$(LIB)) $(addsuffix .scn,$(LIB)) \
-	      $(addsuffix .log,$(LIB)) $(addsuffix .toc,$(LIB)) $(addsuffix .dvi,$(LIB))
-	rm -f $(WORDS)/words.go $(EXAMPLEGO) $(addsuffix /verify.go,$(VERIFY))
-	rm -f $(foreach x,tex pdf idx scn log toc,\
-	        $(foreach e,$(EXAMPLES),examples/$(e)/$(e).$(x)))
-	rm -f $(WORDS)/words.tex $(WORDS)/words.pdf $(WORDS)/words.idx \
-	      $(WORDS)/words.scn $(WORDS)/words.log $(WORDS)/words.toc \
-	      $(WORDS)/words.1 $(WORDS)/words.mpx $(WORDS)/words-1.pdf
-	rm -f $(addsuffix /verify.tex,$(VERIFY)) $(addsuffix /verify.idx,$(VERIFY)) \
-	      $(addsuffix /verify.scn,$(VERIFY)) $(addsuffix /verify.log,$(VERIFY)) \
-	      $(addsuffix /verify.toc,$(VERIFY))
-	rm -f $(EXDIR)/*/verify/*.1 $(EXDIR)/*/verify/*.log $(EXDIR)/*/verify/*.mpx
+	rm -f $(foreach x,tex pdf idx scn log toc dvi,\
+	        $(addsuffix .$(x),$(LIB)))
