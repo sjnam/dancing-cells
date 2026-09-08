@@ -1,4 +1,4 @@
-//line ssmcc.w:27
+//line ssmcc.w:26
 package dcells
 
 import (
@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-//line ssmcc.w:151
+//line ssmcc.w:150
 const (
 	mccExtra = 5 // set entries below each item base: size, pos, itemNo, slack, bound
 	mccIprop = 5 // input-phase slot spacing
@@ -20,22 +20,22 @@ const (
 
 type threeints struct{ l, s, b int32 }
 
-//line ssmcc.w:164
+//line ssmcc.w:163
 type MCC struct {
 
-//line ssmcc.w:72
+//line ssmcc.w:71
 	Debug         bool          // print input summary and final stats to stderr
 	PulseInterval time.Duration // if > 0, offer periodic Heartbeat strings
 
-//line ssmcc.w:741
+//line ssmcc.w:740
 	Bound func(Frame) int // lower bound on the cost still to come; may be nil
 
-//line ssmcc.w:166
+//line ssmcc.w:165
 	ctx context.Context
 
-//line ssmcc.w:168
+//line ssmcc.w:167
 
-//line ssmcc.w:178
+//line ssmcc.w:177
 	nd       []node
 	lastNode int
 	item     []int32
@@ -48,30 +48,30 @@ type MCC struct {
 	baditem  int
 	osecond  int
 
-//line ssmcc.w:169
+//line ssmcc.w:168
 
-//line ssmcc.w:79
+//line ssmcc.w:78
 	names      []string // interned item names, by item number (1-based)
 	nameIndex  map[string]int
 	colorNames []string // interned colors, by id (1-based; 0 means "no color")
 	colorIndex map[string]int
 
-//line ssmcc.w:170
+//line ssmcc.w:169
 
-//line ssmcc.w:89
+//line ssmcc.w:88
 	force  []int32
 	forced int
 
-//line ssmcc.w:171
+//line ssmcc.w:170
 
-//line ssmcc.w:191
+//line ssmcc.w:190
 	included  []int32 // option included at each stage, for solution output
 	savestack []threeints
 	saveptr   int
 
-//line ssmcc.w:172
+//line ssmcc.w:171
 
-//line ssmcc.w:750
+//line ssmcc.w:749
 	minimizing bool
 	optNo      []int32 // node -> the option that node belongs to
 	optCost    []int32 // option number -> the price the caller put on it
@@ -79,25 +79,25 @@ type MCC struct {
 	cost       int64   // price of the options included so far
 	incumbent  int64   // price of the cheapest cover so far
 
-//line ssmcc.w:173
+//line ssmcc.w:172
 
-//line ssmcc.w:93
+//line ssmcc.w:92
 	updates uint64
 	nodes   uint64
 	options uint64
 	count   uint64
 
-//line ssmcc.w:174
+//line ssmcc.w:173
 
-//line ssmcc.w:99
+//line ssmcc.w:98
 	solStream chan []Option
 	heartbeat chan string
 	pulse     *time.Ticker
 
-//line ssmcc.w:175
+//line ssmcc.w:174
 }
 
-//line ssmcc.w:197
+//line ssmcc.w:196
 func NewMCC() *MCC {
 	return &MCC{
 		second:     secondUnset,
@@ -120,39 +120,39 @@ func (m *MCC) WithContext(ctx context.Context) *MCC {
 
 func (m *MCC) Updates() uint64 { return m.updates }
 
-//line ssmcc.w:218
+//line ssmcc.w:217
 func (m *MCC) Nodes() uint64 { return m.nodes }
 
-//line ssmcc.w:222
+//line ssmcc.w:221
 func (m *MCC) size(x int) int { return int(m.set[x-1]) }
 
-//line ssmcc.w:223
+//line ssmcc.w:222
 func (m *MCC) pos(x int) int { return int(m.set[x-2]) }
 
-//line ssmcc.w:224
+//line ssmcc.w:223
 func (m *MCC) itemNo(x int) int { return int(m.set[x-3]) }
 
-//line ssmcc.w:225
+//line ssmcc.w:224
 func (m *MCC) slack(x int) int { return int(m.set[x-4]) }
 
-//line ssmcc.w:226
+//line ssmcc.w:225
 func (m *MCC) bound(x int) int { return int(m.set[x-5]) }
 
 func (m *MCC) setSize(x, v int) { m.set[x-1] = int32(v) }
 
-//line ssmcc.w:229
+//line ssmcc.w:228
 func (m *MCC) setPos(x, v int) { m.set[x-2] = int32(v) }
 
-//line ssmcc.w:230
+//line ssmcc.w:229
 func (m *MCC) setItemNo(x, v int) { m.set[x-3] = int32(v) }
 
-//line ssmcc.w:231
+//line ssmcc.w:230
 func (m *MCC) setSlack(x, v int) { m.set[x-4] = int32(v) }
 
-//line ssmcc.w:232
+//line ssmcc.w:231
 func (m *MCC) setBound(x, v int) { m.set[x-5] = int32(v) }
 
-//line ssmcc.w:238
+//line ssmcc.w:237
 func (m *MCC) internName(name string) (num int, ok bool) {
 	if _, dup := m.nameIndex[name]; dup {
 		return 0, false
@@ -173,11 +173,11 @@ func (m *MCC) internColor(name string) int {
 	return id
 }
 
-//line ssmcc.w:261
+//line ssmcc.w:260
 func (m *MCC) Dance(rd io.Reader) *Result {
 	m.inputMatrix(rd)
 
-//line ssmcc.w:270
+//line ssmcc.w:269
 	m.solStream = make(chan []Option)
 	m.heartbeat = make(chan string)
 
@@ -185,16 +185,16 @@ func (m *MCC) Dance(rd io.Reader) *Result {
 		defer close(m.solStream)
 		defer close(m.heartbeat)
 
-//line ssmcc.w:277
+//line ssmcc.w:276
 
-//line ssmcc.w:293
+//line ssmcc.w:292
 		if m.Debug {
 			fmt.Fprintf(os.Stderr,
 				"(%d options, %d+%d items, %d entries successfully read)\n",
 				m.options, m.osecond, m.itemlen-m.osecond, m.lastNode)
 		}
 
-//line ssmcc.w:278
+//line ssmcc.w:277
 		if m.PulseInterval > 0 {
 			m.pulse = time.NewTicker(m.PulseInterval)
 			defer m.pulse.Stop()
@@ -204,9 +204,9 @@ func (m *MCC) Dance(rd io.Reader) *Result {
 			m.search(0)
 		}
 
-//line ssmcc.w:287
+//line ssmcc.w:286
 
-//line ssmcc.w:300
+//line ssmcc.w:299
 		if m.Debug {
 			plural := "s"
 			if m.count == 1 {
@@ -216,15 +216,15 @@ func (m *MCC) Dance(rd io.Reader) *Result {
 				m.count, plural, m.updates, m.nodes)
 		}
 
-//line ssmcc.w:288
+//line ssmcc.w:287
 	}()
 
 	return &Result{Solutions: m.solStream, Heartbeat: m.heartbeat}
 
-//line ssmcc.w:264
+//line ssmcc.w:263
 }
 
-//line ssmcc.w:327
+//line ssmcc.w:326
 func (m *MCC) search(stage int) bool {
 	m.nodes++
 	select {
@@ -234,9 +234,9 @@ func (m *MCC) search(stage int) bool {
 	}
 	m.tick()
 
-//line ssmcc.w:336
+//line ssmcc.w:335
 
-//line ssmcc.w:354
+//line ssmcc.w:353
 	for m.forced != 0 {
 		m.forced--
 		if bi := int(m.force[m.forced]); m.pos(bi) < m.active {
@@ -244,9 +244,9 @@ func (m *MCC) search(stage int) bool {
 		}
 	}
 
-//line ssmcc.w:337
+//line ssmcc.w:336
 
-//line ssmcc.w:811
+//line ssmcc.w:810
 	if m.minimizing {
 		rest := int64(0)
 		if m.Bound != nil {
@@ -257,7 +257,7 @@ func (m *MCC) search(stage int) bool {
 		}
 	}
 
-//line ssmcc.w:339
+//line ssmcc.w:338
 	best, score := m.chooseBest()
 	if m.forced != 0 {
 		m.forced--
@@ -267,19 +267,19 @@ func (m *MCC) search(stage int) bool {
 		return m.visit(stage)
 	}
 
-//line ssmcc.w:368
+//line ssmcc.w:367
 	mark := m.saveState()
 	opt := int(m.set[best])
 	m.included = ensure(m.included, stage+1)
 	m.included[stage] = int32(opt)
 
-//line ssmcc.w:824
+//line ssmcc.w:823
 	price := int64(0)
 	if m.minimizing {
 		price = int64(m.optCost[m.optNo[opt]])
 	}
 
-//line ssmcc.w:374
+//line ssmcc.w:373
 	m.cost += price
 	if m.includeOption(opt) {
 		if !m.search(stage + 1) {
@@ -299,23 +299,23 @@ func (m *MCC) search(stage int) bool {
 	}
 	m.saveptr = mark
 
-//line ssmcc.w:348
+//line ssmcc.w:347
 	return true
 }
 
-//line ssmcc.w:400
+//line ssmcc.w:399
 func (m *MCC) forcedMove(stage, bi int) bool {
 	opt := int(m.set[bi])
 	m.included = ensure(m.included, stage+1)
 	m.included[stage] = int32(opt)
 
-//line ssmcc.w:824
+//line ssmcc.w:823
 	price := int64(0)
 	if m.minimizing {
 		price = int64(m.optCost[m.optNo[opt]])
 	}
 
-//line ssmcc.w:405
+//line ssmcc.w:404
 	m.cost += price
 	ok := true
 	if m.includeOption(opt) {
@@ -325,7 +325,7 @@ func (m *MCC) forcedMove(stage, bi int) bool {
 	return ok
 }
 
-//line ssmcc.w:421
+//line ssmcc.w:420
 func (m *MCC) chooseBest() (best, score int) {
 	score = infSize
 	bestS, bestL := 0, 0
@@ -354,7 +354,7 @@ func (m *MCC) chooseBest() (best, score int) {
 	return best, score
 }
 
-//line ssmcc.w:456
+//line ssmcc.w:455
 func (m *MCC) includeOption(opt int) bool {
 	for m.nd[opt-1].itm > 0 {
 		opt--
@@ -378,14 +378,14 @@ func (m *MCC) includeOption(opt int) bool {
 	return true
 }
 
-//line ssmcc.w:485
+//line ssmcc.w:484
 func (m *MCC) coverOrCommit(ii, cur, p int) bool {
 	if ii < m.second {
 		m.setBound(ii, m.bound(ii)-1)
 	}
 	if ii >= m.second || m.bound(ii) == 0 {
 
-//line ssmcc.w:503
+//line ssmcc.w:502
 		ss := m.size(ii)
 		c := 0
 		if ii >= m.second {
@@ -404,10 +404,10 @@ func (m *MCC) coverOrCommit(ii, cur, p int) bool {
 		}
 		m.deactivate(ii)
 
-//line ssmcc.w:491
+//line ssmcc.w:490
 	} else {
 
-//line ssmcc.w:526
+//line ssmcc.w:525
 		ss := m.size(ii) - 1
 		if ss < m.bound(ii)-m.slack(ii) {
 			m.forced = 0
@@ -417,22 +417,22 @@ func (m *MCC) coverOrCommit(ii, cur, p int) bool {
 			m.deactivate(ii)
 		} else {
 
-//line ssmcc.w:541
+//line ssmcc.w:540
 			nnp := int(m.set[ii+ss])
 			m.setSize(ii, ss)
 			m.set[ii+ss], m.set[p] = int32(cur), int32(nnp)
 			m.nd[cur].loc, m.nd[nnp].loc = int32(ii+ss), int32(p)
 			m.updates++
 
-//line ssmcc.w:535
+//line ssmcc.w:534
 		}
 
-//line ssmcc.w:493
+//line ssmcc.w:492
 	}
 	return true
 }
 
-//line ssmcc.w:551
+//line ssmcc.w:550
 func (m *MCC) removeFromOtherSets(optp int) bool {
 	cur := optp
 	for m.nd[cur-1].itm > 0 {
@@ -459,20 +459,20 @@ func (m *MCC) removeFromOtherSets(optp int) bool {
 		}
 		if ss > 0 {
 
-//line ssmcc.w:541
+//line ssmcc.w:540
 			nnp := int(m.set[ii+ss])
 			m.setSize(ii, ss)
 			m.set[ii+ss], m.set[p] = int32(cur), int32(nnp)
 			m.nd[cur].loc, m.nd[nnp].loc = int32(ii+ss), int32(p)
 			m.updates++
 
-//line ssmcc.w:577
+//line ssmcc.w:576
 		}
 	}
 	return true
 }
 
-//line ssmcc.w:587
+//line ssmcc.w:586
 func (m *MCC) removeOption(cur int) bool {
 	for m.nd[cur-1].itm > 0 {
 		cur--
@@ -497,20 +497,20 @@ func (m *MCC) removeOption(cur int) bool {
 		}
 		if ss > 0 {
 
-//line ssmcc.w:541
+//line ssmcc.w:540
 			nnp := int(m.set[ii+ss])
 			m.setSize(ii, ss)
 			m.set[ii+ss], m.set[p] = int32(cur), int32(nnp)
 			m.nd[cur].loc, m.nd[nnp].loc = int32(ii+ss), int32(p)
 			m.updates++
 
-//line ssmcc.w:611
+//line ssmcc.w:610
 		}
 	}
 	return true
 }
 
-//line ssmcc.w:618
+//line ssmcc.w:617
 func (m *MCC) deactivate(ii int) {
 	m.active--
 	p := m.pos(ii)
@@ -520,7 +520,7 @@ func (m *MCC) deactivate(ii int) {
 	m.setPos(iii, p)
 }
 
-//line ssmcc.w:632
+//line ssmcc.w:631
 func (m *MCC) saveState() int {
 	mark := m.saveptr
 	m.savestack = ensure(m.savestack, m.saveptr+m.active)
@@ -548,7 +548,7 @@ func (m *MCC) restoreState(mark int) {
 	m.saveptr = mark
 }
 
-//line ssmcc.w:663
+//line ssmcc.w:662
 func (m *MCC) visit(stage int) bool {
 	m.count++
 	m.incumbent = m.cost
@@ -564,7 +564,7 @@ func (m *MCC) visit(stage int) bool {
 	}
 }
 
-//line ssmcc.w:679
+//line ssmcc.w:678
 func (m *MCC) tick() {
 	if m.pulse == nil {
 		return
@@ -579,7 +579,7 @@ func (m *MCC) tick() {
 	}
 }
 
-//line ssmcc.w:694
+//line ssmcc.w:693
 func (m *MCC) option(p int) Option {
 	for m.nd[p-1].itm > 0 {
 		p--
@@ -595,11 +595,11 @@ func (m *MCC) option(p int) Option {
 	return opt
 }
 
-//line ssmcc.w:766
+//line ssmcc.w:765
 func (m *MCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 	m.inputMatrix(rd)
 
-//line ssmcc.w:778
+//line ssmcc.w:777
 	m.optNo = make([]int32, m.lastNode+1)
 	m.optCost = make([]int32, int(m.options)+1)
 	o := int32(0)
@@ -614,17 +614,17 @@ func (m *MCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 		m.optNo[k] = o
 	}
 
-//line ssmcc.w:798
+//line ssmcc.w:797
 	m.itemBase = make([]int32, m.itemlen+1)
 	for k := 0; k < m.itemlen; k++ {
 		base := int(m.item[k])
 		m.itemBase[m.itemNo(base)] = int32(base)
 	}
 
-//line ssmcc.w:769
+//line ssmcc.w:768
 	m.minimizing, m.incumbent = true, infCost
 
-//line ssmcc.w:270
+//line ssmcc.w:269
 	m.solStream = make(chan []Option)
 	m.heartbeat = make(chan string)
 
@@ -632,16 +632,16 @@ func (m *MCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 		defer close(m.solStream)
 		defer close(m.heartbeat)
 
-//line ssmcc.w:277
+//line ssmcc.w:276
 
-//line ssmcc.w:293
+//line ssmcc.w:292
 		if m.Debug {
 			fmt.Fprintf(os.Stderr,
 				"(%d options, %d+%d items, %d entries successfully read)\n",
 				m.options, m.osecond, m.itemlen-m.osecond, m.lastNode)
 		}
 
-//line ssmcc.w:278
+//line ssmcc.w:277
 		if m.PulseInterval > 0 {
 			m.pulse = time.NewTicker(m.PulseInterval)
 			defer m.pulse.Stop()
@@ -651,9 +651,9 @@ func (m *MCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 			m.search(0)
 		}
 
-//line ssmcc.w:287
+//line ssmcc.w:286
 
-//line ssmcc.w:300
+//line ssmcc.w:299
 		if m.Debug {
 			plural := "s"
 			if m.count == 1 {
@@ -663,15 +663,15 @@ func (m *MCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 				m.count, plural, m.updates, m.nodes)
 		}
 
-//line ssmcc.w:288
+//line ssmcc.w:287
 	}()
 
 	return &Result{Solutions: m.solStream, Heartbeat: m.heartbeat}
 
-//line ssmcc.w:771
+//line ssmcc.w:770
 }
 
-//line ssmcc.w:833
+//line ssmcc.w:832
 func (m *MCC) eachLive(yield func(item, opt int) bool) {
 	for k := 0; k < m.active; k++ {
 		x := int(m.item[k])
@@ -687,10 +687,10 @@ func (m *MCC) eachLive(yield func(item, opt int) bool) {
 	}
 }
 
-//line ssmcc.w:855
+//line ssmcc.w:854
 func (m *MCC) optionCost(opt int) int { return int(m.optCost[opt]) }
 
-//line ssmcc.w:856
+//line ssmcc.w:855
 func (m *MCC) itemName(item int) string { return m.names[item] }
 
 func (m *MCC) itemNeed(item int) int {
@@ -701,14 +701,14 @@ func (m *MCC) itemNeed(item int) int {
 	return max(m.bound(x)-m.slack(x), 0)
 }
 
-//line ssmcc.w:874
+//line ssmcc.w:873
 func (m *MCC) inputMatrix(rd io.Reader) {
 	br := bufio.NewReader(rd)
 	m.readItemNames(br)
 	m.readOptions(br)
 }
 
-//line ssmcc.w:891
+//line ssmcc.w:890
 func mustAtoi(s string) int {
 	n, err := strconv.Atoi(s)
 	if err != nil || n < 0 {
@@ -720,7 +720,7 @@ func mustAtoi(s string) int {
 func parseItemSpec(tok string, inSecondary bool) (name string, lower, upper int) {
 	if i := strings.IndexByte(tok, '|'); i >= 0 {
 
-//line ssmcc.w:915
+//line ssmcc.w:914
 		if inSecondary {
 			failf("secondary item cannot have a multiplicity: %q", tok)
 		}
@@ -739,7 +739,7 @@ func parseItemSpec(tok string, inSecondary bool) (name string, lower, upper int)
 		}
 		name = nm
 
-//line ssmcc.w:902
+//line ssmcc.w:901
 	} else {
 		name, lower, upper = tok, 1, 1
 	}
@@ -752,10 +752,10 @@ func parseItemSpec(tok string, inSecondary bool) (name string, lower, upper int)
 	return
 }
 
-//line ssmcc.w:938
+//line ssmcc.w:937
 func (m *MCC) readItemNames(br *bufio.Reader) {
 
-//line ssmcc.w:964
+//line ssmcc.w:963
 	var buf []byte
 	var p int
 	found := false
@@ -773,7 +773,7 @@ func (m *MCC) readItemNames(br *bufio.Reader) {
 		failf("no items")
 	}
 
-//line ssmcc.w:940
+//line ssmcc.w:939
 	for buf[p] != 0 {
 		tok, next := token(buf, p, false)
 		if tok == "|" {
@@ -797,7 +797,7 @@ func (m *MCC) readItemNames(br *bufio.Reader) {
 	m.lastItm = len(m.names)
 }
 
-//line ssmcc.w:983
+//line ssmcc.w:982
 func (m *MCC) readOptions(br *bufio.Reader) {
 	for {
 		buf, ok := nextLine(br)
@@ -812,13 +812,13 @@ func (m *MCC) readOptions(br *bufio.Reader) {
 	m.finalize()
 }
 
-//line ssmcc.w:998
+//line ssmcc.w:997
 func (m *MCC) readOption(buf []byte) {
 	spacer := m.lastNode
 	hasPrimary := false
 	for p := skipSpace(buf, 0); buf[p] != 0; {
 
-//line ssmcc.w:1017
+//line ssmcc.w:1016
 		name, next := token(buf, p, true)
 		if name == "" {
 			failf("empty item name")
@@ -843,12 +843,12 @@ func (m *MCC) readOption(buf []byte) {
 		}
 		p = skipSpace(buf, next)
 
-//line ssmcc.w:1003
+//line ssmcc.w:1002
 	}
 
 	if !hasPrimary {
 
-//line ssmcc.w:1042
+//line ssmcc.w:1041
 		for m.lastNode > spacer {
 			slot := int(m.nd[m.lastNode].itm) * mccIprop
 			m.setSize(slot, m.size(slot)-1)
@@ -856,7 +856,7 @@ func (m *MCC) readOption(buf []byte) {
 			m.lastNode--
 		}
 
-//line ssmcc.w:1007
+//line ssmcc.w:1006
 		return
 	}
 	m.nd[spacer].loc = int32(m.lastNode - spacer)
@@ -866,7 +866,7 @@ func (m *MCC) readOption(buf []byte) {
 	m.nd[m.lastNode].itm = int32(spacer + 1 - m.lastNode)
 }
 
-//line ssmcc.w:1050
+//line ssmcc.w:1049
 func (m *MCC) createNode(num, spacer int, hasPrimary *bool) {
 	slot := num * mccIprop
 	m.set = ensure(m.set, slot)
@@ -885,10 +885,10 @@ func (m *MCC) createNode(num, spacer int, hasPrimary *bool) {
 	m.setPos(slot, m.lastNode)
 }
 
-//line ssmcc.w:1071
+//line ssmcc.w:1070
 func (m *MCC) finalize() {
 
-//line ssmcc.w:1079
+//line ssmcc.w:1078
 	m.active, m.itemlen = m.lastItm-1, m.lastItm-1
 	m.item = ensure(m.item, m.itemlen)
 	m.set = ensure(m.set, m.itemlen*mccIprop+1) // all input slots readable
@@ -907,9 +907,9 @@ func (m *MCC) finalize() {
 		m.osecond = m.second - 1
 	}
 
-//line ssmcc.w:1073
+//line ssmcc.w:1072
 
-//line ssmcc.w:1104
+//line ssmcc.w:1103
 	for ; k != 0; k-- {
 		base := int(m.item[k-1])
 		if k == m.second {
@@ -930,9 +930,9 @@ func (m *MCC) finalize() {
 		}
 	}
 
-//line ssmcc.w:1074
+//line ssmcc.w:1073
 
-//line ssmcc.w:1125
+//line ssmcc.w:1124
 	for k = 1; k < m.lastNode; k++ {
 		if m.nd[k].itm < 0 {
 			continue
@@ -944,11 +944,11 @@ func (m *MCC) finalize() {
 		m.set[loc] = int32(k)
 	}
 
-//line ssmcc.w:1075
+//line ssmcc.w:1074
 	m.deactivateOptionless()
 }
 
-//line ssmcc.w:1139
+//line ssmcc.w:1138
 func (m *MCC) deactivateOptionless() {
 	for m.forced != 0 {
 		m.forced--

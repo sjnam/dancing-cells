@@ -6,7 +6,6 @@
 @s Reader int
 @s Builder int
 @s Time int
-@s any int
 
 @** Introduction.
 This is {\tt SSMCC}: exact cover with {\it multiplicities\/}, danced on sparse

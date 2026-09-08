@@ -6,7 +6,6 @@
 @s Reader int
 @s Builder int
 @s Time int
-@s any int
 
 @** Introduction.
 This is {\tt SSXCC}: exact cover with colors, danced on sparse sets. It is one
