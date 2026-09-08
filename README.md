@@ -139,7 +139,7 @@ an option written with secondary items in front is *reported* with its first
 primary item ahead of them; the rest keep their input order. There is no
 `Minimize`.
 
-### Counting without enumerating (`zdd`)
+### Counting without enumerating (`ZDD`)
 
 The three engines above hand back solutions one at a time. That is the wrong
 shape for a problem with 10¹⁶ of them, so
