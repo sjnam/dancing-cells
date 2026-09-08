@@ -165,6 +165,12 @@ for sol := range d.Solutions() { … }   // still one at a time, if you want
 z, root := d.ZDD()                     // the bdd handle, for everything else
 ```
 
+The solver branches on the item with fewest options, as the other engines do.
+Clearing `MRV` on it branches on the least-numbered active item instead, which
+is Knuth's exercise 7.2.2.1-264; the diagram that comes back is the same one
+either way — a reduced ordered ZDD is fixed by its family and its variable
+order — but on a long thin region the sweep it makes is cheaper.
+
 Whether this pays is a property of the problem, not of the engine. The cache
 wins by the factor by which the number of solutions exceeds the number of
 *distinct subproblems*:
@@ -748,6 +754,7 @@ not check.
 | [129](taocp-7.2.2.1-exercises/129) | Enumerate all the symmetrical solutions to MacMahon's triangle-tiling problem | **281,618 should be 294,457** |
 | [147](taocp-7.2.2.1-exercises/147) | Construct all of the “bricks” that can be made with MacMahon's 30 six-colored cubes | one catalogue line of twenty-four differs |
 | [151, 152](taocp-7.2.2.1-exercises/151-152) | Arrange all of the path dominoes into a single loop | confirmed |
+| [262](taocp-7.2.2.1-exercises/262) | Study the ZDDs for domino and diamond tilings that tend to have large “frozen” regions | every number confirmed; one item bound is missing from part (b) |
 | [305, 306](taocp-7.2.2.1-exercises/305-306) | Find optimum arrangements of the windmill dominoes | confirmed |
 | [320](taocp-7.2.2.1-exercises/320) | Find all ways to make a convex shape from the fourteen tetraboloes | confirmed |
 | [323](taocp-7.2.2.1-exercises/323) | Find all ways to make a skewed rectangle from the ten tetraskews | the 3648 belongs to a 2 × 22 frame, not 2 × 21 |

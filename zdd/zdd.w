@@ -7,11 +7,7 @@
 @s Rand int
 @s Reader int
 @s Builder int
-@s any int
-@s iter int
-@s big int
-@s bdd int
-@s cells int
+@s Option int
 
 @** Introduction.
 The three engines of the |dcells| package hand back solutions one at a time.
@@ -198,6 +194,7 @@ ZDD---the color slots the signature reads, and the memo cache itself.
 @<The solver state@>=
 type Solver struct {
 	Debug bool // print an input summary and final tallies to stderr
+	MRV   bool // branch on the fewest-options item; |New| turns it on
 
 	@<The matrix arrays@>
 	@<Naming tables@>
@@ -253,6 +250,7 @@ hits  uint64
 @ @<Creating a solver@>=
 func New() *Solver {
 	return &Solver{
+		MRV:        true,
 		second:     secondUnset,
 		names:      []string{""}, // item numbers are 1-based
 		nameIndex:  make(map[string]int),
@@ -401,14 +399,31 @@ func (s *Solver) chooseItem() (best, score int) {
 		if x >= s.second {
 			continue // secondary items are not branched on
 		}
-		switch sz := s.size(x); {
-		case sz == 0:
+		sz := s.size(x)
+		if sz == 0 {
 			return x, 0
-		case sz < score || (sz == score && x < best):
-			best, score = x, sz
 		}
+		@<Keep |x| if it beats the incumbent@>
 	}
 	return best, score
+}
+
+@ Fewest options first is only the default. Knuth's exercise 7.2.2.1--264 asks
+what happens when step Z3 takes the {\it least-numbered\/} active item instead,
+and answers that the resulting diagram comes out ordered by option number.
+Ours is ordered either way---|bdd| reduces as it builds, so the family fixes
+the diagram and the branching rule cannot touch it---but the {\it search\/}
+is a different shape, and on the tilings of a long thin region the sweep it
+makes is far cheaper than the one \.{MRV} makes. Clearing |MRV| asks for it.
+@<Keep |x| if it beats the incumbent@>=
+if !s.MRV {
+	if score == infSize || x < best {
+		best, score = x, sz
+	}
+	continue
+}
+if sz < score || (sz == score && x < best) {
+	best, score = x, sz
 }
 
 @* Covering and undoing.

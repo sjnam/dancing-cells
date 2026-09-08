@@ -36,14 +36,14 @@ EXAMPLES := domino filomino hollow langford partridge pentominoes queen \
 EXAMPLEGO  := $(foreach e,$(EXAMPLES),examples/$(e)/$(e).go)
 EXAMPLEPDF := $(foreach e,$(EXAMPLES),examples/$(e)/$(e).pdf)
 EXDIR   := taocp-7.2.2.1-exercises
-EXERCISES := 029-030 055 104 129 147 151-152 305-306 320 323 334 337 346 \
-             387 432
+EXERCISES := 029-030 055 104 129 147 151-152 262 305-306 320 323 334 337 \
+             346 387 432
 FIGS    := $(EXDIR)/029-030/backtrack.png $(EXDIR)/104/allinterval.png \
            $(EXDIR)/151-152/loop8x12.png $(EXDIR)/320/convex56.png \
            $(EXDIR)/323/tetraskews.png $(EXDIR)/334/wwall.png \
            $(EXDIR)/337/dice.png $(EXDIR)/346/tripods.png \
            $(EXDIR)/387/polycubes.png \
-           $(EXDIR)/432/kakuro.png
+           $(EXDIR)/432/kakuro.png $(EXDIR)/262/tilings.png
 VERIFY  := $(foreach e,$(EXERCISES),$(EXDIR)/$(e)/verify)
 LIB   := dcells ssxcc ssmcc xccdc
 
@@ -165,6 +165,7 @@ $(eval $(call figure,337,dice,1100))
 $(eval $(call figure,346,tripods,1300))
 $(eval $(call figure,387,polycubes,1400))
 $(eval $(call figure,432,kakuro,1500))
+$(eval $(call figure,262,tilings,1600))
 
 # clean removes everything the .w files generate, tangled Go included;
 # `make` (or `make tangle`) puts the Go sources back.  The one exception is the
