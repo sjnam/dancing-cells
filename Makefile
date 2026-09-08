@@ -36,9 +36,10 @@ EXAMPLES := domino filomino hollow langford partridge pentominoes queen \
 EXAMPLEGO  := $(foreach e,$(EXAMPLES),examples/$(e)/$(e).go)
 EXAMPLEPDF := $(foreach e,$(EXAMPLES),examples/$(e)/$(e).pdf)
 EXDIR   := taocp-7.2.2.1-exercises
-EXERCISES := 029-030 055 104 129 147 151-152 262 305-306 320 323 334 337 \
-             346 387 432 442
+EXERCISES := 029-030 055 104 121 129 147 151-152 262 305-306 320 323 334 \
+             337 346 387 432 442
 FIGS    := $(EXDIR)/029-030/backtrack.png $(EXDIR)/104/allinterval.png \
+           $(EXDIR)/121/tetrads.png \
            $(EXDIR)/151-152/loop8x12.png $(EXDIR)/262/tilings.png \
            $(EXDIR)/320/convex56.png \
            $(EXDIR)/323/tetraskews.png $(EXDIR)/334/wwall.png \
@@ -158,6 +159,7 @@ $$(EXDIR)/$(1)/verify/verify.pdf: $$(EXDIR)/$(1)/verify/$(2).mp
 endef
 $(eval $(call figure,029-030,backtrack,900))
 $(eval $(call figure,104,allinterval,700))
+$(eval $(call figure,121,tetrads,1500))
 $(eval $(call figure,151-152,loop8x12,1800))
 $(eval $(call figure,262,tilings,1600))
 $(eval $(call figure,320,convex56,1500))

@@ -754,6 +754,7 @@ not check.
 | [29, 30](taocp-7.2.2.1-exercises/029-030) | Characterize all search trees that can arise with Algorithm X | answer 30 is broken by the one-node tree |
 | [55](taocp-7.2.2.1-exercises/055) | Determine the fewest clues needed to force highly symmetric sudoku solutions | confirmed, and the hard half done more cheaply |
 | [104](taocp-7.2.2.1-exercises/104) | Construct infinitely many “perfect” *n*-tone rows | confirmed |
+| [121](taocp-7.2.2.1-exercises/121) | Determine which of the 92 Wang tiles in exercise 2.3.4.3–5 can actually be used when tiling the whole plane | every claim confirmed against the errata |
 | [129](taocp-7.2.2.1-exercises/129) | Enumerate all the symmetrical solutions to MacMahon's triangle-tiling problem | **281,618 should be 294,457** |
 | [147](taocp-7.2.2.1-exercises/147) | Construct all of the “bricks” that can be made with MacMahon's 30 six-colored cubes | one catalogue line of twenty-four differs |
 | [151, 152](taocp-7.2.2.1-exercises/151-152) | Arrange all of the path dominoes into a single loop | confirmed |
