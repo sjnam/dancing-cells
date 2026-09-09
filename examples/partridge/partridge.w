@@ -7,7 +7,6 @@
 @s Context int
 @s Duration int
 @s Time int
-@s pos int
 
 @* 들어가며.
 캐럴 ``The Twelve Days of Christmas''는 배나무 위의 자고새 한 마리로 시작해

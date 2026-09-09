@@ -10,7 +10,6 @@
 @s Time int
 @s In int
 @s Out int
-@s result int
 
 @* 들어가며.
 스도쿠를 정확한 덮개로 옮기는 것은 이 분야의 고전이다. $9\times9$ 판에 1부터

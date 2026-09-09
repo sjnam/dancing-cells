@@ -4,10 +4,9 @@
 
 @s Option int
 @s Diagram int
-@s Int int
+@s big.Int int
 @s Rand int
 @s Builder int
-@s board int
 
 @* 들어가며.
 $8\times8$ 체스판을 $1\times2$ 도미노 서른두 개로 빈틈없이 덮는 방법은 몇

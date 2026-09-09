@@ -2,7 +2,7 @@
 
 @s Func int
 @s ZDD int
-@s Int int
+@s big.Int int
 @s Seq int
 @s Rand int
 @s Reader int
