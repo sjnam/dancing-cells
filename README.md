@@ -767,6 +767,7 @@ not check.
 | [129](taocp-7.2.2.1-exercises/129) | Enumerate all the symmetrical solutions to MacMahon's triangle-tiling problem | **281,618 should be 294,457** |
 | [147](taocp-7.2.2.1-exercises/147) | Construct all of the “bricks” that can be made with MacMahon's 30 six-colored cubes | one catalogue line of twenty-four differs |
 | [151, 152](taocp-7.2.2.1-exercises/151-152) | Arrange all of the path dominoes into a single loop | confirmed |
+| [196](taocp-7.2.2.1-exercises/196) | Analyze the running time of Algorithm X on bounded permutation problems | seven parts confirmed; answer (h) drops two factorial signs and opens a series with the wrong term, and answer (i) misstates the branching |
 | [262](taocp-7.2.2.1-exercises/262) | Study the ZDDs for domino and diamond tilings that tend to have large “frozen” regions | every number confirmed; one item bound is missing from part (b) |
 | [305, 306](taocp-7.2.2.1-exercises/305-306) | Find optimum arrangements of the windmill dominoes | confirmed |
 | [320](taocp-7.2.2.1-exercises/320) | Find all ways to make a convex shape from the fourteen tetraboloes | confirmed |
