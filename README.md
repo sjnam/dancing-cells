@@ -750,7 +750,8 @@ back. [`taocp-7.2.2.1-exercises/`](taocp-7.2.2.1-exercises) holds one such
 reading per directory, written against Volume 4B, first printing, 2022, and
 against the errata file of the day. Section 7.2.2.1 is the dancing-links
 section, so most of them come down to an exact cover problem and the engines
-above do the searching.
+above do the searching. The nineteen exercises that page lists for §7.2.2.1 all
+have a reading here.
 
 Each directory holds the report itself as `README.md` — which is what GitHub
 shows when you open the directory — and the program behind it as a GWEB
@@ -775,6 +776,7 @@ not check.
 | [334](taocp-7.2.2.1-exercises/334) | Build fake solutions for Soma-cube shapes | three counts do not reproduce |
 | [337](taocp-7.2.2.1-exercises/337) | Design a puzzle that makes several kinds of “dice” from the same bent tricubes | confirmed |
 | [346](taocp-7.2.2.1-exercises/346) | Pack space optimally with small tripods | confirmed, and 65/108 improves to 5/8 |
+| [375](taocp-7.2.2.1-exercises/375) | Determine the smallest incomparable dissections of rectangles into rectangles | every number confirmed but one: the fourth diagram of (b) reaches 47, not 56 |
 | [387](taocp-7.2.2.1-exercises/387) | Classify the types of symmetry that a polycube might have | two of the eleven pictures are not minimal |
 | [432](taocp-7.2.2.1-exercises/432) | Find the most interesting 3×3 kakuro puzzles | the puzzle called hardest cannot exist |
 | [442](taocp-7.2.2.1-exercises/442) | Enumerate all hitori covers of small grids | every count confirmed; one range entry is wrong |

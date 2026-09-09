@@ -20,12 +20,13 @@ RSVG    ?= rsvg-convert
 MAGICK  ?= magick
 
 EXERCISES := 029-030 055 104 121 129 147 151-152 196 262 305-306 320 323 \
-             334 337 346 387 432 442
+             334 337 346 375 387 432 442
 VERIFY := $(foreach e,$(EXERCISES),$(e)/verify)
 FIGS   := 029-030/backtrack.png 104/allinterval.png 121/tetrads.png \
           151-152/loop8x12.png 196/staircase.png 262/tilings.png \
           320/convex56.png 323/tetraskews.png 334/wwall.png 337/dice.png \
-          346/tripods.png 387/polycubes.png 432/kakuro.png 442/hitori.png
+          346/tripods.png 375/dissections.png 387/polycubes.png \
+          432/kakuro.png 442/hitori.png
 
 .PHONY: all build test vet tangle pdf clean
 
@@ -81,6 +82,7 @@ $(eval $(call figure,323,tetraskews,1400))
 $(eval $(call figure,334,wwall,1500))
 $(eval $(call figure,337,dice,1100))
 $(eval $(call figure,346,tripods,1300))
+$(eval $(call figure,375,dissections,1300))
 $(eval $(call figure,387,polycubes,1400))
 $(eval $(call figure,432,kakuro,1500))
 $(eval $(call figure,442,hitori,1200))
