@@ -557,10 +557,10 @@ letter set and are interchangeable in an answer.
 
 ### Hungarian Dance No. 5
 
-The first of two examples that use `Minimize` and `Bound`. A *transversal* of a Latin
-square is one cell per row, per column, and per symbol — three "exactly once"
-constraints, so it is an exact cover with 3n items and n² options. Price every
-cell and the question becomes: which transversal is cheapest?
+The first of two examples that use `Minimize` and `Bound`. A *transversal* of
+a Latin square is one cell per row, per column, and per symbol — three "exactly
+once" constraints, so it is an exact cover with 3n items and n² options. Price
+every cell and the question becomes: which transversal is cheapest?
 
 The bound is the point. Forget the symbols and what remains is a minimum-cost
 assignment of the surviving rows to the surviving columns, which the Hungarian

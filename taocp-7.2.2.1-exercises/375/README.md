@@ -130,7 +130,8 @@ With the diagram of answer 374(d) and its labels, all of 375(a) reproduces:
   $w\_3 = 14$, $w\_4 = 15$ — the values the answer works out by hand.
 - The alternating case is **infeasible**.
 - The smallest semiperimeter is **35**, in the case
-  $w\_1 < w\_2 < w\_3 < h\_7 < h\_6 < h\_5 < h\_4 \le w\_4 < w\_5 < w\_6 < w\_7 < h\_3 < h\_2 < h\_1$,
+  $w\_1 < w\_2 < w\_3 < h\_7 < h\_6 < h\_5 < h\_4 \le w\_4$ and
+  $w\_4 < w\_5 < w\_6 < w\_7 < h\_3 < h\_2 < h\_1$,
   at $w\_1 = 1$, $w\_2 = 2$, $w\_3 = 3$, $h\_7 = 4$, $h\_6 = 5$, $h\_5 = 6$,
   $h\_4 = w\_4 = 7$. Two cases reach 35, which is the
   answer's "or the same case with $w\_4 \leftrightarrow h\_4$" — they are the
@@ -176,8 +177,10 @@ the answer's, and it is the only way to get it.
 The fourth diagram is the one that differs. Its smallest incomparable
 dissection has semiperimeter 47, not 56: a $30 \times 17$ rectangle cut into
 
-$$4 \times 16,\ 5 \times 13,\ 9 \times 9,\ 10 \times 8,\ 11 \times 7,\
-12 \times 6,\ 17 \times 3,\ 20 \times 1 .$$
+$$
+4 \times 16,\ 5 \times 13,\ 9 \times 9,\ 10 \times 8,\ 11 \times 7,\
+12 \times 6,\ 17 \times 3,\ 20 \times 1 .
+$$
 
 Sort those by their smaller dimension and the larger dimensions come out
 strictly decreasing — $1 \to 20$, $3 \to 17$, $4 \to 16$, $5 \to 13$,
@@ -228,7 +231,7 @@ cannot beat 27.
 
 ## 7. Running it
 
-```
+```sh
 cd verify && gtangle verify.w && go run . -mode all
 ```
 

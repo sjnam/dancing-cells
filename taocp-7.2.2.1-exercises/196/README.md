@@ -71,9 +71,9 @@ instead of unlinking nodes, and where items of size one are forced before any
 branching happens at all. Their update counts are their own and would answer a
 different question. So `verify/verify.w` carries a plain Algorithm X, its
 `cover`, `hide`, `uncover` and `unhide` exactly as in (12)–(15) of the text,
-with `updates` incremented in exactly the two places Knuth increments it. `ssxcc` still gets a say: it is asked for a
-second opinion on the number of solutions, which no algorithm can disagree
-about.
+with `updates` incremented in exactly the two places Knuth increments it.
+`ssxcc` still gets a say: it is asked for a second opinion on the number of
+solutions, which no algorithm can disagree about.
 
 The one implementation detail that matters is the tie-break in step X3.
 Knuth's programs scan the active items in order and keep a new candidate only
@@ -136,8 +136,10 @@ sweep counts $1, 2, 5, 14, 42, 132, 429, 1430, 4862$.
 
 Part (e) reads
 
-$$1 + \Bigl(\sum\_{j=1}^{n} (n+3-j) \Pi\_j\Bigr) - \Pi\_n, \qquad
-\Pi\_j = \prod\_{i=1}^{j} (a\_i - i + 1),$$
+$$
+1 + \Bigl(\sum\_{j=1}^{n} (n+3-j) \Pi\_j\Bigr) - \Pi\_n, \qquad
+\Pi\_j = \prod\_{i=1}^{j} (a\_i - i + 1),
+$$
 
 and it follows from (c). Each of the $\Pi\_{j-1}$ nodes at depth $j-1$ faces a
 bounded permutation problem on $n-j+1$ items whose first bound is $a\_j - j + 1$,
@@ -268,7 +270,7 @@ exactly as stated.
 
 ## 8. Running it
 
-```
+```sh
 cd verify && gtangle verify.w && go run . -mode all
 ```
 

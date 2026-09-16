@@ -173,8 +173,9 @@ And the 54 others:
   $\delta LU$, $\delta PU$, $\delta RU$, $\delta SU$, $\delta TU$;
 - and all $9 \times 6 = 54$ combinations occur, once each.
 
-Those are the errata's two sets $\delta\lbrace\lbrace L,P,S,T\rbrace\lbrace J,U\rbrace, RU\rbrace$
-and $\delta\lbrace L,K,P,R,S,T\rbrace U$. The first looks at first sight as
+Those are the errata's two sets
+$\delta\lbrace\lbrace L,P,S,T\rbrace\lbrace J,U\rbrace, RU\rbrace$ and
+$\delta\lbrace L,K,P,R,S,T\rbrace U$. The first looks at first sight as
 though it names tiles that are not among the 92 — there is no $\delta LJ$ in the
 list on page 385 — but the basic codes are put together component by component,
 so they commute: $\delta LJ$ and $\delta JL$ are two spellings of one tile. The
@@ -207,7 +208,10 @@ other 86 types occurs in $A\_6$, hence in every sufficiently large tiling."
 $A\_6$ is $63\times63$, built by five rounds of the construction of section 5,
 and it uses **86** of the 92 types. The six it does not use are
 
-$$\beta US, \quad \delta RD, \quad \delta RU, \quad \delta LD, \quad \delta LU, \quad \delta SU,$$
+$$
+\beta US, \quad \delta RD, \quad \delta RU, \quad
+\delta LD, \quad \delta LU, \quad \delta SU,
+$$
 
 which are precisely the six that parts (a), (b) and (c) are about. "The other
 86" is exact.
@@ -228,10 +232,11 @@ and down its left edge
 1P  3P  1T  3P  1P  3T  1T  3P  1P  3P  1T  3T  1P  3T  1T
 ```
 
-In both, the $n\text{th}$ of them carries a $Q$ or a $P$ exactly when $d\_n = 0$. That
-holds in every place of both edges of $A\_k$, checked to $k = 6$, which is 63
-places. For $B\_k$, $C\_k$ and $D\_k$ it holds everywhere but one — the middle of
-the edge, which is where the next level's cross attaches.
+In both, the $n\text{th}$ of them carries a $Q$ or a $P$ exactly when
+$d\_n = 0$. That holds in every place of both edges of $A\_k$, checked to
+$k = 6$, which is 63 places. For $B\_k$, $C\_k$ and $D\_k$ it holds everywhere
+but one — the middle of the edge, which is where the next level's cross
+attaches.
 
 ## 8. The misprint that checked the check
 
