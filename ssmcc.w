@@ -333,7 +333,7 @@ func (m *MCC) search(stage int) bool {
 	m.tick()
 
 	@<Dispatch a leftover forced item@>
-	@<Give up on this branch if it cannot beat the incumbent@>
+	@<Give up on this branch if it cannot beat the cutoff@>
 
 	best, score := m.chooseBest()
 	if m.forced != 0 {
@@ -371,6 +371,7 @@ m.included[stage] = int32(opt)
 
 @<Price this option@>
 m.cost += price
+m.taxDue -= tax
 if m.includeOption(opt) {
 	if !m.search(stage + 1) {
 		m.saveptr = mark
@@ -378,6 +379,7 @@ if m.includeOption(opt) {
 	}
 }
 m.cost -= price
+m.taxDue += tax
 if score != 1 {
 	m.restoreState(mark)
 	if m.removeOption(opt) {
@@ -402,11 +404,13 @@ func (m *MCC) forcedMove(stage, bi int) bool {
 	m.included[stage] = int32(opt)
 	@<Price this option@>
 	m.cost += price
+	m.taxDue -= tax
 	ok := true
 	if m.includeOption(opt) {
 		ok = m.search(stage + 1)
 	}
 	m.cost -= price
+	m.taxDue += tax
 	return ok
 }
 
@@ -656,12 +660,14 @@ func (m *MCC) restoreState(mark int) {
 }
 
 @* Reporting.
-Emitting a solution reads the |included| stack; the pacing select is the
-same as |XCC|'s.
+Emitting a solution reads the |included| stack; the pacing select, and the
+podium that a minimizing search keeps, are the same as |XCC|'s.
 @<Visiting a solution@>=
 func (m *MCC) visit(stage int) bool {
 	m.count++
-	m.incumbent = m.cost
+	if m.minimizing {
+		@<Put the new cover on the podium@>
+	}
 	sol := make([]Option, stage)
 	for k := 0; k < stage; k++ {
 		sol[k] = m.option(int(m.included[k]))
@@ -722,6 +728,12 @@ banishes an option and re-enters the same stage, buying nothing and owing
 nothing. So there is exactly one place where the price of an option is added
 and taken back, plus its twin in the forced move.
 
+The two refinements that \.{ssxcc.w} borrows from Knuth's {\tt DLX5} come
+along: a tax on the primary items, which gives a lower bound for free, and a
+podium of the $k$ cheapest covers found so far, whose dearest member is the
+{\it cutoff\/} that a branch must beat. Only the tax needs rethinking here,
+and it is rethought below where it is levied.
+
 @ Nothing here disturbs |Dance|. The optimizing entry point is a second one,
 |Minimize|, and when it is not in use the search runs the code it ran before,
 one boolean test the poorer. The |Frame| that a bound function looks through
@@ -739,19 +751,26 @@ Returning~0 is always safe and always useless.
 @<Solver knobs@>=
 Bound func(Frame) int // lower bound on the cost still to come; may be nil
 
+@ |Best| asks for the |Best| cheapest covers; left at zero it means one.
+@<Solver knobs@>=
+Best int // with Minimize, how many of the cheapest covers to hunt for
+
 @ The private half of the bookkeeping, field for field the same as |XCC|'s.
 Options are numbered $1,2,\ldots$ in the order they were read, |optNo| maps
 each node to the number of the option it belongs to, |optCost| holds the price
-the caller put on each, and |itemBase| bridges the numbers the frame speaks in
-to the bases the dance uses. All three stay nil until |Minimize| builds them,
-which is what |minimizing| really means.
+the caller put on each, |optTax| the part of that price that is tax, and
+|itemBase| bridges the numbers the frame speaks in to the bases the dance
+uses. All of them stay nil until |Minimize| builds them, which is what
+|minimizing| really means.
 @<Cost bookkeeping@>=
 minimizing bool
 optNo      []int32 // node -> the option that node belongs to
 optCost    []int32 // option number -> the price the caller put on it
+optTax     []int64 // option number -> the tax included in that price
 itemBase   []int32 // item number -> its base in |set|
 cost       int64   // price of the options included so far
-incumbent  int64   // price of the cheapest cover so far
+taxDue     int64   // tax still owed by the coverings yet to come
+podium     []int64 // prices of the |Best| cheapest covers so far, a max-heap
 
 @ |Minimize| reads the same input |Dance| does, prices it, and starts the same
 search. What arrives on |Solutions| is a chain of covers each strictly cheaper
@@ -761,11 +780,17 @@ option's number is an awkward thing for a caller to keep count of: blank
 lines, comments, and options that mention no primary item all pass by without
 consuming a number. So we hand the caller both the number and the option
 itself, in the very shape solutions arrive in, and let it answer.
+With |Best| set to some $k>1$ a cover arrives whenever it beats the $k$th
+cheapest seen so far, and at the end the $k$ cheapest arrivals are $k$
+cheapest covers of the problem, for the reason given in \.{ssxcc.w}.
 @<The minimizing entry point@>=
 func (m *MCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 	m.inputMatrix(rd)
 	@<Price the options@>
-	m.minimizing, m.incumbent = true, infCost
+	@<Levy a tax on every item of fixed multiplicity@>
+	@<Refuse a negative net cost@>
+	@<Set up the podium@>
+	m.minimizing = true
 	@<Launch the search goroutine@>
 }
 
@@ -800,30 +825,107 @@ for k := 0; k < m.itemlen; k++ {
 	m.itemBase[m.itemNo(base)] = int32(base)
 }
 
+@ The tax of \.{ssxcc.w} rested on one fact: every cover takes exactly one
+option from the set of each primary item. Under |MCC| an item with
+multiplicity $[u..v]$ is covered by somewhere between $u$ and $v$ of its
+options, so a tax of~$t$ on it would take $t$ off one cover and $2t$ off
+another, and the cheapest cover might no longer be the cheapest. When $u=v$,
+though---when the slack is zero---every cover takes exactly $v$ of the item's
+options, every cover gets exactly $vt$ cheaper, and the argument goes through
+as before. So we tax those items and leave the others alone. The item's
+|bound| at the root is its~$v$.
+
+The lower bound goes through as well. The options still to come cover each
+taxed item exactly as many more times as its |bound| now says, so the tax they
+carry adds up to $\sum t\cdot|bound|$ over the active taxed items; and
+including an option lowers the bound of each taxed item in it by one, which
+lowers that sum by exactly the option's own tax. So |taxDue| is kept by the
+same subtraction as before.
+@<Levy a tax on every item of fixed multiplicity@>=
+m.optTax = make([]int64, len(m.optCost))
+m.taxDue = 0
+for k := 0; k < m.active; k++ {
+	x := int(m.item[k])
+	if x >= m.second || m.slack(x) != 0 || m.size(x) == 0 {
+		continue
+	}
+	@<Find the least net cost |t| among the options of item |x|@>
+	for c := x; c < x+m.size(x); c++ {
+		m.optTax[m.optNo[int(m.set[c])]] += t
+	}
+	m.taxDue += t * int64(m.bound(x))
+}
+
+@ @<Find the least net cost |t| among the options of item |x|@>=
+t := infCost
+for c := x; c < x+m.size(x); c++ {
+	o := m.optNo[int(m.set[c])]
+	t = min(t, int64(m.optCost[o])-m.optTax[o])
+}
+
+@ An option that contains a taxed item has a net cost that is not negative,
+as in \.{ssxcc.w}. An option that contains none keeps the price the caller gave
+it, and if that price is negative, both the tax bound and the plain cutoff
+test are unsound: a partial cover already as dear as the cutoff might still
+get cheaper. We cannot search that correctly, so we say so, the way a
+malformed input is announced.
+@<Refuse a negative net cost@>=
+for o := 1; o < len(m.optCost); o++ {
+	if net := int64(m.optCost[o]) - m.optTax[o]; net < 0 {
+		panic(fmt.Sprintf("dcells: option %d has negative net cost %d; "+
+			"no item of fixed multiplicity absorbs it", o, net))
+	}
+}
+
+@ @<Set up the podium@>=
+m.podium = make([]int64, max(m.Best, 1))
+for i := range m.podium {
+	m.podium[i] = infCost
+}
+
 @ Here is the pruning test, spliced into the head of |search|. Returning
 |true| abandons this branch and lets the search go on elsewhere; only
-cancellation returns |false|. The comparison is |>=| rather than |>|, so a
-cover merely tying the incumbent is cut off too---which is why the covers that
-do arrive are strictly improving, and why |visit| may record its cover as the
-new incumbent without comparing anything.
-@<Give up on this branch if it cannot beat the incumbent@>=
+cancellation returns |false|. The rest of the cover costs at least the tax
+still owed and at least what the caller's |Bound| says; the cutoff is the top
+of the podium. The comparison is |>=| rather than |>|, so a cover merely tying
+the cutoff is cut off too---which is why, with |Best| at one, the covers that
+do arrive are strictly improving, and why |visit| may put its cover on the
+podium without comparing anything.
+@<Give up on this branch if it cannot beat the cutoff@>=
 if m.minimizing {
-	rest := int64(0)
+	rest := m.taxDue
 	if m.Bound != nil {
-		rest = int64(m.Bound(Frame{m}))
+		rest = max(rest, int64(m.Bound(Frame{m})))
 	}
-	if m.cost+rest >= m.incumbent {
+	if m.cost+rest >= m.podium[0] {
 		return true
 	}
 }
 
-@ And here is the price of one option, from a node inside it. A plain |Dance|
-never built the tables, so it pays nothing but the test.
+@ And here is the price of one option, and the tax in it, from a node inside
+it. A plain |Dance| never built the tables, so it pays nothing but the test.
 @<Price this option@>=
-price := int64(0)
+price, tax := int64(0), int64(0)
 if m.minimizing {
-	price = int64(m.optCost[m.optNo[opt]])
+	o := m.optNo[opt]
+	price, tax = int64(m.optCost[o]), m.optTax[o]
 }
+
+@ The podium is the heap of \.{ssxcc.w}: the newcomer replaces the dearest
+cover at the root and sinks past every dearer child.
+@<Put the new cover on the podium@>=
+h, i := m.podium, 0
+for j := 1; j < len(h); j = 2*i + 1 {
+	if j+1 < len(h) && h[j+1] > h[j] {
+		j++ // the dearer child
+	}
+	if h[j] <= m.cost {
+		break
+	}
+	h[i] = h[j]
+	i = j
+}
+h[i] = m.cost
 
 @ Now this engine's four answers to the frame. Walking the live part of the
 matrix means walking the active items, skipping the secondary ones---they
@@ -1161,6 +1263,7 @@ package dcells
 import (
 	"fmt"
 	"math/rand"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -1378,16 +1481,22 @@ func TestMCCMinimizeMatchesSearch(t *testing.T) {
 		input, price := randomMCCProblem(rng)
 		@<Enumerate every cover and keep the cheapest@>
 		@<Minimize with a bound and without, and compare@>
+		@<Ask for the three cheapest, and compare@>
 	}
 }
 
-@ @<Enumerate every cover and keep the cheapest@>=
-want := -1
+@ The enumeration keeps every price, sorted, because the podium test below
+wants more than the least of them.
+@<Enumerate every cover and keep the cheapest@>=
+var all []int
 res := NewMCC().Dance(strings.NewReader(input))
 for sol := range res.Solutions {
-	if c := priceOfCover(sol, price); want < 0 || c < want {
-		want = c
-	}
+	all = append(all, priceOfCover(sol, price))
+}
+sort.Ints(all)
+want := -1
+if len(all) > 0 {
+	want = all[0]
 }
 
 @ @<Minimize with a bound and without, and compare@>=
@@ -1407,6 +1516,55 @@ for _, bound := range []func(Frame) int{nil, cheapestTimesNeed} {
 	if got != want {
 		t.Fatalf("trial %d: got %d, want %d\n%s", trial, got, want, input)
 	}
+}
+
+@ With |Best| at three, the three cheapest covers to arrive must cost what the
+three cheapest covers of all cost---or, when the problem has fewer than three,
+every cover must arrive.
+@<Ask for the three cheapest, and compare@>=
+s := NewMCC()
+s.Best = 3
+var got []int
+r := s.Minimize(strings.NewReader(input),
+	func(_ int, opt Option) int { return price[strings.Join(opt, " ")] })
+for sol := range r.Solutions {
+	got = append(got, priceOfCover(sol, price))
+}
+sort.Ints(got)
+k := min(3, len(all))
+if len(got) < k || fmt.Sprint(got[:k]) != fmt.Sprint(all[:k]) {
+	t.Fatalf("trial %d: three cheapest %v, want %v\n%s", trial, got, all[:k], input)
+}
+
+@ Negative prices are legal on an option that contains an item of fixed
+multiplicity, whose tax absorbs them. This is the example of \.{ssxcc.w}: every
+option costs~$-1$, and $\{a\}+\{b\}$ at~$-2$ must beat $\{ab\}$ at~$-1$,
+though the search meets $\{ab\}$ first.
+@(ssmcc_test.go@>=
+func TestMCCMinimizeNegative(t *testing.T) {
+	res := NewMCC().Minimize(strings.NewReader("a b\na b\na\nb\n"),
+		func(_ int, _ Option) int { return -1 })
+	got := 0
+	for sol := range res.Solutions {
+		got = -len(sol)
+	}
+	if got != -2 {
+		t.Errorf("cheapest cover costs %d, want -2", got)
+	}
+}
+
+@ Option $\{c\}$ holds only an item with slack, so no tax can absorb its
+negative price, and |Minimize| must refuse rather than answer wrongly. (Option
+$\{a\}$ at~$-1$ is fine by itself.)
+@(ssmcc_test.go@>=
+func TestMCCMinimizeRefusesNegative(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Error("a negative price on option c was accepted")
+		}
+	}()
+	NewMCC().Minimize(strings.NewReader("a 0:1|c\na\nc\n"),
+		func(_ int, _ Option) int { return -1 })
 }
 
 @** Index.

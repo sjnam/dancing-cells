@@ -329,7 +329,7 @@ func (s *XCC) search(level int) bool {
 	default:
 	}
 	s.tick()
-	@<Give up on this branch if it cannot beat the incumbent@>
+	@<Give up on this branch if it cannot beat the cutoff@>
 
 	best, solution := s.chooseItem()
 	if solution {
@@ -349,7 +349,8 @@ sizes, and go around again. Note that |restoreSizes| runs whether or not the
 commit succeeded---a failed |commitOption| leaves partial damage that must be
 undone just the same. The running total |s.cost| rises and falls with the
 choice, so that at every node it holds exactly the price of the options
-committed above it.
+committed above it; and |s.taxDue|, the tax still owed by the items not yet
+covered, falls and rises with it by the tax this option pays.
 @<Cover |best| and try each of its options in turn@>=
 s.swapOut(best)
 s.oactive = s.active
@@ -361,6 +362,7 @@ for c := best; c < best+s.size(best); c++ {
 	s.choice[level] = int32(opt)
 	@<Price this option@>
 	s.cost += price
+	s.taxDue -= tax
 	if s.commitOption(opt) {
 		if !s.search(level + 1) {
 			return false
@@ -368,6 +370,7 @@ for c := best; c < best+s.size(best); c++ {
 	}
 	s.restoreSizes(level)
 	s.cost -= price
+	s.taxDue += tax
 }
 
 @ Which item shall we branch on? Christine Solnon and Knuth added a wrinkle to
@@ -582,15 +585,17 @@ func (s *XCC) restoreSizes(level int) {
 Reaching a solution, we materialize it from the |choice| stack---one option
 per level---and send it down the channel. The send is the pacing point: if
 the consumer has abandoned the range, or the context is cancelled, the other
-arm of the select fires and the whole search unwinds. A cover that gets this
-far is also the cheapest one yet---the test at the head of |search| turned
-back every branch that could not beat the incumbent---so recording it as the
-new incumbent needs no comparison. (For a plain |Dance| the running cost is
-always zero and the incumbent is never consulted.)
+arm of the select fires and the whole search unwinds. When we are minimizing,
+a cover that gets this far is also cheaper than the dearest one on the
+podium---the test at the head of |search| turned back every branch that could
+not beat it---so it takes that one's place without further ado. (A plain
+|Dance| has no podium and never looks for one.)
 @<Visiting a solution@>=
 func (s *XCC) visit(level int) bool {
 	s.count++
-	s.incumbent = s.cost
+	if s.minimizing {
+		@<Put the new cover on the podium@>
+	}
 	sol := make([]Option, level)
 	for k := 0; k < level; k++ {
 		sol[k] = s.option(int(s.choice[k]))
@@ -659,12 +664,25 @@ the cover must still cost. With no such oracle the incumbent alone still
 prunes, since a partial cover already dearer than a finished one is hopeless,
 and that much comes free.
 
+Two refinements come from Knuth's {\tt DLX5}, the dancing-links solver in
+which he first taught Algorithm~X to count money. One is a {\it tax\/} on
+every primary item, which gives the search a lower bound of its own, free of
+charge, whether or not the caller supplies one; it is explained where it is
+levied. The other is to hunt for the $k$
+cheapest covers instead of the single cheapest one. Keep the prices of the
+best $k$ covers found so far on a {\it podium\/} and let the dearest of them
+be the {\it cutoff}, the price a branch has to beat to be worth exploring.
+When $k=1$ the podium holds one cover and the cutoff is the incumbent. (The
+cutoff rule itself is old: Garfinkel and Nemhauser used it in one of the first
+programs for least-cost exact cover [{\sl Operations Research\/ \bf17}
+(1969), 848--856].)
+
 @ Nothing in this chapter disturbs |Dance|. The optimizing entry point is a
 second one, |Minimize|, and when it is not in use the search runs the code it
-ran before, one boolean test the poorer. Only one new name goes out to
-callers, the entry point itself; the |Frame| a bound function looks through
-belongs to \.{dcells.w}, since both engines offer the same one, and what is
-left here is the four answers this engine gives it.
+ran before, one boolean test the poorer. Callers see three new names: the
+entry point itself and two knobs, |Bound| and |Best|. The |Frame| a bound
+function looks through belongs to \.{dcells.w}, since both engines offer the
+same one, and what is left here is the four answers this engine gives it.
 @<The optimizer@>=
 @<The minimizing entry point@>
 @<Answering the frame@>
@@ -678,23 +696,41 @@ turn out to be a solution the frame is empty and any sensible bound is zero.
 @<Solver knobs@>=
 Bound func(Frame) int // lower bound on the cost still to come; may be nil
 
+@ The size of the podium is a knob too. |Best| asks for the |Best| cheapest
+covers, and left at zero it means one, the plain minimization.
+@<Solver knobs@>=
+Best int // with Minimize, how many of the cheapest covers to hunt for
+
 @ The private half of the bookkeeping. Options are numbered $1,2,\ldots$ in
 the order they were read, |optNo| maps each node to the number of the option
-it belongs to, and |optCost| holds the price the caller put on each. Both stay
-nil until |Minimize| builds them, which is what |minimizing| really means.
+it belongs to, |optCost| holds the price the caller put on each, and |optTax|
+holds the part of that price that is tax. All of them stay nil until
+|Minimize| builds them, which is what |minimizing| really means.
 @<Cost bookkeeping@>=
 minimizing bool
 optNo      []int32 // node -> the option that node belongs to
 optCost    []int32 // option number -> the price the caller put on it
+optTax     []int64 // option number -> the tax included in that price
 itemBase   []int32 // item number -> its base in |set|
 cost       int64   // price of the options committed so far
-incumbent  int64   // price of the cheapest cover so far
+taxDue     int64   // total tax on the primary items not yet covered
+podium     []int64 // prices of the |Best| cheapest covers so far, a max-heap
 
 @ |Minimize| reads the same input |Dance| does, prices it, and starts the same
-search. What arrives on |Solutions| is a chain of covers each strictly cheaper
-than the last, so a caller who keeps only the newest ends up holding an
-optimal one; a caller who wants to watch the improvement come in can print
-them all. If the problem has no cover at all, nothing arrives.
+search. With |Best| left alone, what arrives on |Solutions| is a chain of
+covers each strictly cheaper than the last, so a caller who keeps only the
+newest ends up holding an optimal one; a caller who wants to watch the
+improvement come in can print them all. If the problem has no cover at all,
+nothing arrives.
+
+With |Best| set to some $k>1$ the chain is no longer monotone. A cover arrives
+whenever it is cheaper than the $k$th cheapest one seen so far, and once the
+search is over the $k$ cheapest covers that arrived are $k$ cheapest covers of
+the problem---or all of its covers, if it has fewer than~$k$. The reason is
+that the cutoff never rises: a cover turned away was no cheaper than the
+cutoff of its day, and so no cheaper than the $k$ that are on the podium at
+the end. Among covers of the same price, which ones make the podium is a
+matter of luck.
 
 The price list is a function rather than a slice because an option's number is
 an awkward thing for a caller to keep count of: blank lines, comments, and
@@ -706,7 +742,9 @@ is the same handle a |Bound| function will see later.
 func (s *XCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 	s.inputMatrix(rd)
 	@<Price the options@>
-	s.minimizing, s.incumbent = true, infCost
+	@<Levy a tax on every primary item@>
+	@<Set up the podium@>
+	s.minimizing = true
 	@<Launch the search goroutine@>
 }
 
@@ -741,30 +779,110 @@ for k := 0; k < s.itemlen; k++ {
 	s.itemBase[s.itemNo(base)] = int32(base)
 }
 
+@ Now the tax. Every cover takes exactly one option from the set of each
+primary item, so if we charge an item a tax~$t$ and knock $t$ off the price of
+every option that contains it, each cover gets exactly $t$ cheaper; the
+cheapest cover stays the cheapest. What is left of an option's price after all
+its items have been taxed Knuth calls its {\it net cost}. Take for $t$ the
+least net cost among the item's options at the moment it is taxed, and two
+things happen together. No net cost goes negative, since an option containing
+the item cost at least $t$ before. And the cheapest option in that item's set
+now costs nothing net, which it goes on doing, since a later tax never exceeds
+it.
+
+Why bother, when the answer does not change? Because the running price of a
+partial cover does not see this shuffling, while the covers still to come do.
+The options that finish the cover must between them cover every primary item
+still active, each exactly once, and each costs its tax plus a net cost that
+is not negative. So the tax on the active items, |taxDue|, is a lower bound on
+what is left to pay---found without looking at a single option, and kept up
+to date by one subtraction per committed option. It is exactly what {\tt
+DLX5} gets by comparing net costs with net costs, told in the caller's
+currency.
+
+A bonus comes with it. The argument never asks a price to be positive: a tax
+may be negative, and it is net costs that must not be. So a caller may put
+negative prices on options, as long as every option contains a primary
+item---and in this engine every option does, since the input drops the ones
+that contain none.
+@<Levy a tax on every primary item@>=
+s.optTax = make([]int64, len(s.optCost))
+s.taxDue = 0
+for k := 0; k < s.active; k++ {
+	x := int(s.item[k])
+	if x >= s.second || s.size(x) == 0 {
+		continue // a secondary item pays no tax; nor does one without options
+	}
+	@<Find the least net cost |t| among the options of item |x|@>
+	for c := x; c < x+s.size(x); c++ {
+		s.optTax[s.optNo[int(s.set[c])]] += t
+	}
+	s.taxDue += t
+}
+
+@ The net cost of an option is its price minus the tax it has paid so far.
+@<Find the least net cost |t| among the options of item |x|@>=
+t := infCost
+for c := x; c < x+s.size(x); c++ {
+	o := s.optNo[int(s.set[c])]
+	t = min(t, int64(s.optCost[o])-s.optTax[o])
+}
+
+@ The podium starts out as |Best| empty places, each at the price |infCost|,
+so the first |Best| covers step onto it unopposed.
+@<Set up the podium@>=
+s.podium = make([]int64, max(s.Best, 1))
+for i := range s.podium {
+	s.podium[i] = infCost
+}
+
 @ Here is the pruning test, spliced into the head of |search|. Returning
 |true| abandons this branch and lets the search go on elsewhere; only
-cancellation returns |false|. The comparison is |>=| rather than |>|, so a
-cover merely tying the incumbent is cut off too---which is why the covers that
-do arrive are strictly improving.
-@<Give up on this branch if it cannot beat the incumbent@>=
+cancellation returns |false|. What the rest of the cover must still cost is
+at least the tax still owed, and at least whatever the caller's |Bound| says,
+so it is at least the larger of the two. The cutoff is the top of the podium.
+The comparison is |>=| rather than |>|, so a cover merely tying the cutoff is
+cut off too---which is why, with |Best| at one, the covers that do arrive are
+strictly improving.
+@<Give up on this branch if it cannot beat the cutoff@>=
 if s.minimizing {
-	rest := int64(0)
+	rest := s.taxDue
 	if s.Bound != nil {
-		rest = int64(s.Bound(Frame{s}))
+		rest = max(rest, int64(s.Bound(Frame{s})))
 	}
-	if s.cost+rest >= s.incumbent {
+	if s.cost+rest >= s.podium[0] {
 		return true
 	}
 }
 
-@ And here is the price of one option, looked up twice per branch---once on
-the way down, once on the way back---from a node inside it. A plain |Dance|
-never built the tables, so it pays nothing but the test.
+@ And here is the price of one option, and the tax included in it, looked up
+twice per branch---once on the way down, once on the way back---from a node
+inside it. A plain |Dance| never built the tables, so it pays nothing but the
+test.
 @<Price this option@>=
-price := int64(0)
+price, tax := int64(0), int64(0)
 if s.minimizing {
-	price = int64(s.optCost[s.optNo[opt]])
+	o := s.optNo[opt]
+	price, tax = int64(s.optCost[o]), s.optTax[o]
 }
+
+@ A new cover goes onto the podium in place of the dearest one there, which
+sits at the root of the heap. The newcomer starts at the root as well and
+sinks, trading places with its dearer child, until neither child is dearer
+than it is. The new root is the new cutoff.
+@<Put the new cover on the podium@>=
+h, i := s.podium, 0
+for j := 1; j < len(h); j = 2*i + 1 {
+	if j+1 < len(h) && h[j+1] > h[j] {
+		j++ // the dearer child
+	}
+	if h[j] <= s.cost {
+		break
+	}
+	h[i] = h[j]
+	i = j
+}
+h[i] = s.cost
 
 @ Here are this engine's four answers to the frame. Walking the live part of
 the matrix means walking the active items, skipping the secondary ones---they
@@ -1303,6 +1421,60 @@ func TestMinimizeQueens(t *testing.T) {
 		t.Errorf("Minimize with a bound found %d, want %d", bounded, want)
 	}
 	t.Logf("%d nodes without a bound, %d with one", nodes, fewer)
+}
+
+@ Asking for the $k$ cheapest covers is checked the same way, against the
+whole list. The 7-queens board has forty solutions; we price them all, and
+the five cheapest that |Minimize| delivers with |Best| at five must cost what
+the five cheapest of the forty cost.
+@(ssxcc_test.go@>=
+func TestMinimizeBest(t *testing.T) {
+	const n, k = 7, 5
+	var all []int
+	for sol := range NewXCC().Dance(strings.NewReader(nQueensInput(n))).Solutions {
+		all = append(all, coverPrice(sol))
+	}
+	s := NewXCC()
+	s.Best = k
+	var got []int
+	res := s.Minimize(strings.NewReader(nQueensInput(n)),
+		func(_ int, opt Option) int { return queenPrice(opt) })
+	for sol := range res.Solutions {
+		got = append(got, coverPrice(sol))
+	}
+	@<Compare the |k| cheapest of |got| with the |k| cheapest of |all|@>
+}
+
+@ @<Compare the |k| cheapest of |got| with the |k| cheapest of |all|@>=
+sort.Ints(all)
+sort.Ints(got)
+if len(got) < k {
+	t.Fatalf("only %d covers arrived, want at least %d", len(got), k)
+}
+for i := 0; i < k; i++ {
+	if got[i] != all[i] {
+		t.Fatalf("the %d cheapest: got %v, want %v", k, got[:k], all[:k])
+	}
+}
+t.Logf("%d of the %d covers arrived", len(got), len(all))
+
+@ Negative prices are legal, thanks to the tax. Over items |a| and |b| the
+options $\{ab\}$, $\{a\}$, $\{b\}$ each cost~$-1$, so $\{a\}+\{b\}$ at~$-2$
+beats $\{ab\}$ at~$-1$. The search happens to find $\{ab\}$ first, and a
+search that pruned on the running price alone would then turn away $\{a\}$,
+already as dear as the incumbent, never learning that $\{b\}$ would make it
+cheaper.
+@(ssxcc_test.go@>=
+func TestMinimizeNegative(t *testing.T) {
+	res := NewXCC().Minimize(strings.NewReader("a b\na b\na\nb\n"),
+		func(_ int, _ Option) int { return -1 })
+	got := 0
+	for sol := range res.Solutions {
+		got = -len(sol)
+	}
+	if got != -2 {
+		t.Errorf("cheapest cover costs %d, want -2", got)
+	}
 }
 
 @** Index.

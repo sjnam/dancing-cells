@@ -79,15 +79,28 @@ for sol := range res.Solutions {
 - The price function is called once per option, right after the input is read.
 - Branch and bound: a branch that cannot beat the best cover so far is
   abandoned, so `Solutions` delivers a strictly improving chain.
+- Every primary item is *taxed*, as in Knuth's
+  [`DLX5`](https://www-cs-faculty.stanford.edu/~knuth/programs/dlx5.w): the
+  cheapest option in its set is the item's tax. Every cover pays each tax
+  exactly once, so the tax still owed by the uncovered items is a lower bound
+  that costs nothing to keep. That bound is always on. It also makes negative
+  prices legal under XCC.
+- `xc.Best = k` asks for the *k* cheapest covers instead of the single
+  cheapest. A cover then arrives whenever it beats the *k*th cheapest seen so
+  far, and when the search ends the *k* cheapest covers that arrived are *k*
+  cheapest covers of the problem. When *k* > 1 the chain is not monotone.
 - `xc.Bound = func(f cells.Frame) int { … }` supplies a lower bound on the cost
   of *finishing* the partial cover at each node — never an overestimate. Range
   over `f.Live` for the surviving (item, option) pairs; `f.Cost(opt)` and
   `f.Name(item)` read them back, and `f.Need(item)` says how many more times an
-  item must still be covered (always 1 under XCC). Leaving `Bound` nil prunes on
-  the incumbent alone.
-- **`NewMCC()` has it too**, with the same `Minimize` and `Bound`, and there
-  `Need` can exceed 1 — which is the whole point of having it. `NewXCCDC()`
-  does not: it counts covers, it does not price them.
+  item must still be covered (always 1 under XCC). The search uses whichever
+  of `Bound` and the tax is larger. Leaving `Bound` nil prunes on the tax alone.
+- **`NewMCC()` has it too**, with the same `Minimize`, `Best` and `Bound`, and
+  there `Need` can exceed 1 — which is the whole point of having it. Only items
+  of fixed multiplicity (`2|a`, not `1:2|a`) are taxed, since only they are
+  covered the same number of times by every cover. An option that contains no
+  such item may not have a negative price; `Minimize` panics if one does.
+  `NewXCCDC()` has no `Minimize`: it counts covers, it does not price them.
 - `Dance` is untouched by any of this.
 
 ### Input format (DLX)
@@ -576,30 +589,45 @@ $ go run ./examples/transversal -plain 9
    0:81   1:887   2:847    3:59  [ 4:81]  5:318   6:425   7:540   8:456
    ...
 가장 싼 횡단의 값 1296, 노드 184개, 1ms
-하한 없이는 노드 2125개, 1ms
+하한 없이는 노드 912개, 0s
 ````
 
 The square is the Cayley table of Z_n, so by Hall–Paige it has transversals only
 for odd n (and their counts match OEIS A006717: 15, 133, 2025, 37851 for
 n = 5, 7, 9, 11). The bound pays off more the harder the problem gets:
 
-| n | nodes without a bound | nodes with one | ratio |
+| n | tax only | Hungarian | ratio |
 | --: | --: | --: | --: |
-| 13 | 155,095 | 979 | 158× |
-| 15 | 1,681,693 | 6,881 | 244× |
-| 17 | 8,571,751 | 16,842 | 509× |
-| 19 | 117,455,633 | 82,212 | **1429×** |
-| 21 | >350M (1 min, unfinished) | 268,418 | — |
+| 13 | 27,509 / 8ms | 979 / 8ms | 28× |
+| 15 | 231,090 / 36ms | 6,881 / 35ms | 34× |
+| 17 | 852,684 / 132ms | 14,502 / 64ms | 59× |
+| 19 | 6,067,842 / 1.01s | 82,498 / 489ms | 74× |
+| 21 | 50,337,997 / 8.82s | 268,426 / 1.93s | 188× |
+| 23 | 382,007,278 / 69.8s | 1,358,635 / 11.6s | 281× |
+| 25 | 2,381,530,509 / 7.5 min | 3,376,057 / 33.1s | **705×** |
 
-That is 39× in wall clock at n = 19, and it moves the wall from about n = 19 to
-about n = 27 (2 minutes). Below n ≈ 11 the bound costs more than it saves. And
-for even n it does nothing at all: with no transversal there is never an
-incumbent to beat, and branch-and-*bound* only works once it has something to
-beat.
+A Hungarian node costs about 6 µs against 0.17 µs for a tax-only one, so the
+bound breaks even near n = 15. It is 2× faster in wall clock at n = 19 and 14×
+at n = 25, and it moves the wall from about n = 23 to about n = 27 (2 minutes;
+n = 29 does not finish in 8). And for even n it does nothing at all: with no
+transversal there is never a cutoff to beat, and branch-and-*bound* only works
+once it has something to beat.
+
+The left column used to be the search with no bound whatsoever — 117 million
+nodes and 19.5 s at n = 19, a ratio of 1429×, and 39× in wall clock. Then the
+engine learned Knuth's tax (see [Least-cost covers](#least-cost-covers-minimize)),
+which cut that column twentyfold for free. The write-up points out why it is
+so strong here. The items are listed rows, then columns, then symbols, so the
+tax subtracts every row's minimum and then every column's minimum, which is
+exactly the row and column reduction that opens the Hungarian algorithm.
+After that it reduces the symbols too, the axis the Hungarian bound ignores. The
+Hungarian bound earns its ratio with the two things the tax lacks: the
+augmenting steps after the reductions, and redoing all of it at every node over
+the cells still alive.
 
 And the ceiling, which the write-up now states plainly: those ratios are
-measured against the *same program with its bound switched off*, not against
-the state of the art. Minimum-cost transversal is almost too easy to write as
+measured against the *same program with only the tax*, not against the state of
+the art. Minimum-cost transversal is almost too easy to write as
 an integer program, and written that way its LP relaxation is nearly tight — a
 general MILP solver clears n = 27 in about a second and barely branches, where
 this program spends two minutes. Ours throws a whole axis away and lands some
@@ -639,18 +667,29 @@ and are pairwise ≥ *n* apart in Chebyshev distance, so no single piece can pay
 for two; sum. It finds cells that start out free and become trapped as options
 die. On the order-8 board (36×36), with a 2-minute cap:
 
-| z | minimum | no bound | `Need` bound | trapped-cell bound |
+| z | minimum | tax only | `Need` bound | trapped-cell bound |
 | --: | --: | --: | --: | --: |
-| 8 | 0 | 7,347 / 139ms | 7,347 / 1.73s | 7,347 / 1.70s |
-| 12 | 0 | 11,142 / 189ms | 11,142 / 2.60s | 10,691 / 2.47s |
+| 8 | 0 | 7,347 / 133ms | 7,347 / 1.73s | 7,347 / 1.73s |
+| 12 | 0 | 11,142 / 187ms | 11,142 / 2.62s | 10,691 / 2.51s |
 | 14 | ≤ 1 | — | — | — |
-| 16 | **1** | — | — | **7,923 / 1.91s** |
+| 16 | **1** | **8,718 / 172ms** | 8,718 / 2.10s | 7,923 / 1.90s |
 
-At *z* ≤ 12 a price-0 cover turns up almost at once, the incumbent drops to 0,
-and every branch dies on `cost + rest >= incumbent` — the bound is pure
-overhead. At *z* = 16 it inverts: two minutes and 6.4M nodes prove nothing
-without the bound, and with it the whole tree collapses in under two seconds,
-because the trapped 2×2 block forces the root bound to 1.
+At *z* ≤ 12 a price-0 cover turns up almost at once, the cutoff drops to 0, and
+every branch dies on `cost + rest >= cutoff` — the bound is pure overhead.
+
+At *z* = 16 the story changed after the write-up was first finished. Without a
+bound, two minutes and 6.4M nodes proved nothing; the trapped-cell bound
+collapsed the tree in under two seconds. Then the engine started taxing items
+(see [Least-cost covers](#least-cost-covers-minimize)), and now the search
+with no `Bound` at all finishes in 0.17 s. The tax does the pencil argument
+unaided. Every option covering a trapped cell costs 1, so that cell's tax is 1.
+The block's other three cells pay nothing, because each of them shares a piece
+with the first cell, and that piece has already been taxed down to 0. That
+is exactly the double counting the trapped-cell bound avoids by keeping its
+cells ≥ *n* apart. The root bound is 1 and the tree dies once a price-1 cover
+is in hand. What the hand-written bound still adds is cells that become
+trapped *during* the search, which the tax, levied once at input, cannot see.
+Here that saves 9% of the nodes and costs 11× the time.
 
 The `Need` bound — *size k still needs t copies but only u of its surviving
 placements are free, so t−u must be paid* — is the one that reads `Frame.Need`,
@@ -661,7 +700,8 @@ and lumping placements together by size cannot see that. Both bounds ship behind
 
 *z* = 14 = 2*n*−2 stays open: price 1 is found in two seconds, price 0 is
 neither found nor ruled out. It is exactly the largest zone the pencil argument
-permits, and exactly the last one where the bound returns 0 at the root.
+permits, and exactly the last one where the bound returns 0 at the root. With
+no trapped cell at the root, the tax is 0 there too.
 
 The write-up is [`examples/hollow/hollow.w`](examples/hollow/hollow.w).
 
