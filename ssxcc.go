@@ -3,40 +3,42 @@ package dcells
 
 import (
 	"bufio"
+	"cmp"
 	"context"
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"strings"
 	"time"
 )
 
-//line ssxcc.w:143
+//line ssxcc.w:145
 const primExtra = 4 // set entries reserved below each item's base
 
 type twoints struct {
 	l, r int32
 }
 
-//line ssxcc.w:156
+//line ssxcc.w:158
 type XCC struct {
 
-//line ssxcc.w:73
+//line ssxcc.w:75
 	Debug         bool          // print input summary and final stats to stderr
 	PulseInterval time.Duration // if > 0, offer periodic Heartbeat strings
 
-//line ssxcc.w:697
+//line ssxcc.w:704
 	Bound func(Frame) int // lower bound on the cost still to come; may be nil
 
-//line ssxcc.w:702
+//line ssxcc.w:709
 	Best int // with Minimize, how many of the cheapest covers to hunt for
 
-//line ssxcc.w:158
+//line ssxcc.w:160
 	ctx context.Context
 
-//line ssxcc.w:160
+//line ssxcc.w:162
 
-//line ssxcc.w:170
+//line ssxcc.w:172
 	nd       []node
 	lastNode int
 	item     []int32
@@ -50,59 +52,61 @@ type XCC struct {
 	baditem  int
 	osecond  int
 
-//line ssxcc.w:161
+//line ssxcc.w:163
 
-//line ssxcc.w:80
+//line ssxcc.w:82
 	names      []string // interned item names, by item number (1-based)
 	nameIndex  map[string]int
 	colorNames []string // interned colors, by id (1-based; 0 means "no color")
 	colorIndex map[string]int
 
-//line ssxcc.w:162
+//line ssxcc.w:164
 
-//line ssxcc.w:90
+//line ssxcc.w:92
 	force  []int32
 	forced int
 
-//line ssxcc.w:163
+//line ssxcc.w:165
 
-//line ssxcc.w:184
+//line ssxcc.w:186
 	choice    []int32
 	saved     []int32
 	savestack []twoints
 	saveptr   int
 
-//line ssxcc.w:164
+//line ssxcc.w:166
 
-//line ssxcc.w:710
+//line ssxcc.w:717
 	minimizing bool
-	optNo      []int32 // node -> the option that node belongs to
-	optCost    []int32 // option number -> the price the caller put on it
-	optTax     []int64 // option number -> the tax included in that price
-	itemBase   []int32 // item number -> its base in |set|
-	cost       int64   // price of the options committed so far
-	taxDue     int64   // total tax on the primary items not yet covered
-	podium     []int64 // prices of the |Best| cheapest covers so far, a max-heap
+	optNo      []int32     // node -> the option that node belongs to
+	optCost    []int32     // option number -> the price the caller put on it
+	optTax     []int64     // option number -> the tax included in that price
+	itemBase   []int32     // item number -> its base in |set|
+	cost       int64       // price of the options committed so far
+	taxDue     int64       // total tax on the primary items not yet covered
+	podium     []int64     // prices of the |Best| cheapest covers so far, a max-heap
+	byNet      []pricedOpt // every option, dearest net cost first
+	sweptAt    []int32     // level -> how far along |byNet| that node has swept
 
-//line ssxcc.w:165
+//line ssxcc.w:167
 
-//line ssxcc.w:94
+//line ssxcc.w:96
 	updates uint64
 	nodes   uint64
 	options uint64
 	count   uint64
 
-//line ssxcc.w:166
+//line ssxcc.w:168
 
-//line ssxcc.w:100
+//line ssxcc.w:102
 	solStream chan []Option
 	heartbeat chan string
 	pulse     *time.Ticker
 
-//line ssxcc.w:167
+//line ssxcc.w:169
 }
 
-//line ssxcc.w:197
+//line ssxcc.w:199
 func NewXCC() *XCC {
 	return &XCC{
 		second:     secondUnset,
@@ -125,27 +129,27 @@ func (s *XCC) WithContext(ctx context.Context) *XCC {
 
 func (s *XCC) Updates() uint64 { return s.updates }
 
-//line ssxcc.w:218
+//line ssxcc.w:220
 func (s *XCC) Nodes() uint64 { return s.nodes }
 
-//line ssxcc.w:226
+//line ssxcc.w:228
 func (s *XCC) size(x int) int { return int(s.set[x-1]) }
 
-//line ssxcc.w:227
+//line ssxcc.w:229
 func (s *XCC) pos(x int) int { return int(s.set[x-2]) }
 
-//line ssxcc.w:228
+//line ssxcc.w:230
 func (s *XCC) itemNo(x int) int { return int(s.set[x-3]) }
 
 func (s *XCC) setSize(x, v int) { s.set[x-1] = int32(v) }
 
-//line ssxcc.w:231
+//line ssxcc.w:233
 func (s *XCC) setPos(x, v int) { s.set[x-2] = int32(v) }
 
-//line ssxcc.w:232
+//line ssxcc.w:234
 func (s *XCC) setItemNo(x, v int) { s.set[x-3] = int32(v) }
 
-//line ssxcc.w:238
+//line ssxcc.w:240
 func (s *XCC) internName(name string) (num int, ok bool) {
 	if _, dup := s.nameIndex[name]; dup {
 		return 0, false
@@ -166,11 +170,11 @@ func (s *XCC) internColor(name string) int {
 	return id
 }
 
-//line ssxcc.w:264
+//line ssxcc.w:266
 func (s *XCC) Dance(rd io.Reader) *Result {
 	s.inputMatrix(rd)
 
-//line ssxcc.w:275
+//line ssxcc.w:277
 	s.solStream = make(chan []Option)
 	s.heartbeat = make(chan string)
 
@@ -178,16 +182,16 @@ func (s *XCC) Dance(rd io.Reader) *Result {
 		defer close(s.solStream)
 		defer close(s.heartbeat)
 
-//line ssxcc.w:282
+//line ssxcc.w:284
 
-//line ssxcc.w:300
+//line ssxcc.w:302
 		if s.Debug {
 			fmt.Fprintf(os.Stderr,
 				"(%d options, %d+%d items, %d entries successfully read)\n",
 				s.options, s.osecond, s.itemlen-s.osecond, s.lastNode)
 		}
 
-//line ssxcc.w:283
+//line ssxcc.w:285
 		if s.PulseInterval > 0 {
 			s.pulse = time.NewTicker(s.PulseInterval)
 			defer s.pulse.Stop()
@@ -197,9 +201,9 @@ func (s *XCC) Dance(rd io.Reader) *Result {
 			s.search(0)
 		}
 
-//line ssxcc.w:292
+//line ssxcc.w:294
 
-//line ssxcc.w:307
+//line ssxcc.w:309
 		if s.Debug {
 			plural := "s"
 			if s.count == 1 {
@@ -209,15 +213,15 @@ func (s *XCC) Dance(rd io.Reader) *Result {
 				s.count, plural, s.updates, s.nodes)
 		}
 
-//line ssxcc.w:293
+//line ssxcc.w:295
 	}()
 
 	return &Result{Solutions: s.solStream, Heartbeat: s.heartbeat}
 
-//line ssxcc.w:267
+//line ssxcc.w:269
 }
 
-//line ssxcc.w:324
+//line ssxcc.w:326
 func (s *XCC) search(level int) bool {
 	s.nodes++
 	select {
@@ -227,7 +231,7 @@ func (s *XCC) search(level int) bool {
 	}
 	s.tick()
 
-//line ssxcc.w:848
+//line ssxcc.w:858
 	if s.minimizing {
 		rest := s.taxDue
 		if s.Bound != nil {
@@ -238,13 +242,47 @@ func (s *XCC) search(level int) bool {
 		}
 	}
 
-//line ssxcc.w:334
+//line ssxcc.w:335
+
+//line ssxcc.w:938
+	if s.minimizing {
+		budget := s.podium[0] - s.cost - s.taxDue
+		p := 0
+		if level > 0 {
+			p = int(s.sweptAt[level-1])
+		}
+		for ; p < len(s.byNet) && s.byNet[p].net >= budget; p++ {
+
+//line ssxcc.w:959
+			for nn := int(s.byNet[p].node); s.nd[nn].itm > 0; nn++ {
+				u, v := int(s.nd[nn].itm), int(s.nd[nn].loc)
+				if s.pos(u) >= s.active || v >= u+s.size(u) {
+					continue // an inactive item, or one this option has already left
+				}
+				ss := s.size(u) - 1
+				if ss == 0 && u < s.second {
+					return true // a primary item has nothing left that it can afford
+				}
+				nnp := int(s.set[u+ss])
+				s.setSize(u, ss)
+				s.set[u+ss], s.set[v] = int32(nn), int32(nnp)
+				s.nd[nn].loc, s.nd[nnp].loc = int32(u+ss), int32(v)
+				s.updates++
+			}
+
+//line ssxcc.w:946
+		}
+		s.sweptAt = ensure(s.sweptAt, level+1)
+		s.sweptAt[level] = int32(p)
+	}
+
+//line ssxcc.w:337
 	best, solution := s.chooseItem()
 	if solution {
 		return s.visit(level)
 	}
 
-//line ssxcc.w:355
+//line ssxcc.w:358
 	s.swapOut(best)
 	s.oactive = s.active
 	s.hide(best, 0, 0)
@@ -254,14 +292,21 @@ func (s *XCC) search(level int) bool {
 		opt := int(s.set[c])
 		s.choice[level] = int32(opt)
 
-//line ssxcc.w:863
+//line ssxcc.w:873
 		price, tax := int64(0), int64(0)
 		if s.minimizing {
 			o := s.optNo[opt]
 			price, tax = int64(s.optCost[o]), s.optTax[o]
 		}
 
-//line ssxcc.w:364
+//line ssxcc.w:367
+
+//line ssxcc.w:997
+		if s.minimizing && s.cost+price+s.taxDue-tax >= s.podium[0] {
+			continue
+		}
+
+//line ssxcc.w:368
 		s.cost += price
 		s.taxDue -= tax
 		if s.commitOption(opt) {
@@ -274,11 +319,11 @@ func (s *XCC) search(level int) bool {
 		s.taxDue += tax
 	}
 
-//line ssxcc.w:339
+//line ssxcc.w:342
 	return true
 }
 
-//line ssxcc.w:386
+//line ssxcc.w:390
 func (s *XCC) chooseItem() (best int, solution bool) {
 	for s.forced != 0 {
 		s.forced--
@@ -287,7 +332,7 @@ func (s *XCC) chooseItem() (best int, solution bool) {
 		}
 	}
 
-//line ssxcc.w:405
+//line ssxcc.w:409
 	score := infSize
 	for k := 0; k < s.active; k++ {
 		x := int(s.item[k])
@@ -306,7 +351,7 @@ func (s *XCC) chooseItem() (best int, solution bool) {
 		}
 	}
 
-//line ssxcc.w:394
+//line ssxcc.w:398
 	if s.forced != 0 {
 		s.forced--
 		return int(s.force[s.forced]), false
@@ -314,10 +359,10 @@ func (s *XCC) chooseItem() (best int, solution bool) {
 	return best, score == infSize
 }
 
-//line ssxcc.w:433
+//line ssxcc.w:437
 func (s *XCC) commitOption(opt int) bool {
 
-//line ssxcc.w:440
+//line ssxcc.w:444
 	p := s.active
 	s.oactive = s.active
 	for q := opt + 1; q != opt; {
@@ -338,9 +383,9 @@ func (s *XCC) commitOption(opt int) bool {
 	}
 	s.active = p
 
-//line ssxcc.w:435
+//line ssxcc.w:439
 
-//line ssxcc.w:468
+//line ssxcc.w:472
 	for q := opt + 1; q != opt; {
 		c := int(s.nd[q].itm)
 		if c < 0 {
@@ -362,11 +407,11 @@ func (s *XCC) commitOption(opt int) bool {
 		q++
 	}
 
-//line ssxcc.w:436
+//line ssxcc.w:440
 	return true
 }
 
-//line ssxcc.w:497
+//line ssxcc.w:501
 func (s *XCC) hide(c, color, check int) bool {
 	for rr, end := c, c+s.size(c); rr < end; rr++ {
 		tt := int(s.set[rr])
@@ -374,7 +419,7 @@ func (s *XCC) hide(c, color, check int) bool {
 			continue
 		}
 
-//line ssxcc.w:514
+//line ssxcc.w:518
 		for nn := tt + 1; nn != tt; {
 			u, v := int(s.nd[nn].itm), int(s.nd[nn].loc)
 			if u < 0 {
@@ -384,7 +429,7 @@ func (s *XCC) hide(c, color, check int) bool {
 			if s.pos(u) < s.oactive {
 				ss := s.size(u) - 1
 
-//line ssxcc.w:533
+//line ssxcc.w:537
 				if ss <= 1 && check != 0 && u < s.second && s.pos(u) < s.active {
 					if ss == 0 {
 						return false
@@ -394,7 +439,7 @@ func (s *XCC) hide(c, color, check int) bool {
 					s.forced++
 				}
 
-//line ssxcc.w:523
+//line ssxcc.w:527
 				nnp := int(s.set[u+ss])
 				s.setSize(u, ss)
 				s.set[u+ss], s.set[v] = int32(nn), int32(nnp)
@@ -404,12 +449,12 @@ func (s *XCC) hide(c, color, check int) bool {
 			nn++
 		}
 
-//line ssxcc.w:504
+//line ssxcc.w:508
 	}
 	return true
 }
 
-//line ssxcc.w:545
+//line ssxcc.w:549
 func (s *XCC) swapOut(x int) {
 	p := s.active - 1
 	s.active = p
@@ -421,7 +466,7 @@ func (s *XCC) swapOut(x int) {
 	s.updates++
 }
 
-//line ssxcc.w:565
+//line ssxcc.w:569
 func (s *XCC) saveSizes(level int) {
 	s.savestack = ensure(s.savestack, s.saveptr+s.active)
 	for p := 0; p < s.active; p++ {
@@ -441,12 +486,12 @@ func (s *XCC) restoreSizes(level int) {
 	}
 }
 
-//line ssxcc.w:594
+//line ssxcc.w:598
 func (s *XCC) visit(level int) bool {
 	s.count++
 	if s.minimizing {
 
-//line ssxcc.w:874
+//line ssxcc.w:884
 		h, i := s.podium, 0
 		for j := 1; j < len(h); j = 2*i + 1 {
 			if j+1 < len(h) && h[j+1] > h[j] {
@@ -460,7 +505,7 @@ func (s *XCC) visit(level int) bool {
 		}
 		h[i] = s.cost
 
-//line ssxcc.w:598
+//line ssxcc.w:602
 	}
 	sol := make([]Option, level)
 	for k := 0; k < level; k++ {
@@ -474,7 +519,7 @@ func (s *XCC) visit(level int) bool {
 	}
 }
 
-//line ssxcc.w:615
+//line ssxcc.w:619
 func (s *XCC) tick() {
 	if s.pulse == nil {
 		return
@@ -489,7 +534,7 @@ func (s *XCC) tick() {
 	}
 }
 
-//line ssxcc.w:635
+//line ssxcc.w:639
 func (s *XCC) option(p int) Option {
 	for s.nd[p-1].itm > 0 {
 		p-- // move to the option's first node
@@ -505,11 +550,11 @@ func (s *XCC) option(p int) Option {
 	return opt
 }
 
-//line ssxcc.w:742
+//line ssxcc.w:751
 func (s *XCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 	s.inputMatrix(rd)
 
-//line ssxcc.w:756
+//line ssxcc.w:766
 	s.optNo = make([]int32, s.lastNode+1)
 	s.optCost = make([]int32, int(s.options)+1)
 	o := int32(0)
@@ -524,16 +569,16 @@ func (s *XCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 		s.optNo[k] = o
 	}
 
-//line ssxcc.w:776
+//line ssxcc.w:786
 	s.itemBase = make([]int32, s.itemlen+1)
 	for k := 0; k < s.itemlen; k++ {
 		base := int(s.item[k])
 		s.itemBase[s.itemNo(base)] = int32(base)
 	}
 
-//line ssxcc.w:745
+//line ssxcc.w:754
 
-//line ssxcc.w:809
+//line ssxcc.w:819
 	s.optTax = make([]int64, len(s.optCost))
 	s.taxDue = 0
 	for k := 0; k < s.active; k++ {
@@ -542,32 +587,47 @@ func (s *XCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 			continue // a secondary item pays no tax; nor does one without options
 		}
 
-//line ssxcc.w:825
+//line ssxcc.w:835
 		t := infCost
 		for c := x; c < x+s.size(x); c++ {
 			o := s.optNo[int(s.set[c])]
 			t = min(t, int64(s.optCost[o])-s.optTax[o])
 		}
 
-//line ssxcc.w:817
+//line ssxcc.w:827
 		for c := x; c < x+s.size(x); c++ {
 			s.optTax[s.optNo[int(s.set[c])]] += t
 		}
 		s.taxDue += t
 	}
 
-//line ssxcc.w:746
+//line ssxcc.w:755
 
-//line ssxcc.w:834
+//line ssxcc.w:980
+	s.byNet = s.byNet[:0]
+	for k := 1; k < s.lastNode; k++ {
+		if s.nd[k].itm > 0 && s.nd[k-1].itm <= 0 {
+			o := s.optNo[k]
+			s.byNet = append(s.byNet,
+				pricedOpt{int32(k), int64(s.optCost[o]) - s.optTax[o]})
+		}
+	}
+	slices.SortStableFunc(s.byNet, func(a, b pricedOpt) int {
+		return cmp.Compare(b.net, a.net)
+	})
+
+//line ssxcc.w:756
+
+//line ssxcc.w:844
 	s.podium = make([]int64, max(s.Best, 1))
 	for i := range s.podium {
 		s.podium[i] = infCost
 	}
 
-//line ssxcc.w:747
+//line ssxcc.w:757
 	s.minimizing = true
 
-//line ssxcc.w:275
+//line ssxcc.w:277
 	s.solStream = make(chan []Option)
 	s.heartbeat = make(chan string)
 
@@ -575,16 +635,16 @@ func (s *XCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 		defer close(s.solStream)
 		defer close(s.heartbeat)
 
-//line ssxcc.w:282
+//line ssxcc.w:284
 
-//line ssxcc.w:300
+//line ssxcc.w:302
 		if s.Debug {
 			fmt.Fprintf(os.Stderr,
 				"(%d options, %d+%d items, %d entries successfully read)\n",
 				s.options, s.osecond, s.itemlen-s.osecond, s.lastNode)
 		}
 
-//line ssxcc.w:283
+//line ssxcc.w:285
 		if s.PulseInterval > 0 {
 			s.pulse = time.NewTicker(s.PulseInterval)
 			defer s.pulse.Stop()
@@ -594,9 +654,9 @@ func (s *XCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 			s.search(0)
 		}
 
-//line ssxcc.w:292
+//line ssxcc.w:294
 
-//line ssxcc.w:307
+//line ssxcc.w:309
 		if s.Debug {
 			plural := "s"
 			if s.count == 1 {
@@ -606,15 +666,15 @@ func (s *XCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 				s.count, plural, s.updates, s.nodes)
 		}
 
-//line ssxcc.w:293
+//line ssxcc.w:295
 	}()
 
 	return &Result{Solutions: s.solStream, Heartbeat: s.heartbeat}
 
-//line ssxcc.w:749
+//line ssxcc.w:759
 }
 
-//line ssxcc.w:891
+//line ssxcc.w:1005
 func (s *XCC) eachLive(yield func(item, opt int) bool) {
 	for k := 0; k < s.active; k++ {
 		x := int(s.item[k])
@@ -630,10 +690,10 @@ func (s *XCC) eachLive(yield func(item, opt int) bool) {
 	}
 }
 
-//line ssxcc.w:910
+//line ssxcc.w:1024
 func (s *XCC) optionCost(opt int) int { return int(s.optCost[opt]) }
 
-//line ssxcc.w:911
+//line ssxcc.w:1025
 func (s *XCC) itemName(item int) string { return s.names[item] }
 
 func (s *XCC) itemNeed(item int) int {
@@ -643,17 +703,17 @@ func (s *XCC) itemNeed(item int) int {
 	return 0
 }
 
-//line ssxcc.w:930
+//line ssxcc.w:1044
 func (s *XCC) inputMatrix(rd io.Reader) {
 	br := bufio.NewReader(rd)
 	s.readItemNames(br)
 	s.readOptions(br)
 }
 
-//line ssxcc.w:946
+//line ssxcc.w:1060
 func (s *XCC) readItemNames(br *bufio.Reader) {
 
-//line ssxcc.w:969
+//line ssxcc.w:1083
 	var buf []byte
 	var p int
 	found := false
@@ -671,7 +731,7 @@ func (s *XCC) readItemNames(br *bufio.Reader) {
 		failf("no items")
 	}
 
-//line ssxcc.w:948
+//line ssxcc.w:1062
 	for buf[p] != 0 {
 		name, next := token(buf, p, false)
 		if name == "|" {
@@ -692,7 +752,7 @@ func (s *XCC) readItemNames(br *bufio.Reader) {
 	s.lastItm = len(s.names) // items + 1 (names[0] is unused)
 }
 
-//line ssxcc.w:989
+//line ssxcc.w:1103
 func (s *XCC) readOptions(br *bufio.Reader) {
 	for {
 		buf, ok := nextLine(br)
@@ -707,13 +767,13 @@ func (s *XCC) readOptions(br *bufio.Reader) {
 	s.finalize()
 }
 
-//line ssxcc.w:1009
+//line ssxcc.w:1123
 func (s *XCC) readOption(buf []byte) {
 	spacer := s.lastNode
 	hasPrimary := false
 	for p := skipSpace(buf, 0); buf[p] != 0; {
 
-//line ssxcc.w:1029
+//line ssxcc.w:1143
 		name, next := token(buf, p, true)
 		if name == "" {
 			failf("empty item name")
@@ -738,12 +798,12 @@ func (s *XCC) readOption(buf []byte) {
 		}
 		p = skipSpace(buf, next)
 
-//line ssxcc.w:1014
+//line ssxcc.w:1128
 	}
 
 	if !hasPrimary {
 
-//line ssxcc.w:1056
+//line ssxcc.w:1170
 		for s.lastNode > spacer {
 			slot := int(s.nd[s.lastNode].itm) << 2
 			s.setSize(slot, s.size(slot)-1)
@@ -751,7 +811,7 @@ func (s *XCC) readOption(buf []byte) {
 			s.lastNode--
 		}
 
-//line ssxcc.w:1018
+//line ssxcc.w:1132
 		return
 	}
 	s.nd[spacer].loc = int32(s.lastNode - spacer)
@@ -761,7 +821,7 @@ func (s *XCC) readOption(buf []byte) {
 	s.nd[s.lastNode].itm = int32(spacer + 1 - s.lastNode)
 }
 
-//line ssxcc.w:1068
+//line ssxcc.w:1182
 func (s *XCC) createNode(m, spacer int, hasPrimary *bool) {
 	slot := m << 2
 	s.set = ensure(s.set, slot)
@@ -780,10 +840,10 @@ func (s *XCC) createNode(m, spacer int, hasPrimary *bool) {
 	s.setPos(slot, s.lastNode)
 }
 
-//line ssxcc.w:1089
+//line ssxcc.w:1203
 func (s *XCC) finalize() {
 
-//line ssxcc.w:1100
+//line ssxcc.w:1214
 	s.active, s.itemlen = s.lastItm-1, s.lastItm-1
 	s.item = ensure(s.item, s.itemlen)
 	s.set = ensure(s.set, (s.itemlen<<2)+1) // all input slots readable
@@ -802,9 +862,9 @@ func (s *XCC) finalize() {
 		s.osecond = s.second - 1
 	}
 
-//line ssxcc.w:1091
+//line ssxcc.w:1205
 
-//line ssxcc.w:1122
+//line ssxcc.w:1236
 	for ; k != 0; k-- {
 		base := int(s.item[k-1])
 		if k == s.second {
@@ -818,9 +878,9 @@ func (s *XCC) finalize() {
 		s.setItemNo(base, k)
 	}
 
-//line ssxcc.w:1092
+//line ssxcc.w:1206
 
-//line ssxcc.w:1139
+//line ssxcc.w:1253
 	for k = 1; k < s.lastNode; k++ {
 		if s.nd[k].itm < 0 {
 			continue
@@ -832,5 +892,5 @@ func (s *XCC) finalize() {
 		s.set[loc] = int32(k)
 	}
 
-//line ssxcc.w:1093
+//line ssxcc.w:1207
 }

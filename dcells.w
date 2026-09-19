@@ -121,6 +121,7 @@ The small vocabulary that both engines share is collected here:
 @<The node type@>
 @<Solutions and heartbeats@>
 @<The bound's peephole@>
+@<The line of options@>
 @<The slice grower@>
 
 @ Three sentinels are shared by both engines. |infSize| is larger than any real
@@ -196,6 +197,17 @@ type frameView interface {
 	optionCost(opt int) int
 	itemName(item int) string
 	itemNeed(item int) int
+}
+
+@ When either engine minimizes, it lines up all the options by {\it net
+cost\/}---price less tax, as \.{ssxcc.w} explains---so that it can sweep away,
+at every node, the options the node can no longer afford. Each entry of the
+line names an option by its first node, which is where a deletion starts
+walking, and carries the option's net cost.
+@<The line of options@>=
+type pricedOpt struct {
+	node int32 // the option's first node
+	net  int64 // its price less the tax it pays
 }
 
 @ One generic helper appears on nearly every page: |ensure| returns a slice at

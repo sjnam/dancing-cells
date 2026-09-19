@@ -27,10 +27,12 @@ package dcells
 
 import (
 	"bufio"
+	"cmp"
 	"context"
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -334,6 +336,7 @@ func (m *MCC) search(stage int) bool {
 
 	@<Dispatch a leftover forced item@>
 	@<Give up on this branch if it cannot beat the cutoff@>
+	@<Sweep away the options this node can no longer afford@>
 
 	best, score := m.chooseBest()
 	if m.forced != 0 {
@@ -364,7 +367,7 @@ option, |opt|. The {\it left\/} child includes it and moves to |stage+1|; the
 child---excluding the option would starve the item---so half the work
 vanishes. Either way we leave with the save stack exactly as we found it.
 @<Branch left and right on |best|@>=
-mark := m.saveState()
+mark, swept := m.saveState(), m.swept
 opt := int(m.set[best])
 m.included = ensure(m.included, stage+1)
 m.included[stage] = int32(opt)
@@ -380,6 +383,7 @@ if m.includeOption(opt) {
 }
 m.cost -= price
 m.taxDue += tax
+m.swept = swept
 if score != 1 {
 	m.restoreState(mark)
 	if m.removeOption(opt) {
@@ -728,11 +732,12 @@ banishes an option and re-enters the same stage, buying nothing and owing
 nothing. So there is exactly one place where the price of an option is added
 and taken back, plus its twin in the forced move.
 
-The two refinements that \.{ssxcc.w} borrows from Knuth's {\tt DLX5} come
-along: a tax on the primary items, which gives a lower bound for free, and a
+The three refinements that \.{ssxcc.w} borrows from Knuth's {\tt DLX5} come
+along: a tax on the primary items, which gives a lower bound for free; a sweep
+that deletes, at every node, the options the node can no longer afford; and a
 podium of the $k$ cheapest covers found so far, whose dearest member is the
-{\it cutoff\/} that a branch must beat. Only the tax needs rethinking here,
-and it is rethought below where it is levied.
+{\it cutoff\/} that a branch must beat. The tax and the sweep both need some
+rethinking here, and each is rethought below where it happens.
 
 @ Nothing here disturbs |Dance|. The optimizing entry point is a second one,
 |Minimize|, and when it is not in use the search runs the code it ran before,
@@ -771,6 +776,8 @@ itemBase   []int32 // item number -> its base in |set|
 cost       int64   // price of the options included so far
 taxDue     int64   // tax still owed by the coverings yet to come
 podium     []int64 // prices of the |Best| cheapest covers so far, a max-heap
+byNet      []pricedOpt // every option, dearest net cost first
+swept      int         // how far along |byNet| the current node has swept
 
 @ |Minimize| reads the same input |Dance| does, prices it, and starts the same
 search. What arrives on |Solutions| is a chain of covers each strictly cheaper
@@ -789,6 +796,7 @@ func (m *MCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 	@<Price the options@>
 	@<Levy a tax on every item of fixed multiplicity@>
 	@<Refuse a negative net cost@>
+	@<Line up the options by net cost@>
 	@<Set up the podium@>
 	m.minimizing = true
 	@<Launch the search goroutine@>
@@ -881,6 +889,70 @@ for o := 1; o < len(m.optCost); o++ {
 m.podium = make([]int64, max(m.Best, 1))
 for i := range m.podium {
 	m.podium[i] = infCost
+}
+m.swept = 0
+
+@ The line of options is laid out as in \.{ssxcc.w}, dearest net cost first.
+@<Line up the options by net cost@>=
+m.byNet = m.byNet[:0]
+for k := 1; k < m.lastNode; k++ {
+	if m.nd[k].itm > 0 && m.nd[k-1].itm <= 0 {
+		o := m.optNo[k]
+		m.byNet = append(m.byNet,
+			pricedOpt{int32(k), int64(m.optCost[o]) - m.optTax[o]})
+	}
+}
+slices.SortStableFunc(m.byNet, func(a, b pricedOpt) int {
+	return cmp.Compare(b.net, a.net)
+})
+
+@ The sweep of \.{ssxcc.w} carries over: an option whose net cost is not under
+the node's budget $|cutoff|-|cost|-|taxDue|$ can play no part below it, and
+the options over budget form a prefix of |byNet| that only grows on the way
+down. Two things are different here.
+
+The first is how a node learns where its parent stopped. Under binary
+branching the right child re-enters the same stage as its parent, so the
+stage cannot index the stopping points the way the level does in
+\.{ssxcc.w}. Instead |m.swept| holds the stopping point of whichever node is
+running, and the node that branches puts its own value back after the left
+child returns, before the right child starts. A forced move needs no such
+care. It has only one child and hands its answer straight up, and the
+ancestor that branched puts everything back.
+
+The second is the deletion itself, which is |removeOption|'s with one
+difference. A primary item that would drop below the number of coverings it
+still demands kills the branch, as there. But where |removeOption| leaves the
+last entry of a set in place and lets the size stay at one, the sweep always
+removes the entry and retires any item whose set runs dry, primary or
+secondary. A retired item cannot be covered or purified again below this
+node, so no later step can take the dead option for a live one; and the
+ancestor's |restoreState| brings the item back. The sets that may be touched
+are those of the active items, and in them only the entries still live. No skipping test is needed before the left
+branch, as it was in \.{ssxcc.w}: the left child includes the option just
+chosen, right after this node has swept, so that option is within budget.
+@<Sweep away the options this node can no longer afford@>=
+if m.minimizing {
+	budget := m.podium[0] - m.cost - m.taxDue
+	for ; m.swept < len(m.byNet) && m.byNet[m.swept].net >= budget; m.swept++ {
+		@<Delete option |m.byNet[m.swept]| from the active sets, or give up@>
+	}
+}
+
+@ @<Delete option |m.byNet[m.swept]| from the active sets, or give up@>=
+for cur := int(m.byNet[m.swept].node); m.nd[cur].itm > 0; cur++ {
+	ii, p := int(m.nd[cur].itm), int(m.nd[cur].loc)
+	if m.pos(ii) >= m.active || p >= ii+m.size(ii) {
+		continue // an inactive item, or one this option has already left
+	}
+	ss := m.size(ii) - 1
+	if ii < m.second && ss < m.bound(ii)-m.slack(ii) {
+		return true // the item can no longer be covered often enough
+	}
+	@<Swap option |cur| out of slot |p| of item |ii|'s set@>
+	if ss == 0 {
+		m.deactivate(ii) // nothing left in its set
+	}
 }
 
 @ Here is the pruning test, spliced into the head of |search|. Returning
@@ -1426,7 +1498,9 @@ func cheapestTimesNeed(f Frame) int {
 
 @ And here is the test that earns its keep. Small multiplicity problems are
 generated at random---every non-empty subset of the items is an option unless
-the dice say to leave it out---and the cheapest cover is found twice over: by
+the dice say to leave it out, and a third of the options also take a
+secondary item~|x| in one of two colors---and the cheapest cover is found
+twice over: by
 enumerating every cover with |Dance|, and by |Minimize|, with a bound and
 without one. All three must agree, four hundred times running.
 
@@ -1455,7 +1529,7 @@ for _, name := range names {
 		fmt.Fprintf(&b, "1:2|%s ", name)
 	}
 }
-b.WriteString("\n")
+b.WriteString("| x\n")
 
 @ @<Write a random priced option for most subsets@>=
 price = map[string]int{}
@@ -1468,6 +1542,9 @@ for mask := 1; mask < 1<<len(names); mask++ {
 		if mask&(1<<i) != 0 {
 			opt = append(opt, name)
 		}
+	}
+	if rng.Intn(3) == 0 {
+		opt = append(opt, "x:"+string(rune('A'+rng.Intn(2))))
 	}
 	line := strings.Join(opt, " ")
 	price[line] = rng.Intn(40)

@@ -85,6 +85,13 @@ for sol := range res.Solutions {
   exactly once, so the tax still owed by the uncovered items is a lower bound
   that costs nothing to keep. That bound is always on. It also makes negative
   prices legal under XCC.
+- The tax is put to work a second time. At every node the search deletes the
+  options that node can no longer afford: those whose net cost (price less
+  tax) is not below the cutoff minus the price so far minus the tax still
+  owed. `DLX5` does this by keeping each item's list sorted, which sparse sets
+  cannot do, since every deletion swaps entries. Here, one list of all options
+  is sorted once, and each node continues from where its parent stopped.
+  Branching then counts only affordable options, and a `Bound` sees only them.
 - `xc.Best = k` asks for the *k* cheapest covers instead of the single
   cheapest. A cover then arrives whenever it beats the *k*th cheapest seen so
   far, and when the search ends the *k* cheapest covers that arrived are *k*
@@ -588,49 +595,55 @@ made to mesh, not a new procedure.
 $ go run ./examples/transversal -plain 9
    0:81   1:887   2:847    3:59  [ 4:81]  5:318   6:425   7:540   8:456
    ...
-가장 싼 횡단의 값 1296, 노드 184개, 1ms
-하한 없이는 노드 912개, 0s
+가장 싼 횡단의 값 1296, 노드 122개, 1ms
+하한 없이는 노드 155개, 0s
 ````
 
 The square is the Cayley table of Z_n, so by Hall–Paige it has transversals only
 for odd n (and their counts match OEIS A006717: 15, 133, 2025, 37851 for
 n = 5, 7, 9, 11). The bound pays off more the harder the problem gets:
 
-| n | tax only | Hungarian | ratio |
+| n | tax and sweep only | Hungarian | ratio |
 | --: | --: | --: | --: |
-| 13 | 27,509 / 8ms | 979 / 8ms | 28× |
-| 15 | 231,090 / 36ms | 6,881 / 35ms | 34× |
-| 17 | 852,684 / 132ms | 14,502 / 64ms | 59× |
-| 19 | 6,067,842 / 1.01s | 82,498 / 489ms | 74× |
-| 21 | 50,337,997 / 8.82s | 268,426 / 1.93s | 188× |
-| 23 | 382,007,278 / 69.8s | 1,358,635 / 11.6s | 281× |
-| 25 | 2,381,530,509 / 7.5 min | 3,376,057 / 33.1s | **705×** |
+| 13 | 1,478 / 2ms | 535 / 3ms | 3× |
+| 15 | 13,654 / 14ms | 3,926 / 23ms | 3× |
+| 17 | 73,253 / 67ms | 9,374 / 42ms | 8× |
+| 19 | 183,635 / 231ms | 37,801 / 216ms | 5× |
+| 21 | 1,412,610 / 1.80s | 133,554 / 930ms | 11× |
+| 23 | 7,915,018 / 11.3s | 706,998 / 5.57s | 11× |
+| 25 | 40,935,232 / 68.2s | 1,955,438 / 18.3s | **21×** |
 
-A Hungarian node costs about 6 µs against 0.17 µs for a tax-only one, so the
-bound breaks even near n = 15. It is 2× faster in wall clock at n = 19 and 14×
-at n = 25, and it moves the wall from about n = 23 to about n = 27 (2 minutes;
-n = 29 does not finish in 8). And for even n it does nothing at all: with no
-transversal there is never a cutoff to beat, and branch-and-*bound* only works
-once it has something to beat.
+A Hungarian node costs 6–9 µs against 1.3–1.7 µs for the other kind, so the
+bound breaks even somewhere between n = 17 and 19. It is 4× faster in wall
+clock at n = 25. Without it n = 25 takes over a minute; with it n = 27 takes
+1m20s, n = 29 4m25s and n = 31 5m18s, so it moves the wall from about n = 25
+to about n = 30. And for even n it does nothing at all: with no transversal
+there is never a cutoff to beat, and branch-and-*bound* only works once it has
+something to beat.
 
 The left column used to be the search with no bound whatsoever — 117 million
 nodes and 19.5 s at n = 19, a ratio of 1429×, and 39× in wall clock. Then the
-engine learned Knuth's tax (see [Least-cost covers](#least-cost-covers-minimize)),
-which cut that column twentyfold for free. The write-up points out why it is
-so strong here. The items are listed rows, then columns, then symbols, so the
-tax subtracts every row's minimum and then every column's minimum, which is
-exactly the row and column reduction that opens the Hungarian algorithm.
-After that it reduces the symbols too, the axis the Hungarian bound ignores. The
-Hungarian bound earns its ratio with the two things the tax lacks: the
+engine learned two things from Knuth's `DLX5` (see
+[Least-cost covers](#least-cost-covers-minimize)). The first, the tax, cut that
+column twentyfold for free. The write-up points out why it is so strong here.
+The items are listed rows, then columns, then symbols, so the tax subtracts
+every row's minimum and then every column's minimum, which is exactly the row
+and column reduction that opens the Hungarian algorithm. After that it reduces
+the symbols too, the axis the Hungarian bound ignores. The second, the sweep,
+deletes at every node the options that node can no longer afford, so the
+branching rule counts only live choices; that cut the column by a further
+factor of 30 or so (50 million nodes to 1.4 million at n = 21). The Hungarian
+bound earns what ratio is left with the two things neither has: the
 augmenting steps after the reductions, and redoing all of it at every node over
-the cells still alive.
+the cells still alive. It also profits from the sweep, since it now solves an
+assignment problem on the cells that survive it.
 
 And the ceiling, which the write-up now states plainly: those ratios are
-measured against the *same program with only the tax*, not against the state of
-the art. Minimum-cost transversal is almost too easy to write as
+measured against the *same program with only the tax and the sweep*, not
+against the state of the art. Minimum-cost transversal is almost too easy to write as
 an integer program, and written that way its LP relaxation is nearly tight — a
 general MILP solver clears n = 27 in about a second and barely branches, where
-this program spends two minutes. Ours throws a whole axis away and lands some
+this program spends 1m20s. Ours throws a whole axis away and lands some
 40% below the optimum; the LP keeps all three and falls short by under 10%.
 That the Hungarian algorithm solves our relaxation *exactly* and that our
 relaxation is *good* turn out to be different statements. The technique is a
@@ -667,12 +680,12 @@ and are pairwise ≥ *n* apart in Chebyshev distance, so no single piece can pay
 for two; sum. It finds cells that start out free and become trapped as options
 die. On the order-8 board (36×36), with a 2-minute cap:
 
-| z | minimum | tax only | `Need` bound | trapped-cell bound |
+| z | minimum | tax and sweep only | `Need` bound | trapped-cell bound |
 | --: | --: | --: | --: | --: |
-| 8 | 0 | 7,347 / 133ms | 7,347 / 1.73s | 7,347 / 1.73s |
-| 12 | 0 | 11,142 / 187ms | 11,142 / 2.62s | 10,691 / 2.51s |
+| 8 | 0 | 7,347 / 139ms | 7,347 / 1.76s | 7,347 / 1.78s |
+| 12 | 0 | 9,128 / 156ms | 9,128 / 2.09s | 9,128 / 2.06s |
 | 14 | ≤ 1 | — | — | — |
-| 16 | **1** | **8,718 / 172ms** | 8,718 / 2.10s | 7,923 / 1.90s |
+| 16 | **1** | **7,413 / 132ms** | 7,413 / 1.74s | 7,413 / 1.77s |
 
 At *z* ≤ 12 a price-0 cover turns up almost at once, the cutoff drops to 0, and
 every branch dies on `cost + rest >= cutoff` — the bound is pure overhead.
@@ -681,15 +694,21 @@ At *z* = 16 the story changed after the write-up was first finished. Without a
 bound, two minutes and 6.4M nodes proved nothing; the trapped-cell bound
 collapsed the tree in under two seconds. Then the engine started taxing items
 (see [Least-cost covers](#least-cost-covers-minimize)), and now the search
-with no `Bound` at all finishes in 0.17 s. The tax does the pencil argument
+with no `Bound` at all finishes in 0.13 s. The tax does the pencil argument
 unaided. Every option covering a trapped cell costs 1, so that cell's tax is 1.
 The block's other three cells pay nothing, because each of them shares a piece
 with the first cell, and that piece has already been taxed down to 0. That
 is exactly the double counting the trapped-cell bound avoids by keeping its
 cells ≥ *n* apart. The root bound is 1 and the tree dies once a price-1 cover
-is in hand. What the hand-written bound still adds is cells that become
-trapped *during* the search, which the tax, levied once at input, cannot see.
-Here that saves 9% of the nodes and costs 11× the time.
+is in hand. The tax is levied once at input, so it cannot see cells that
+become trapped *during* the search; for a while that was what the
+hand-written bound still added, 9% fewer nodes at 11× the time. Then the
+engine began sweeping away the options each node can no longer afford, and a
+cell trapped mid-search is simply a cell whose last affordable option has just
+been swept, so the branch dies there. All three columns now visit the same
+nodes. The only thing left for the hand-written bound would be several
+far-apart cells trapped *together*, whose costs add up where the sweep looks
+at one cell at a time, and on this board that never pays.
 
 The `Need` bound — *size k still needs t copies but only u of its surviving
 placements are free, so t−u must be paid* — is the one that reads `Frame.Need`,
@@ -701,16 +720,19 @@ and lumping placements together by size cannot see that. Both bounds ship behind
 *z* = 14 = 2*n*−2 stays open: price 1 is found in two seconds, price 0 is
 neither found nor ruled out. It is exactly the largest zone the pencil argument
 permits, and exactly the last one where the bound returns 0 at the root. With
-no trapped cell at the root, the tax is 0 there too.
+no trapped cell at the root, the tax is 0 there too. Once a price-1 cover is
+found the sweep deletes every price-1 option, so what remains is the bare exact
+cover question *can the free placements tile the board?* — and even that does
+not finish in two minutes.
 
 The write-up is [`examples/hollow/hollow.w`](examples/hollow/hollow.w).
 
 ````console
 $ go run ./examples/hollow -z 16
-갇힌 조각 2개 (노드 7331개, 1.699s)
-갇힌 조각 1개 (노드 7906개, 1.845s)
+갇힌 조각 2개 (노드 7331개, 1.727s)
+갇힌 조각 1개 (노드 7399개, 1.741s)
 ...
-갇힌 조각 1개, 노드 7923개, 1.91s
+갇힌 조각 1개, 노드 7413개, 1.749s
 ````
 
 ## The source is a literate program

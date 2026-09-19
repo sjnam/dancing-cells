@@ -9,19 +9,19 @@ import (
 	"fmt"
 )
 
-//line dcells.w:133
+//line dcells.w:134
 const (
 	infSize     = 1 << 30        // "no item to branch on" => a solution
 	secondUnset = 1 << 30        // sentinel for "no primary/secondary boundary yet"
 	infCost     = int64(1) << 62 // "no cover found yet"
 )
 
-//line dcells.w:146
+//line dcells.w:147
 type node struct {
 	itm, loc, clr int32 // itm and clr are fixed after input; loc dances
 }
 
-//line dcells.w:159
+//line dcells.w:160
 type Option []string
 
 type Result struct {
@@ -29,21 +29,21 @@ type Result struct {
 	Heartbeat <-chan string
 }
 
-//line dcells.w:182
+//line dcells.w:183
 type Frame struct{ v frameView }
 
 func (f Frame) Live(yield func(item, opt int) bool) { f.v.eachLive(yield) }
 
-//line dcells.w:185
+//line dcells.w:186
 func (f Frame) Cost(opt int) int { return f.v.optionCost(opt) }
 
-//line dcells.w:186
+//line dcells.w:187
 func (f Frame) Name(item int) string { return f.v.itemName(item) }
 
-//line dcells.w:187
+//line dcells.w:188
 func (f Frame) Need(item int) int { return f.v.itemNeed(item) }
 
-//line dcells.w:194
+//line dcells.w:195
 type frameView interface {
 	eachLive(yield func(item, opt int) bool)
 	optionCost(opt int) int
@@ -51,7 +51,13 @@ type frameView interface {
 	itemNeed(item int) int
 }
 
-//line dcells.w:206
+//line dcells.w:208
+type pricedOpt struct {
+	node int32 // the option's first node
+	net  int64 // its price less the tax it pays
+}
+
+//line dcells.w:218
 func ensure[T any](s []T, n int) []T {
 	if n <= len(s) {
 		return s
@@ -64,7 +70,7 @@ func ensure[T any](s []T, n int) []T {
 	return t
 }
 
-//line dcells.w:246
+//line dcells.w:258
 type parseError struct{ msg string }
 
 func (e *parseError) Error() string { return e.msg }
@@ -73,7 +79,7 @@ func failf(format string, a ...any) {
 	panic(&parseError{fmt.Sprintf(format, a...)})
 }
 
-//line dcells.w:259
+//line dcells.w:271
 func isspace(c byte) bool {
 	return c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r'
 }
@@ -88,7 +94,7 @@ func nextLine(br *bufio.Reader) (buf []byte, ok bool) {
 	return buf, true
 }
 
-//line dcells.w:277
+//line dcells.w:289
 func skipSpace(buf []byte, p int) int {
 	for isspace(buf[p]) {
 		p++

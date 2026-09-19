@@ -31,10 +31,12 @@ package dcells
 
 import (
 	"bufio"
+	"cmp"
 	"context"
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"strings"
 	"time"
 )
@@ -330,6 +332,7 @@ func (s *XCC) search(level int) bool {
 	}
 	s.tick()
 	@<Give up on this branch if it cannot beat the cutoff@>
+	@<Sweep away the options this node can no longer afford@>
 
 	best, solution := s.chooseItem()
 	if solution {
@@ -361,6 +364,7 @@ for c := best; c < best+s.size(best); c++ {
 	opt := int(s.set[c])
 	s.choice[level] = int32(opt)
 	@<Price this option@>
+	@<Skip this option if the cutoff has overtaken it@>
 	s.cost += price
 	s.taxDue -= tax
 	if s.commitOption(opt) {
@@ -664,11 +668,14 @@ the cover must still cost. With no such oracle the incumbent alone still
 prunes, since a partial cover already dearer than a finished one is hopeless,
 and that much comes free.
 
-Two refinements come from Knuth's {\tt DLX5}, the dancing-links solver in
-which he first taught Algorithm~X to count money. One is a {\it tax\/} on
-every primary item, which gives the search a lower bound of its own, free of
-charge, whether or not the caller supplies one; it is explained where it is
-levied. The other is to hunt for the $k$
+Three refinements come from Knuth's {\tt DLX5}, the dancing-links solver in
+which he first taught Algorithm~X to count money. The first is a {\it tax\/}
+on every primary item, which gives the search a lower bound of its own, free
+of charge, whether or not the caller supplies one; it is explained where it is
+levied. The second puts the tax to work a second time, sweeping away at every
+node the options that the node can no longer afford; {\tt DLX5} does that
+with sorted lists, which sparse sets cannot keep, so here it takes a different
+shape. The third is to hunt for the $k$
 cheapest covers instead of the single cheapest one. Keep the prices of the
 best $k$ covers found so far on a {\it podium\/} and let the dearest of them
 be the {\it cutoff}, the price a branch has to beat to be worth exploring.
@@ -715,6 +722,8 @@ itemBase   []int32 // item number -> its base in |set|
 cost       int64   // price of the options committed so far
 taxDue     int64   // total tax on the primary items not yet covered
 podium     []int64 // prices of the |Best| cheapest covers so far, a max-heap
+byNet      []pricedOpt // every option, dearest net cost first
+sweptAt    []int32     // level -> how far along |byNet| that node has swept
 
 @ |Minimize| reads the same input |Dance| does, prices it, and starts the same
 search. With |Best| left alone, what arrives on |Solutions| is a chain of
@@ -743,6 +752,7 @@ func (s *XCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 	s.inputMatrix(rd)
 	@<Price the options@>
 	@<Levy a tax on every primary item@>
+	@<Line up the options by net cost@>
 	@<Set up the podium@>
 	s.minimizing = true
 	@<Launch the search goroutine@>
@@ -883,6 +893,110 @@ for j := 1; j < len(h); j = 2*i + 1 {
 	i = j
 }
 h[i] = s.cost
+
+@ The tax does more than supply a bound. Suppose a node has committed options
+costing |cost| and still owes |taxDue|, and let $o$ be an option with net cost
+$\nu(o)$. A cover that uses $o$ below this node costs at least
+$|cost|+|taxDue|+\nu(o)$: the options already committed, then $o$ itself,
+which pays its own items' taxes plus $\nu(o)$, then the tax on the items it
+leaves for others. If that is not below the cutoff, $o$ is useless anywhere
+beneath this node. Going deeper only raises $|cost|+|taxDue|$, since each
+option committed adds its net cost, which is not negative; and the cutoff only
+falls. Call $|cutoff|-|cost|-|taxDue|$ the node's {\it budget}. An option whose
+net cost is not under budget can be thrown away.
+
+{\tt DLX5} does this cheaply by keeping each item's list sorted by net cost, so
+that covering an item stops the moment it meets an option over budget. The
+trick needs the lists to stay sorted, and dancing links keep them so:
+unlinking a node leaves its neighbors in their old order. Sparse sets do not.
+A deletion swaps the departing option with the last one in the set, and a
+single deletion scrambles the order for good. So we sort something else,
+something that never moves: the list |byNet| of all the options, dearest net
+cost first. The options over a node's budget form a prefix of that list, and
+because budgets only shrink on the way down, a child's prefix extends its
+parent's. So each node picks up where its parent stopped, walks forward while
+the net cost is not under budget, and deletes each option it passes from the
+sets of the active items that still hold it. |sweptAt[level]| records where it
+stopped.
+
+Undoing costs nothing. The deletions are the same sparse-set swaps that |hide|
+makes, and the sizes that |restoreSizes| writes back when the parent moves on
+re-admit every option a child swept away. This is one place where dancing
+cells come out ahead: {\tt DLX5} must uncover with exactly the thresholds it
+covered with, because its cutoff moves in the meantime, while a restored size
+does not care. Only the sets of {\it active\/} items may be touched, though.
+The item an ancestor branched on is inactive, and that ancestor's loop is
+walking its set at this very moment. Swapping entries there would make the
+loop skip one option and try another twice.
+
+The sweep sharpens everything after it. An item whose options are all over
+budget is dead, and the branch is given up at once. The sizes that
+|chooseItem| compares now count only the options this node can afford, so the
+rule of minimum remaining values sees the problem as it really is. And a
+caller's |Bound| sees the same smaller matrix through its |Frame|.
+@<Sweep away the options this node can no longer afford@>=
+if s.minimizing {
+	budget := s.podium[0] - s.cost - s.taxDue
+	p := 0
+	if level > 0 {
+		p = int(s.sweptAt[level-1])
+	}
+	for ; p < len(s.byNet) && s.byNet[p].net >= budget; p++ {
+		@<Delete option |s.byNet[p]| from the active sets, or give up@>
+	}
+	s.sweptAt = ensure(s.sweptAt, level+1)
+	s.sweptAt[level] = int32(p)
+}
+
+@ The deletion is the one in |hide|, with two differences. An option may
+already be gone from some of its sets---hidden by a commitment higher up, or
+swept away by an ancestor---and there is nothing to do there. And a primary
+item left with no option at all ends the branch. Giving up in the middle of an
+option leaves it deleted from some sets and not others, but that does no harm,
+because the parent's |restoreSizes| is the next thing to happen. At the root
+there is no parent, and giving up there means the search is over.
+@<Delete option |s.byNet[p]| from the active sets, or give up@>=
+for nn := int(s.byNet[p].node); s.nd[nn].itm > 0; nn++ {
+	u, v := int(s.nd[nn].itm), int(s.nd[nn].loc)
+	if s.pos(u) >= s.active || v >= u+s.size(u) {
+		continue // an inactive item, or one this option has already left
+	}
+	ss := s.size(u) - 1
+	if ss == 0 && u < s.second {
+		return true // a primary item has nothing left that it can afford
+	}
+	nnp := int(s.set[u+ss])
+	s.setSize(u, ss)
+	s.set[u+ss], s.set[v] = int32(nn), int32(nnp)
+	s.nd[nn].loc, s.nd[nnp].loc = int32(u+ss), int32(v)
+	s.updates++
+}
+
+@ The line is laid out once, after the tax, since the net costs are fixed from
+then on. Its entries are of the type |pricedOpt| from \.{dcells.w}: an
+option's first node, where the deletion above starts walking, and its net
+cost. A stable sort keeps options of equal net cost in input order.
+@<Line up the options by net cost@>=
+s.byNet = s.byNet[:0]
+for k := 1; k < s.lastNode; k++ {
+	if s.nd[k].itm > 0 && s.nd[k-1].itm <= 0 {
+		o := s.optNo[k]
+		s.byNet = append(s.byNet,
+			pricedOpt{int32(k), int64(s.optCost[o]) - s.optTax[o]})
+	}
+}
+slices.SortStableFunc(s.byNet, func(a, b pricedOpt) int {
+	return cmp.Compare(b.net, a.net)
+})
+
+@ An option can fall over budget while its elder siblings are being explored,
+since every cover they find lowers the cutoff. The head of |search| would turn
+it back, but only after |commitOption| had done its work. Checking first costs
+one comparison.
+@<Skip this option if the cutoff has overtaken it@>=
+if s.minimizing && s.cost+price+s.taxDue-tax >= s.podium[0] {
+	continue
+}
 
 @ Here are this engine's four answers to the frame. Walking the live part of
 the matrix means walking the active items, skipping the secondary ones---they
@@ -1163,6 +1277,8 @@ were found.
 package dcells
 
 import (
+	"fmt"
+	"math/rand"
 	"sort"
 	"strings"
 	"testing"
@@ -1474,6 +1590,86 @@ func TestMinimizeNegative(t *testing.T) {
 	}
 	if got != -2 {
 		t.Errorf("cheapest cover costs %d, want -2", got)
+	}
+}
+
+@ The sweep deletes options in the middle of a search that also hides and
+purifies, so it gets the test that shakes out such things: small random
+problems, solved both by enumerating every cover with |Dance| and by
+|Minimize|, four hundred times over. Each problem has three to five primary
+items and two secondary ones, options are random subsets of the primaries
+with a colored secondary item or two thrown in, and prices run from $-10$
+to~29, so that the tax has negative prices to absorb. |Minimize| must find the
+cheapest cover, and with |Best| at three the three cheapest.
+@(ssxcc_test.go@>=
+func randomXCCProblem(rng *rand.Rand) (input string, price map[string]int) {
+	names := []string{"a", "b", "c", "d", "e"}[:3+rng.Intn(3)]
+	var b strings.Builder
+	b.WriteString(strings.Join(names, " ") + " | x y\n")
+	price = map[string]int{}
+	for i := 0; i < 4+rng.Intn(10); i++ {
+		@<Write a random option with a price@>
+	}
+	return b.String(), price
+}
+
+@ An option takes each primary item with probability one half---at least
+one---and each secondary item with probability one third, in one of two
+colors.
+@<Write a random option with a price@>=
+var opt []string
+for _, name := range names {
+	if rng.Intn(2) == 0 {
+		opt = append(opt, name)
+	}
+}
+if len(opt) == 0 {
+	opt = append(opt, names[rng.Intn(len(names))])
+}
+for _, sec := range []string{"x", "y"} {
+	if rng.Intn(3) == 0 {
+		opt = append(opt, sec+":"+string(rune('A'+rng.Intn(2))))
+	}
+}
+line := strings.Join(opt, " ")
+price[line] = rng.Intn(40) - 10
+b.WriteString(line + "\n")
+
+@ @(ssxcc_test.go@>=
+func TestMinimizeMatchesSearch(t *testing.T) {
+	rng := rand.New(rand.NewSource(11))
+	for trial := 0; trial < 400; trial++ {
+		input, price := randomXCCProblem(rng)
+		cost := func(sol []Option) int {
+			c := 0
+			for _, opt := range sol {
+				c += price[strings.Join(opt, " ")]
+			}
+			return c
+		}
+		var all []int
+		for sol := range NewXCC().Dance(strings.NewReader(input)).Solutions {
+			all = append(all, cost(sol))
+		}
+		sort.Ints(all)
+		@<Minimize for the one and the three cheapest, and compare@>
+	}
+}
+
+@ @<Minimize for the one and the three cheapest, and compare@>=
+for _, k := range []int{1, 3} {
+	s := NewXCC()
+	s.Best = k
+	var got []int
+	r := s.Minimize(strings.NewReader(input),
+		func(_ int, opt Option) int { return price[strings.Join(opt, " ")] })
+	for sol := range r.Solutions {
+		got = append(got, cost(sol))
+	}
+	sort.Ints(got)
+	m := min(k, len(all))
+	if len(got) < m || fmt.Sprint(got[:m]) != fmt.Sprint(all[:m]) {
+		t.Fatalf("trial %d, Best %d: got %v, want %v\n%s", trial, k, got, all[:m], input)
 	}
 }
 
