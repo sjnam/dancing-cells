@@ -998,6 +998,28 @@ if s.minimizing && s.cost+price+s.taxDue-tax >= s.podium[0] {
 	continue
 }
 
+@ One idea from {\tt DLX5} was tried and left out. Near the end of that
+program Knuth suggests a stronger bound built from the ``cost per item'' of the
+remaining options, and adds that he had no time to look into it. Here is the
+version I measured. Share each live option's net cost equally among the active
+primary items it covers, give each item the smallest share among its options,
+and add the shares, rounding up. The sum is a lower bound on the net cost still
+to come, because the options that finish the cover hand out exactly their net
+costs in shares, and each item receives at least its smallest one. Added to
+|taxDue| after the sweep, it passed every test in this document.
+
+It did not pay, and the reason is instructive. On the cheapest-transversal
+example (\.{examples/transversal}), with no bound of the caller's, it cut the
+nodes by a factor of 2 to 2.6, but the time by only 15 to 23 percent at
+$n=21$ and~23, and at $n=19$ the search got slower. With the caller's Hungarian
+bound it changed almost nothing. On the hollow partridge (\.{examples/hollow})
+it removed not one node and made the search ten times slower. The tax already
+adds up each item's cheapest option without counting any option twice, and the
+sweep already throws away what a node cannot afford. What is left for the
+shares to discover is small, while computing them costs two passes over every
+live entry at every node. A caller who knows that a problem is of the first
+kind can still supply the bound through |Bound|.
+
 @ Here are this engine's four answers to the frame. Walking the live part of
 the matrix means walking the active items, skipping the secondary ones---they
 demand nothing of their own---and running along each survivor's set.

@@ -674,7 +674,7 @@ func (s *XCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 //line ssxcc.w:759
 }
 
-//line ssxcc.w:1005
+//line ssxcc.w:1027
 func (s *XCC) eachLive(yield func(item, opt int) bool) {
 	for k := 0; k < s.active; k++ {
 		x := int(s.item[k])
@@ -690,10 +690,10 @@ func (s *XCC) eachLive(yield func(item, opt int) bool) {
 	}
 }
 
-//line ssxcc.w:1024
+//line ssxcc.w:1046
 func (s *XCC) optionCost(opt int) int { return int(s.optCost[opt]) }
 
-//line ssxcc.w:1025
+//line ssxcc.w:1047
 func (s *XCC) itemName(item int) string { return s.names[item] }
 
 func (s *XCC) itemNeed(item int) int {
@@ -703,17 +703,17 @@ func (s *XCC) itemNeed(item int) int {
 	return 0
 }
 
-//line ssxcc.w:1044
+//line ssxcc.w:1066
 func (s *XCC) inputMatrix(rd io.Reader) {
 	br := bufio.NewReader(rd)
 	s.readItemNames(br)
 	s.readOptions(br)
 }
 
-//line ssxcc.w:1060
+//line ssxcc.w:1082
 func (s *XCC) readItemNames(br *bufio.Reader) {
 
-//line ssxcc.w:1083
+//line ssxcc.w:1105
 	var buf []byte
 	var p int
 	found := false
@@ -731,7 +731,7 @@ func (s *XCC) readItemNames(br *bufio.Reader) {
 		failf("no items")
 	}
 
-//line ssxcc.w:1062
+//line ssxcc.w:1084
 	for buf[p] != 0 {
 		name, next := token(buf, p, false)
 		if name == "|" {
@@ -752,7 +752,7 @@ func (s *XCC) readItemNames(br *bufio.Reader) {
 	s.lastItm = len(s.names) // items + 1 (names[0] is unused)
 }
 
-//line ssxcc.w:1103
+//line ssxcc.w:1125
 func (s *XCC) readOptions(br *bufio.Reader) {
 	for {
 		buf, ok := nextLine(br)
@@ -767,13 +767,13 @@ func (s *XCC) readOptions(br *bufio.Reader) {
 	s.finalize()
 }
 
-//line ssxcc.w:1123
+//line ssxcc.w:1145
 func (s *XCC) readOption(buf []byte) {
 	spacer := s.lastNode
 	hasPrimary := false
 	for p := skipSpace(buf, 0); buf[p] != 0; {
 
-//line ssxcc.w:1143
+//line ssxcc.w:1165
 		name, next := token(buf, p, true)
 		if name == "" {
 			failf("empty item name")
@@ -798,12 +798,12 @@ func (s *XCC) readOption(buf []byte) {
 		}
 		p = skipSpace(buf, next)
 
-//line ssxcc.w:1128
+//line ssxcc.w:1150
 	}
 
 	if !hasPrimary {
 
-//line ssxcc.w:1170
+//line ssxcc.w:1192
 		for s.lastNode > spacer {
 			slot := int(s.nd[s.lastNode].itm) << 2
 			s.setSize(slot, s.size(slot)-1)
@@ -811,7 +811,7 @@ func (s *XCC) readOption(buf []byte) {
 			s.lastNode--
 		}
 
-//line ssxcc.w:1132
+//line ssxcc.w:1154
 		return
 	}
 	s.nd[spacer].loc = int32(s.lastNode - spacer)
@@ -821,7 +821,7 @@ func (s *XCC) readOption(buf []byte) {
 	s.nd[s.lastNode].itm = int32(spacer + 1 - s.lastNode)
 }
 
-//line ssxcc.w:1182
+//line ssxcc.w:1204
 func (s *XCC) createNode(m, spacer int, hasPrimary *bool) {
 	slot := m << 2
 	s.set = ensure(s.set, slot)
@@ -840,10 +840,10 @@ func (s *XCC) createNode(m, spacer int, hasPrimary *bool) {
 	s.setPos(slot, s.lastNode)
 }
 
-//line ssxcc.w:1203
+//line ssxcc.w:1225
 func (s *XCC) finalize() {
 
-//line ssxcc.w:1214
+//line ssxcc.w:1236
 	s.active, s.itemlen = s.lastItm-1, s.lastItm-1
 	s.item = ensure(s.item, s.itemlen)
 	s.set = ensure(s.set, (s.itemlen<<2)+1) // all input slots readable
@@ -862,9 +862,9 @@ func (s *XCC) finalize() {
 		s.osecond = s.second - 1
 	}
 
-//line ssxcc.w:1205
+//line ssxcc.w:1227
 
-//line ssxcc.w:1236
+//line ssxcc.w:1258
 	for ; k != 0; k-- {
 		base := int(s.item[k-1])
 		if k == s.second {
@@ -878,9 +878,9 @@ func (s *XCC) finalize() {
 		s.setItemNo(base, k)
 	}
 
-//line ssxcc.w:1206
+//line ssxcc.w:1228
 
-//line ssxcc.w:1253
+//line ssxcc.w:1275
 	for k = 1; k < s.lastNode; k++ {
 		if s.nd[k].itm < 0 {
 			continue
@@ -892,5 +892,5 @@ func (s *XCC) finalize() {
 		s.set[loc] = int32(k)
 	}
 
-//line ssxcc.w:1207
+//line ssxcc.w:1229
 }
