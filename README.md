@@ -639,8 +639,8 @@ the cells still alive. It also profits from the sweep, since it now solves an
 assignment problem on the cells that survive it.
 
 And the ceiling, which the write-up now states plainly: those ratios are
-measured against the *same program with only the tax and the sweep*, not
-against the state of the art. Minimum-cost transversal is almost too easy to write as
+measured against the *same program with only the tax and the sweep*, not against
+the state of the art. Minimum-cost transversal is almost too easy to write as
 an integer program, and written that way its LP relaxation is nearly tight — a
 general MILP solver clears n = 27 in about a second and barely branches, where
 this program spends 1m20s. Ours throws a whole axis away and lands some
