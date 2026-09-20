@@ -1,23 +1,22 @@
 # Dancing Cells
 
-Exact cover with colors (XCC), solved with Donald E. Knuth's sparse-set
-**"dancing cells"** technique instead of dancing links. This repository is the
-dancing-cells counterpart to [`sjnam/dlx`](https://github.com/sjnam/dlx) and
-exposes the same library API, so the dlx example programs port over almost
-unchanged.
+색깔 있는 정확 덮개(XCC)를 춤추는 링크가 아니라 크누스(Donald E. Knuth)의 희소
+집합 기법 **"춤추는 칸"**으로 푼다. 이 저장소는
+[`sjnam/dlx`](https://github.com/sjnam/dlx)의 춤추는 칸 짝이고 같은 라이브러리
+API를 내주므로, dlx의 예제 프로그램이 거의 그대로 옮겨 온다.
 
-The library is a **literate program**: its whole source lives in five English
-[GWEB](https://github.com/sjnam/gweb) documents — [`dcells.w`](dcells.w),
-[`ssxcc.w`](ssxcc.w), [`ssmcc.w`](ssmcc.w), [`xccdc.w`](xccdc.w), and
-[`zdd/zdd.w`](zdd/zdd.w) — see
-[The source is a literate program](#the-source-is-a-literate-program) below.
+라이브러리는 **문학적 프로그램**이다. 소스 전체가 한글로 쓰인 다섯 개의
+[GWEB](https://github.com/sjnam/gweb) 문서에 들어 있다 — [`dcells.w`](dcells.w),
+[`ssxcc.w`](ssxcc.w), [`ssmcc.w`](ssmcc.w), [`xccdc.w`](xccdc.w),
+[`zdd/zdd.w`](zdd/zdd.w). 아래
+[소스는 문학적 프로그램이다](#소스는-문학적-프로그램이다)를 보라.
 
-The engines are also put to work on Knuth's own text:
-[`taocp-7.2.2.1-exercises/`](taocp-7.2.2.1-exercises) holds a careful reading of
-one exercise of TAOCP §7.2.2.1 and its answer per directory. See
-[Careful readings of TAOCP 7.2.2.1](#careful-readings-of-taocp-7221) below.
+엔진은 크누스 자신의 책에도 써 먹는다. 디렉터리
+[`taocp-7.2.2.1-exercises/`](taocp-7.2.2.1-exercises)에는 TAOCP §7.2.2.1의
+연습문제와 그 답을 하나씩 꼼꼼히 읽은 글이 디렉터리마다 하나씩 들어 있다. 아래
+[Careful readings of TAOCP 7.2.2.1](#careful-readings-of-taocp-7221)을 보라.
 
-## Library
+## 라이브러리
 
 ```go
 package main
@@ -43,216 +42,208 @@ d e g
 
     for sol := range res.Solutions {
         for _, opt := range sol {
-            fmt.Println(opt) // opt is []string, e.g. [a d f]
+            fmt.Println(opt) // opt는 []string이다. 이를테면 [a d f]
         }
     }
 }
 ```
 
-- `NewXCC()` returns an `*XCC`; set `Debug = true` for an input summary and
-  final stats on stderr, like dlx.
-- `Dance(io.Reader) *Result` parses the DLX text and returns
-  `Result{ Solutions <-chan []Option, Heartbeat <-chan string }`.
-- An `Option` is `[]string`, the option's item names (a colored secondary item
-  appears as `name:c`). The list is always in input order, so `opt[0]`,
-  `opt[1]`, … can be indexed positionally (`NewXCCDC` is the one exception,
-  noted below).
-- The search runs in a goroutine and blocks on each send, so ranging over
-  `Solutions` paces it. `WithContext(ctx)` aborts the search when `ctx` is
-  cancelled (and lets you stop after the first solution without leaking).
+- 함수 `NewXCC()`는 `*XCC`를 돌려준다. 필드 `Debug = true`로 두면 dlx처럼 입력
+  요약과 마무리 통계를 stderr에 찍는다.
+- 메서드 `Dance(io.Reader) *Result`는 DLX 텍스트를 읽어
+  `Result{ Solutions <-chan []Option, Heartbeat <-chan string }`을 돌려준다.
+- 타입 `Option`은 `[]string`이고 그 옵션의 아이템 이름들이다(색이 붙은 부
+  아이템은 `name:c`로 나온다). 목록은 언제나 입력 차례이므로 `opt[0]`,
+  `opt[1]`, …처럼 자리로 찾아 써도 된다(`NewXCCDC`만 예외인데 아래에 적는다).
+- 탐색은 고루틴에서 돌고 보낼 때마다 멈추므로, 채널 `Solutions`를 훑는 쪽이
+  속도를 쥔다. 메서드 `WithContext(ctx)`는 문맥 `ctx`가 끊기면 탐색을 그만두게
+  한다(첫 해만 받고 새는 것 없이 멈출 수도 있다).
 
-### Least-cost covers (`Minimize`)
+### 가장 싼 덮개 (`Minimize`)
 
-When every option carries a price and you want the cheapest cover rather than
-every cover, use `Minimize` instead of `Dance`:
+옵션마다 값이 매겨져 있고 모든 덮개가 아니라 가장 싼 덮개를 원한다면, `Dance`
+대신 `Minimize`를 쓴다.
 
 ```go
 xc := cells.NewXCC()
 res := xc.Minimize(strings.NewReader(input), func(o int, opt cells.Option) int {
-    return price(opt) // o is the option's number, 1, 2, … in input order
+    return price(opt) // o는 그 옵션의 번호다. 입력 차례로 1, 2, …
 })
 for sol := range res.Solutions {
-    // each cover is strictly cheaper than the one before; the last is optimal
+    // 덮개가 닿을 때마다 앞의 것보다 반드시 싸다. 마지막 것이 최적이다
 }
 ```
 
-- The price function is called once per option, right after the input is read.
-- Branch and bound: a branch that cannot beat the best cover so far is
-  abandoned, so `Solutions` delivers a strictly improving chain.
-- Every primary item is *taxed*, as in Knuth's
-  [`DLX5`](https://www-cs-faculty.stanford.edu/~knuth/programs/dlx5.w): the
-  cheapest option in its set is the item's tax. Every cover pays each tax
-  exactly once, so the tax still owed by the uncovered items is a lower bound
-  that costs nothing to keep. That bound is always on. It also makes negative
-  prices legal under XCC.
-- The tax is put to work a second time. At every node the search deletes the
-  options that node can no longer afford: those whose net cost (price less
-  tax) is not below the cutoff minus the price so far minus the tax still
-  owed. `DLX5` does this by keeping each item's list sorted, which sparse sets
-  cannot do, since every deletion swaps entries. Here, one list of all options
-  is sorted once, and each node continues from where its parent stopped.
-  Branching then counts only affordable options, and a `Bound` sees only them.
-- `xc.Best = k` asks for the *k* cheapest covers instead of the single
-  cheapest. A cover then arrives whenever it beats the *k*th cheapest seen so
-  far, and when the search ends the *k* cheapest covers that arrived are *k*
-  cheapest covers of the problem. When *k* > 1 the chain is not monotone.
-- `xc.Bound = func(f cells.Frame) int { … }` supplies a lower bound on the cost
-  of *finishing* the partial cover at each node — never an overestimate. Range
-  over `f.Live` for the surviving (item, option) pairs; `f.Cost(opt)` and
-  `f.Name(item)` read them back, and `f.Need(item)` says how many more times an
-  item must still be covered (always 1 under XCC). The search uses whichever
-  of `Bound` and the tax is larger. Leaving `Bound` nil prunes on the tax alone.
-- **`NewMCC()` has it too**, with the same `Minimize`, `Best` and `Bound`, and
-  there `Need` can exceed 1 — which is the whole point of having it. Only items
-  of fixed multiplicity (`2|a`, not `1:2|a`) are taxed, since only they are
-  covered the same number of times by every cover. An option that contains no
-  such item may not have a negative price; `Minimize` panics if one does.
-  `NewXCCDC()` has no `Minimize`: it counts covers, it does not price them.
-- `Dance` is untouched by any of this.
+- 값 함수는 입력을 읽고 난 바로 뒤에 옵션마다 한 번씩 불린다.
+- 분기한정이다. 이제껏 가장 좋은 덮개를 이길 수 없는 가지는 버려지므로, 채널
+  `Solutions`는 반드시 나아지는 사슬을 건넨다.
+- 주 아이템마다 *세금*을 매기는데, 크누스의
+  [`DLX5`](https://www-cs-faculty.stanford.edu/~knuth/programs/dlx5.w)에서
+  온 것이다. 그 아이템의 집합에서 가장 싼 옵션의 값이 그 아이템의 세금이다.
+  어느 덮개든 세금을 꼭 한 번씩 물므로, 아직 덮이지 않은 아이템들의 세금 합이
+  거저 얻는 하한이다. 그 하한은 언제나 켜져 있다. 덕분에 XCC에서는 음수 값도
+  쓸 수 있다.
+- 세금은 한 번 더 부려진다. 마디마다 그 마디가 더는 감당할 수 없는 옵션을
+  지우는데, 순값(값에서 세금을 뺀 것)이 cutoff에서 이제껏 쓴 값과 아직 물어야
+  할 세금을 뺀 것보다 작지 않은 옵션이 그것이다. 프로그램 `DLX5`는 아이템마다
+  리스트를 정렬해 두어 이 일을 하는데, 희소 집합은 삭제할 때마다 칸을 맞바꾸므로
+  그럴 수 없다. 그래서 여기서는 모든 옵션을 한 줄로 한 번만 정렬해 두고, 마디마다
+  제 부모가 멈춘 자리에서 이어 간다. 그러면 분기 규칙이 감당할 수 있는 옵션만
+  세고, `Bound`도 그것만 본다.
+- 필드 `xc.Best = k`는 가장 싼 덮개 하나가 아니라 *k*개를 달라는 뜻이다. 그러면
+  이제껏 본 *k*번째로 싼 것보다 싼 덮개가 나올 때마다 닿고, 탐색이 끝나면 닿은
+  것 가운데 가장 싼 *k*개가 이 문제의 가장 싼 덮개 *k*개다. 값 *k*가 1보다 크면
+  사슬은 한 방향이 아니다.
+- 필드 `xc.Bound = func(f cells.Frame) int { … }`는 마디마다 부분 덮개를
+  *마저 짓는* 데 드는 값의 하한을 내준다. 넘겨짚어 크게 말해서는 안 된다.
+  필드 `f.Live`를 훑으면 살아남은 (아이템, 옵션) 쌍이 나오고, `f.Cost(opt)`와
+  `f.Name(item)`으로 그것을 읽으며, `f.Need(item)`은 그 아이템이 앞으로 몇 번
+  더 덮여야 하는지를 말한다(XCC에서는 언제나 1이다). 탐색은 `Bound`와 세금 가운데
+  큰 쪽을 쓴다. 필드 `Bound`를 nil로 두면 세금만으로 가지를 친다.
+- **함수 `NewMCC()`에도 있다.** 같은 `Minimize`와 `Best`와 `Bound`가 있고,
+  거기서는 `Need`가 1을 넘을 수 있는데 그것이 이 필드를 둔 까닭 전부다. 세금은
+  다중도가 정해진 아이템(`1:2|a`가 아니라 `2|a`)에만 걷는데, 그런 아이템만이
+  어느 덮개에서나 같은 횟수로 덮이기 때문이다. 그런 아이템을 하나도 담지 않은
+  옵션에는 음수 값을 매길 수 없고, 그러면 `Minimize`가 panic한다. 함수
+  `NewXCCDC()`에는 `Minimize`가 없다. 덮개를 셀 뿐 값을 매기지는 않는다.
+- 메서드 `Dance`는 이 가운데 어느 것에도 손대지 않는다.
 
-### Input format (DLX)
+### 입력 형식 (DLX)
 
-The first non-comment line lists item names: primary items, then `|`, then
-secondary items (which may be colored inside options). Each later line is one
-option. Lines beginning with `|` are comments.
+주석이 아닌 첫 줄은 아이템 이름을 늘어놓는다. 주 아이템, 그다음 `|`, 그다음 부
+아이템이다(부 아이템은 옵션 안에서 색을 받을 수 있다). 그 뒤의 줄은 저마다 옵션
+하나다. 글자 `|`로 시작하는 줄은 주석이다.
 
-### Multiplicities (`NewMCC`)
+### 다중도 (`NewMCC`)
 
-`NewMCC()` returns an `*MCC` with the same `Dance`/`Result`/`Option` API but
-allows a primary item to be covered a *range* of times (Knuth's SSMCC, binary
-branching). Give a multiplicity prefix in the item line: `low:high|name` or
-`high|name` (default `1:1`). For example `2|a` means item `a` must be covered
-exactly twice. With default multiplicities it solves ordinary XCC, so it is a
-strict superset of `NewXCC` (the partridge example uses it).
+함수 `NewMCC()`는 `*MCC`를 돌려주는데, `Dance`/`Result`/`Option` API는 같되 주
+아이템이 *범위*만큼 덮이도록 허락한다(크누스의 SSMCC, 이진 분기다). 아이템 줄에
+다중도를 앞에 붙인다. 적는 꼴은 `low:high|name`이나 `high|name`이고 기본값은
+`1:1`이다.
+이를테면 `2|a`는 아이템 `a`가 꼭 두 번 덮여야 한다는 뜻이다. 다중도를 그냥 두면
+여느 XCC를 풀므로 `NewXCC`를 고스란히 품는다(파티지 예제가 이것을 쓴다).
 
-### Domain consistency (`NewXCCDC`)
+### 도메인 일관성 (`NewXCCDC`)
 
-`NewXCCDC()` returns an `*XCCDC` that answers the same question `NewXCC()` does,
-with the same `Dance`/`Result`/`Option` API and the same input, but looks much
-further ahead. It maintains **domain consistency**: an option is thrown out as
-soon as *using it* would leave some primary item elsewhere with no option at
-all, and the removals cascade until every item's surviving options are mutually
-supportable. In effect `DLX-PRE` is run again at every node, all the way down.
+함수 `NewXCCDC()`는 `*XCCDC`를 돌려주는데, `NewXCC()`와 같은 물음에 같은
+`Dance`/`Result`/`Option` API와 같은 입력으로 답하되 훨씬 멀리 내다본다. 이
+엔진은 **도메인 일관성**을 지킨다. 어떤 옵션을 *쓰기만 해도* 다른 어딘가의 주
+아이템에 옵션이 하나도 남지 않는다면 그 옵션은 그 자리에서 내버리고, 그 치움은
+아이템마다 살아남은 옵션들이 서로 받쳐 줄 수 있게 될 때까지 물결친다. 말하자면
+`DLX-PRE`를 마디마다, 바닥까지 다시 돌리는 셈이다.
 
 ```go
 dc := cells.NewXCCDC()
 for sol := range dc.Dance(strings.NewReader(input)).Solutions {
-    // the same covers NewXCC() finds, usually after far fewer nodes
+    // NewXCC()가 찾는 것과 같은 덮개를, 대개 훨씬 적은 마디로 찾는다
 }
 fmt.Println(dc.Nodes(), dc.Updates(), dc.Purges())
 ```
 
-Nodes get expensive; there are far fewer of them. Which way that trades is a
-property of the problem, not of the engine — two examples from this repository,
-each solved twice:
+마디는 비싸지고, 그 수는 훨씬 줄어든다. 그 거래가 어느 쪽으로 기우는지는 엔진이
+아니라 문제의 성질이다. 이 저장소의 예제 둘을 두 엔진으로 각각 풀어 보면 이렇다.
 
-| Problem | XCC | XCCDC |
+| 문제 | XCC | XCCDC |
 | --- | --- | --- |
-| `examples/filomino/15x15.filomino.dlx` | 133,639 nodes, 11.1 s | **82 nodes, 54 ms** |
-| `examples/pentominoes/8x8.dlx` | 93,833 nodes, **0.32 s** | 12,295 nodes, 2.0 s |
+| `examples/filomino/15x15.filomino.dlx` | 마디 133,639개, 11.1초 | **마디 82개, 54ms** |
+| `examples/pentominoes/8x8.dlx` | 마디 93,833개, **0.32초** | 마디 12,295개, 2.0초 |
 
-Two differences from `NewXCC()` are worth knowing. `Purges()` counts the options
-domain consistency removed, and `Debug = true` reports how many of them went
-before the first branch was ever taken. And this engine requires every option to
-begin with a primary item, shifting the nodes at input time if it does not, so
-an option written with secondary items in front is *reported* with its first
-primary item ahead of them; the rest keep their input order. There is no
-`Minimize`.
+함수 `NewXCC()`와 다른 점 둘은 알아 둘 값이 있다. 메서드 `Purges()`는 도메인
+일관성이 치운 옵션의 수를 세고, `Debug = true`로 두면 첫 가지를 뻗기도 전에 그
+가운데 몇 개가 나갔는지를 알려 준다. 그리고 이 엔진은 옵션마다 주 아이템으로
+시작하기를 바라고 그렇지 않으면 입력 때 노드를 옮겨 놓으므로, 부 아이템을 앞에
+두고 쓴 옵션은 그 첫 주 아이템이 앞에 온 채로 *알려진다*. 나머지는 입력 차례를
+지킨다. 메서드 `Minimize`는 없다.
 
-### Counting without enumerating (`ZDD`)
+### 늘어놓지 않고 세기 (`ZDD`)
 
-The three engines above hand back solutions one at a time. That is the wrong
-shape for a problem with 10¹⁶ of them, so
-[`zdd/`](zdd) is a fourth engine that returns
-all solutions at once, as a **ZDD** — a decision diagram whose paths are exactly
-the exact covers. It is Knuth's
-[`DLX6`](https://www-cs-faculty.stanford.edu/~knuth/programs/dlx6.w) idea
-(after Nishino, Yasuda, Minato and Nagata, 2017) on sparse sets: the subproblem
-left after some options are chosen depends only on *which items remain*, so a
-search that remembers the subproblems it has solved never solves one twice.
-The diagrams come from [`sjnam/bdd`](https://github.com/sjnam/bdd), a Go
-rendering of Knuth's `BDD15`.
+위의 세 엔진은 해를 하나씩 건네준다. 해가 10¹⁶개인 문제에는 틀린 모양이므로,
+[`zdd/`](zdd)는 모든 해를 한꺼번에 **ZDD**로 돌려주는 넷째 엔진이다. 그 경로가
+바로 정확 덮개인 결정 다이어그램이다. 크누스의
+[`DLX6`](https://www-cs-faculty.stanford.edu/~knuth/programs/dlx6.w)
+착상(Nishino, Yasuda, Minato, Nagata의 2017년 논문을 따른 것이다)을 희소 집합
+위에 올린 것인데, 옵션 몇 개를 고르고 남은 부분 문제는 *어느 아이템이 남았느냐*에만
+달렸으므로 이제껏 푼 부분 문제를 기억하는 탐색은 같은 것을 두 번 풀지 않는다.
+다이어그램은 크누스의 `BDD15`를 Go로 옮긴
+[`sjnam/bdd`](https://github.com/sjnam/bdd)에서 온다.
 
 ```go
 import zdd "github.com/sjnam/dancing-cells/zdd"
 
 d := zdd.New().Dance(strings.NewReader(input))
-fmt.Println(d.Count())                 // *big.Int — a walk over the diagram
-fmt.Println(d.Nodes())                 // how big the diagram is
-best, weight, _ := d.MaxWeight(w)      // the heaviest cover, without searching
-one, _ := d.Random(rnd)                // uniform over all covers
-for sol := range d.Solutions() { … }   // still one at a time, if you want
-z, root := d.ZDD()                     // the bdd handle, for everything else
+fmt.Println(d.Count())                 // *big.Int — 다이어그램을 한 번 걷는다
+fmt.Println(d.Nodes())                 // 다이어그램의 크기
+best, weight, _ := d.MaxWeight(w)      // 가장 무거운 덮개, 탐색 없이
+one, _ := d.Random(rnd)                // 모든 덮개에 대해 고르게 무작위로
+for sol := range d.Solutions() { … }   // 원한다면 여전히 하나씩
+z, root := d.ZDD()                     // bdd 손잡이, 나머지는 모두 거기서
 ```
 
-The solver branches on the item with fewest options, as the other engines do.
-Clearing `MRV` on it branches on the least-numbered active item instead, which
-is Knuth's exercise 7.2.2.1-264; the diagram that comes back is the same one
-either way — a reduced ordered ZDD is fixed by its family and its variable
-order — but on a long thin region the sweep it makes is cheaper.
+풀이기는 다른 엔진들처럼 옵션이 가장 적은 아이템에서 분기한다. 필드 `MRV`를 끄면
+번호가 가장 작은 살아 있는 아이템에서 분기하는데, 크누스의 연습문제
+7.2.2.1-264가 그것이다. 돌아오는 다이어그램은 어느 쪽이든 같다. 줄여서 차례가
+잡힌 ZDD는 그 집합족과 변수 차례로 정해지기 때문이다. 다만 길고 가는 영역에서는
+그 쓸기가 더 싸다.
 
-Whether this pays is a property of the problem, not of the engine. The search
-nodes column is what this engine visits; the saving is that divided into what
-the other engines visit with no cache, estimated for the two largest boards
-since nobody enumerates 5.3 × 10¹⁶ tilings to measure it. The cache wins by
-the factor by which those nodes exceed the number of *distinct subproblems*
-among them:
+이것이 값을 하는지는 엔진이 아니라 문제의 성질이다. 탐색 마디 칸은 이 엔진이
+들르는 수이고, 아낌은 캐시 없는 다른 엔진들이 들르는 수를 그것으로 나눈 값이다.
+가장 큰 판 둘은 어림값인데, 5.3 × 10¹⁶가지 덮기를 세어 보겠다고 나설 사람이 없기
+때문이다. 캐시는 그 마디 수가 그 가운데 *서로 다른 부분 문제*의 수를 넘어서는
+배수만큼 이긴다.
 
-| Problem | Solutions | Search nodes | Saving |
+| 문제 | 해의 수 | 탐색 마디 | 아낌 |
 | --- | ---: | ---: | ---: |
-| dominoes on 8 × 8 | 12,988,816 | 2,317 | **21,600×** |
-| dominoes on 10 × 10 | 258,584,046,368 | 13,560 | **7.4 × 10⁷** |
-| dominoes on 12 × 12 | 5.3 × 10¹⁶ | 74,023 | **2.8 × 10¹²** |
-| pentominoes 6 × 10 | 9,356 | 822,828 | 1.5× |
-| Langford 11 | 17,792 | 130,724 | 1.3× |
-| 8 queens | 92 | 869 | 1.1× |
+| 8 × 8 도미노 | 12,988,816 | 2,317 | **21,600×** |
+| 10 × 10 도미노 | 258,584,046,368 | 13,560 | **7.4 × 10⁷** |
+| 12 × 12 도미노 | 5.3 × 10¹⁶ | 74,023 | **2.8 × 10¹²** |
+| 6 × 10 펜토미노 | 9,356 | 822,828 | 1.5× |
+| 랭포드 11 | 17,792 | 130,724 | 1.3× |
+| 8-퀸 | 92 | 869 | 1.1× |
 
-Tilings of a regular region decompose into small independent pieces, so nearly
-every subproblem recurs; the twelve pentominoes are all different, so nearly
-none does, and a cache of 700,000 signatures to save a factor of 1.5 is a bad
-bargain. Use `NewXCC()` for those. Counting all 258 billion tilings of the
-10 × 10 board, on the other hand, takes 36 ms and a 13,161-node diagram, and
-finding the heaviest of them takes another 0.8 ms — neither is reachable by
-enumeration at all.
+고른 모양의 영역을 덮는 문제는 작고 서로 상관없는 조각으로 나뉘므로 거의 모든
+부분 문제가 되풀이된다. 펜토미노 열둘은 모두 다르므로 되풀이되는 것이 거의 없고,
+1.5배를 아끼자고 서명 700,000개짜리 캐시를 무는 것은 밑지는 거래다. 그런 것에는
+`NewXCC()`를 쓰라. 반면 10 × 10 판의 2580억 가지 덮기를 모두 세는 데는 36ms와
+마디 13,161개짜리 다이어그램이면 되고, 그 가운데 가장 무거운 것을 찾는 데 0.8ms가
+더 들 뿐이다. 둘 다 낱낱이 늘어놓아서는 닿을 수 없다.
 
-`zdd` is a package of its own so that the core stays free of dependencies:
-`go get github.com/sjnam/dancing-cells` pulls in nothing, and only an import of
-`.../dancing-cells/zdd` brings in `bdd`.
+패키지 `zdd`가 따로 서 있는 것은 핵심이 기대는 것 없이 남게 하려는 것이다.
+명령 `go get github.com/sjnam/dancing-cells`은 아무것도 끌어오지 않고,
+`.../dancing-cells/zdd`를 import할 때에만 `bdd`가 딸려 온다.
 
-## Examples
+## 예제
 
-| Example | Run |
+| 예제 | 실행 |
 | --- | --- |
-| N-queens | `go run ./examples/queen 8` |
-| Langford pairs | `go run ./examples/langford 4` |
-| Pentominoes | `go run ./examples/pentominoes examples/pentominoes/6x10.dlx` |
-| Sudoku | `go run ./examples/sudoku examples/sudoku/puzzles.txt` |
-| Filomino | `go run ./examples/filomino examples/filomino/10x10.filomino.dlx` |
-| Zebra puzzle | `go run ./examples/zebra` |
-| Partridge (multiplicities) | `go run ./examples/partridge 8` |
-| Domino tilings (ZDD) | `go run ./examples/domino -aztec 8` |
-| Word search | `go run ./examples/wordsearch examples/wordsearch/movie.txt 13 13` |
-| Five words, 24 letters | `go run ./examples/words examples/words/sgb-words.txt 5` |
-| Cheapest Latin-square transversal | `go run ./examples/transversal -plain 11` |
-| Partridge with a hollow centre | `go run ./examples/hollow -z 16` |
+| N-퀸 | `go run ./examples/queen 8` |
+| 랭포드 짝 | `go run ./examples/langford 4` |
+| 펜토미노 | `go run ./examples/pentominoes examples/pentominoes/6x10.dlx` |
+| 스도쿠 | `go run ./examples/sudoku examples/sudoku/puzzles.txt` |
+| 필로미노 | `go run ./examples/filomino examples/filomino/10x10.filomino.dlx` |
+| 얼룩말 퍼즐 | `go run ./examples/zebra` |
+| 파티지 (다중도) | `go run ./examples/partridge 8` |
+| 도미노 덮기 (ZDD) | `go run ./examples/domino -aztec 8` |
+| 낱말 찾기 | `go run ./examples/wordsearch examples/wordsearch/movie.txt 13 13` |
+| 스물넉 자를 덮는 다섯 낱말 | `go run ./examples/words examples/words/sgb-words.txt 5` |
+| 가장 싼 라틴 방진 횡단 | `go run ./examples/transversal -plain 11` |
+| 가운데가 빈 파티지 | `go run ./examples/hollow -z 16` |
 
-Each example generates the problem as DLX text (or reads it from a file),
-passes it to `Dance`, and consumes the `Solutions` channel — the same pattern as
-the dlx examples. Item names and colors are arbitrary-length (possibly
-multibyte) strings, so zebra (`nationality:England`) and the Korean word search
-work as-is. Partridge, which needs multiplicities, is solved with `NewMCC`. With
-that, every dlx example is now ported to dancing cells.
+예제는 저마다 문제를 DLX 텍스트로 지어내거나 파일에서 읽어 `Dance`에 넘기고 채널
+`Solutions`를 비운다. dlx 예제와 같은 본새다. 아이템 이름과 색은 길이에 제한이
+없는(여러 바이트여도 되는) 문자열이므로, 얼룩말(`nationality:England`)도 한글
+낱말 찾기도 그대로 된다. 다중도가 필요한 파티지는 `NewMCC`로 푼다. 이로써 dlx의
+예제가 모두 춤추는 칸으로 옮겨졌다.
 
-### Langford pairing
+### 랭포드 짝짓기
 
 ````console
 $ go run ./examples/langford 4
 [2 3 4 2 1 3 1 4]
 ````
 
-### Pentominoes
+### 펜토미노
 
-- 12 pieces: **O P Q R S T U V W X Y Z**
+- 조각 12개: **O P Q R S T U V W X Y Z**
 
 ````console
 $ cd examples/pentominoes
@@ -290,7 +281,7 @@ P P O O O O O R
 ...
 ````
 
-### Nqueen
+### N-퀸
 
 ````console
 $ go run ./examples/queen 8
@@ -317,7 +308,7 @@ Q . . . . . . .
 ...
 ````
 
-### Sudoku
+### 스도쿠
 
 ````console
 $ cd examples/sudoku
@@ -340,7 +331,7 @@ A[70099]: 4382971656594312787215863491679248535428739168936154279741685323857426
 Solving took: 2.142709417s
 ````
 
-### Filomino
+### 필로미노
 
 ````console
 $ cd examples/filomino
@@ -369,12 +360,12 @@ $ go run filomino.go 10x10.filomino.dlx
 1 2 2 3 4 6 6 6 3 3
 ````
 
-### Word Search
+### 낱말 찾기
 
-What is Word search? <https://thewordsearch.com/>
+낱말 찾기가 무엇인가? <https://thewordsearch.com/>
 
-The words are always placed in the same way, but the cells left over are filled
-with random letters, so no two runs print quite the same grid.
+낱말은 언제나 같은 자리에 놓이지만 남는 칸은 아무 글자로나 채우므로, 두 번
+돌려서 똑같은 판이 찍히는 일은 없다.
 
 ````console
 $ cd examples/wordsearch
@@ -413,28 +404,28 @@ X M A M R E H S I A L G K S L
 R V H X L T F F O H H C R I K
 ````
 
-### Zebra puzzle
+### 얼룩말 퍼즐
 
-Five people, from five different countries, have five different occupations,
-own five different pets, drink five different beverages, and live in a row of
-five different colored houses.
+다섯 사람이 저마다 다른 다섯 나라에서 왔고, 다섯 가지 다른 일을 하며, 다섯 가지
+다른 동물을 기르고, 다섯 가지 다른 것을 마시며, 색깔이 저마다 다른 다섯 집에
+한 줄로 산다.
 
-- The Englishman lives in a red house.
-- The painter comes from Japan.
-- The yellow house hosts a diplomat.
-- The coffee-lover's house is green.
-- The Norwegian's house is the leftmost.
-- The dog's owner is from Spain.
-- The milk drinker lives in the middle house.
-- The violinist drinks orange juice.
-- The white house is just left of the green one.
-- The Ukrainian drinks tea.
-- The Norwegian lives next to the blue house.
-- The sculptor breeds snails.
-- The horse lives next to the diplomat.
-- The nurse lives next to the fox.
+- 영국 사람은 빨간 집에 산다.
+- 화가는 일본에서 왔다.
+- 노란 집에는 외교관이 산다.
+- 커피를 좋아하는 사람의 집은 초록색이다.
+- 노르웨이 사람의 집은 맨 왼쪽이다.
+- 개 주인은 스페인에서 왔다.
+- 우유를 마시는 사람은 한가운데 집에 산다.
+- 바이올리니스트는 오렌지 주스를 마신다.
+- 하얀 집은 초록 집 바로 왼쪽이다.
+- 우크라이나 사람은 차를 마신다.
+- 노르웨이 사람은 파란 집 옆에 산다.
+- 조각가는 달팽이를 기른다.
+- 말은 외교관 옆에 산다.
+- 간호사는 여우 옆에 산다.
 
-Who trains the zebra, and who prefers to drink just plain water?
+얼룩말을 길들이는 사람은 누구이고, 맹물만 마시기를 좋아하는 사람은 누구인가?
 
 ````console
 $ go run ./examples/zebra
@@ -445,7 +436,7 @@ water       tea         milk        orange      coffee
 yellow      blue        red         white       green
 ````
 
-### Partridge puzzle
+### 파티지 퍼즐
 
 ````console
 $ go run ./examples/partridge 9
@@ -497,16 +488,16 @@ $ go run ./examples/partridge 9
 └─────────────────┴─────────────────┴─────────────────┴─────────────────┴─────────────────┘
 ````
 
-### Counting domino tilings
+### 도미노 덮기 세기
 
-The one example built on the `zdd` engine, and the one that could not be
-written without it. An 8 × 8 board has 12,988,816 domino tilings, a 12 × 12
-board has 53,060,477,521,960,000, and an Aztec diamond of order *n* has exactly
-2^(*n*(*n*+1)/2) — numbers that no amount of enumeration will reach. The program
-counts them, checks the count against Kasteleyn's product formula (or, for the
-Aztec diamond, against the exact power of two), draws a tiling picked uniformly
-at random from all of them, and finds the heaviest tiling under per-cell
-weights — a maximum-weight perfect matching, done as one walk over the diagram.
+엔진 `zdd` 위에 세운 하나뿐인 예제이고, 그것 없이는 쓸 수 없었을 예제다. 8 × 8
+판에는 도미노로 덮는 법이 12,988,816가지, 12 × 12 판에는 53,060,477,521,960,000
+가지 있고, 차수 *n*의 아즈텍 다이아몬드에는 정확히 2^(*n*(*n*+1)/2)가지 있다.
+낱낱이 늘어놓아서는 아무리 해도 닿지 못할 수다. 이 프로그램은 그것을 세고, 센
+값을 Kasteleyn의 곱셈 공식(아즈텍 다이아몬드라면 정확한 2의 거듭제곱)과 맞춰
+보고, 모든 덮기에서 고르게 뽑은 덮기 하나를 그리고, 칸마다 무게가 주어졌을 때
+가장 무거운 덮기를 찾는다. 최대 무게 완전 짝짓기를 다이어그램 위의 걸음 한 번으로
+푸는 것이다.
 
 ````console
 $ go run ./examples/domino -aztec 10
@@ -539,23 +530,21 @@ $ go run ./examples/domino -aztec 10
                   └───┘
 ````
 
-Look at the corners of that random tiling: they have frozen into regular
-brickwork while the disorder stays inside a circle in the middle. That is the
-**arctic circle** (Jockusch, Propp and Shor, 1998), and seeing it needs a
-sample drawn uniformly from all 3.6 × 10¹⁶ tilings — which is one walk down the
-diagram, and impossible any other way.
+저 무작위 덮기의 네 귀퉁이를 보라. 벽돌처럼 고른 무늬로 얼어붙었고, 어지러움은
+한가운데 원 안에만 남아 있다. 그것이 **북극원**(Jockusch, Propp, Shor, 1998)인데,
+그것을 보려면 3.6 × 10¹⁶가지 덮기에서 고르게 뽑은 표본이 있어야 한다. 다이어그램을
+한 번 걸으면 되는 일이고, 달리는 될 수 없는 일이다.
 
-The mutilated chessboard makes the opposite point: `-cut` removes two opposite
-corners, and the answer comes back as zero, with a one-node diagram, in
-milliseconds.
+잘린 체스판은 그 반대쪽을 말한다. 깃발 `-cut`은 마주 보는 두 귀퉁이를 떼어 내고,
+답은 마디 하나짜리 다이어그램과 함께 0으로, 몇 밀리초 만에 돌아온다.
 
-### Five words that cover 24 letters
+### 스물넉 자를 덮는 다섯 낱말
 
-`sgb-words.txt` is the Stanford GraphBase list of 5757 five-letter English
-words. Five of them fill 25 letter slots; can those slots cover 24 distinct
-letters of the alphabet? (Twenty-five cannot be done — no five words on this
-list are pairwise letter-disjoint.) The write-up is
-[`examples/words/words.w`](examples/words/words.w).
+파일 `sgb-words.txt`는 다섯 글자 영어 낱말 5757개를 모은 스탠퍼드 그래프베이스의
+목록이다. 그 가운데 다섯이면 글자 자리 스물다섯을 채우는데, 그 자리들이 알파벳
+스물넉 자를 서로 다르게 덮을 수 있을까? (스물다섯은 안 된다. 이 목록에는 글자가
+서로 하나도 겹치지 않는 다섯 낱말이 없다.) 글은
+[`examples/words/words.w`](examples/words/words.w)에 있다.
 
 ````console
 $ go run ./examples/words examples/words/sgb-words.txt 8
@@ -570,26 +559,24 @@ foxed glitz nymph squab wrack   (a를 두 번, j v 빠짐)
 해 8개
 ````
 
-Pass `0` instead of `8` to enumerate them all: 9592 answers in about 40 seconds.
-The solver itself returns 8132 — one per letter set — and each is expanded into
-the words that realize it, since anagrams like `stack` and `tacks` share a
-letter set and are interchangeable in an answer.
+숫자 `8` 대신 `0`을 주면 모두 늘어놓는다. 40초쯤에 답이 9592개다. 풀이기 자신이
+돌려주는 것은 글자 집합마다 하나씩 8132개이고, 그 하나하나를 그것을 이루는
+낱말들로 펼친 것이다. 낱말 `stack`과 `tacks` 같은 어구전철은 글자 집합이 같아 답에서
+서로 바꿔 쓸 수 있기 때문이다.
 
-### Hungarian Dance No. 5
+### 헝가리 무곡 제5번
 
-The first of two examples that use `Minimize` and `Bound`. A *transversal* of
-a Latin square is one cell per row, per column, and per symbol — three "exactly
-once" constraints, so it is an exact cover with 3n items and n² options. Price
-every cell and the question becomes: which transversal is cheapest?
+메서드 `Minimize`와 필드 `Bound`를 쓰는 두 예제 가운데 첫째다. 라틴 방진의
+*횡단*은 행마다, 열마다, 기호마다 칸 하나씩을 고르는 것이다. "꼭 한 번"이라는
+제약 셋이니, 아이템 3n개와 옵션 n²개짜리 정확 덮개다. 칸마다 값을 매기면 물음은
+이렇게 된다. 어느 횡단이 가장 싼가?
 
-The bound is the point. Forget the symbols and what remains is a minimum-cost
-assignment of the surviving rows to the surviving columns, which the Hungarian
-algorithm solves *exactly* in O(n³). Dropping a constraint can only make the
-answer cheaper, so it is a valid lower bound — and a strong one, because it is
-the exact optimum of a subproblem rather than an estimate. Branching by dancing
-cells, bounding by Hungarian: the write-up, which began with Brahms, calls it
-the *Hungarian Dance technique* — a name for where two existing algorithms are
-made to mesh, not a new procedure.
+하한이 핵심이다. 기호를 잊으면 남는 것은 살아 있는 행을 살아 있는 열에 맞추는
+최소비용 배정이고, 헝가리안 알고리즘이 그것을 O(n³)에 *정확히* 푼다. 제약 하나를
+버리면 답은 싸지기만 하므로 그것은 성한 하한이고, 어림이 아니라 부분 문제의 정확한
+최적값이므로 센 하한이다. 분기는 춤추는 칸으로, 한정은 헝가리안으로. 브람스에서
+시작하는 그 글은 이것을 *헝가리 무곡 기법*이라 부르는데, 있던 알고리즘 둘이
+맞물리는 자리에 붙인 이름이지 새 절차가 아니다.
 
 ````console
 $ go run ./examples/transversal -plain 9
@@ -599,11 +586,11 @@ $ go run ./examples/transversal -plain 9
 하한 없이는 노드 155개, 0s
 ````
 
-The square is the Cayley table of Z_n, so by Hall–Paige it has transversals only
-for odd n (and their counts match OEIS A006717: 15, 133, 2025, 37851 for
-n = 5, 7, 9, 11). The bound pays off more the harder the problem gets:
+이 방진은 Z_n의 케일리 표이므로 Hall–Paige에 따라 n이 홀수일 때만 횡단이 있다(그
+수도 OEIS A006717과 맞는다. n = 5, 7, 9, 11에 대해 15, 133, 2025, 37851이다).
+하한은 문제가 어려울수록 더 값을 한다.
 
-| n | tax and sweep only | Hungarian | ratio |
+| n | 세금과 쓸기만 | 헝가리안 | 비 |
 | --: | --: | --: | --: |
 | 13 | 1,478 / 2ms | 535 / 3ms | 3× |
 | 15 | 13,654 / 14ms | 3,926 / 23ms | 3× |
@@ -613,119 +600,106 @@ n = 5, 7, 9, 11). The bound pays off more the harder the problem gets:
 | 23 | 7,915,018 / 11.3s | 706,998 / 5.57s | 11× |
 | 25 | 40,935,232 / 68.2s | 1,955,438 / 18.3s | **21×** |
 
-A Hungarian node costs 6–9 µs against 1.3–1.7 µs for the other kind, so the
-bound breaks even somewhere between n = 17 and 19. It is 4× faster in wall
-clock at n = 25. Without it n = 25 takes over a minute; with it n = 27 takes
-1m20s, n = 29 4m25s and n = 31 5m18s, so it moves the wall from about n = 25
-to about n = 30. And for even n it does nothing at all: with no transversal
-there is never a cutoff to beat, and branch-and-*bound* only works once it has
-something to beat.
+헝가리안 마디 하나가 6–9µs인데 다른 쪽은 1.3–1.7µs이므로, 하한이 본전을 뽑는
+자리는 n = 17과 19 사이 어딘가다. n = 25에서는 벽시계로 4배 빠르다. 하한이 없으면
+n = 25에 1분이 넘게 걸리고, 있으면 n = 27에 1분 20초, n = 29에 4분 25초, n = 31에
+5분 18초가 걸린다. 그러니 벽을 n = 25쯤에서 n = 30쯤으로 밀어 준다. 그리고 n이
+짝수이면 아무 일도 하지 않는다. 횡단이 없으면 이길 cutoff가 아예 생기지 않고,
+분기*한정*은 이길 것이 손에 들어와야 비로소 일을 하기 때문이다.
 
-The left column used to be the search with no bound whatsoever — 117 million
-nodes and 19.5 s at n = 19, a ratio of 1429×, and 39× in wall clock. Then the
-engine learned two things from Knuth's `DLX5` (see
-[Least-cost covers](#least-cost-covers-minimize)). The first, the tax, cut that
-column twentyfold for free. The write-up points out why it is so strong here.
-The items are listed rows, then columns, then symbols, so the tax subtracts
-every row's minimum and then every column's minimum, which is exactly the row
-and column reduction that opens the Hungarian algorithm. After that it reduces
-the symbols too, the axis the Hungarian bound ignores. The second, the sweep,
-deletes at every node the options that node can no longer afford, so the
-branching rule counts only live choices; that cut the column by a further
-factor of 30 or so (50 million nodes to 1.4 million at n = 21). The Hungarian
-bound earns what ratio is left with the two things neither has: the
-augmenting steps after the reductions, and redoing all of it at every node over
-the cells still alive. It also profits from the sweep, since it now solves an
-assignment problem on the cells that survive it.
+왼쪽 칸은 예전에 하한이라고는 아무것도 없는 탐색이었다. n = 19에서 마디 1억 1700만
+개에 19.5초였으니 비가 1429×이고 벽시계로 39×였다. 그러다 엔진이 크누스의 `DLX5`에서
+두 가지를 배웠다([가장 싼 덮개](#가장-싼-덮개-minimize)를 보라). 첫째인 세금은 그
+칸을 거저 스무 배 줄였다. 그 글은 세금이 여기서 왜 그리 센지를 짚는다. 아이템이
+행, 열, 기호 차례로 늘어서 있으므로 세금은 행마다 최솟값을 빼고 그다음 열마다
+최솟값을 빼는데, 그것이 바로 헝가리안 알고리즘을 여는 행·열 감축이다. 그러고 나서
+기호까지 감축하는데, 헝가리안 하한이 못 본 척하는 축이 그것이다. 둘째인 쓸기는
+마디마다 그 마디가 더는 감당할 수 없는 옵션을 지우므로 분기 규칙이 살아 있는
+선택지만 세게 되고, 그것이 그 칸을 다시 서른 배쯤 줄였다(n = 21에서 5천만 마디가
+140만 마디로). 남은 비는 헝가리안 하한이 둘 다에게 없는 두 가지로 벌어들인다.
+감축 뒤의 증강 단계, 그리고 그 모두를 마디마다 아직 살아 있는 칸에 대해 다시
+하는 것이다. 하한은 쓸기 덕도 보는데, 이제 쓸기를 견뎌 낸 칸들에 대해 배정 문제를
+풀기 때문이다.
 
-And the ceiling, which the write-up now states plainly: those ratios are
-measured against the *same program with only the tax and the sweep*, not against
-the state of the art. Minimum-cost transversal is almost too easy to write as
-an integer program, and written that way its LP relaxation is nearly tight — a
-general MILP solver clears n = 27 in about a second and barely branches, where
-this program spends 1m20s. Ours throws a whole axis away and lands some
-40% below the optimum; the LP keeps all three and falls short by under 10%.
-That the Hungarian algorithm solves our relaxation *exactly* and that our
-relaxation is *good* turn out to be different statements. The technique is a
-frame worth knowing, but this is not the floor where it earns its keep.
+그리고 천장이 있는데, 그 글이 이제 대놓고 말한다. 그 비는 *세금과 쓸기만 가진
+같은 프로그램*에 견준 것이지 최고 수준에 견준 것이 아니다. 최소비용 횡단은 정수
+계획으로 옮겨 적기가 지나치게 쉽고, 그렇게 적으면 LP 완화가 거의 빈틈없다. 이
+프로그램이 1분 20초를 쓰는 n = 27을 웬만한 MILP 풀이기는 1초쯤에 끝내고 분기도
+거의 하지 않는다. 우리 것은 축 하나를 통째로 버리고 최적값보다 40%쯤 아래에
+내려앉는 반면, LP는 셋을 다 쥐고 10%도 채 못 미친다. 헝가리안 알고리즘이 우리
+완화를 *정확히* 푼다는 것과 우리 완화가 *좋다*는 것은 서로 다른 말이었던 셈이다.
+이 기법은 알아 둘 값이 있는 틀이지만, 이 바닥이 그것이 제값을 하는 자리는 아니다.
 
-Fitting the same hook to MCC turned out to be the delicate half. Under binary
-branching, giving up on a branch is only safe where the force stack is empty —
-otherwise the next node adopts the leftover entries as its own forced moves,
-and a forced move there is not a branch at all but the inclusion of one option
-with the alternatives never tried. The answers stay plausible and merely stop
-being the cheapest; it took a few thousand random problems checked against full
-enumeration to catch it.
+같은 훅을 MCC에 다는 일이 더 까다로운 쪽이었다. 이진 분기에서 가지를 버리는 일은
+강제 스택이 비어 있는 자리에서만 안전하다. 그렇지 않으면 다음 마디가 남은 칸을 제
+강제 이동으로 주워 가는데, 거기서 강제 이동은 분기가 아니라 옵션 하나를 들이고
+다른 길은 아예 시도하지 않는 것이다. 답은 그럴듯한 채로 남고 다만 가장 싼 것이기를
+그친다. 무작위 문제 수천 개를 모조리 세어 본 답과 맞춰 보고서야 그것을 잡았다.
 
 ### A Partridge in a Pear Tree
 
-The other `Minimize` example, and the one that puts `Need` to work. The
-[partridge puzzle](examples/partridge) packs *k* copies of the *k*×*k* square,
-*k* = 1…*n*, into a square of side *n*(*n*+1)/2 — the areas match because
-1³+⋯+*n*³ = (1+⋯+*n*)². The smallest order with any solution is 8. Now price it:
-mark off a *z*×*z* zone at the centre of the board and charge 1 for every piece
-that comes to rest **entirely inside** it. A cover of price 0 is a board where
-every piece straddles the zone's edge — a *hollow heart*.
+메서드 `Minimize`를 쓰는 다른 예제이고, `Need`를 부리는 예제다.
+[파티지 퍼즐](examples/partridge)은 *k*×*k* 정사각형 *k*장씩을, *k* = 1…*n*에
+대해, 변이 *n*(*n*+1)/2인 정사각형에 채워 넣는 것이다. 1³+⋯+*n*³ = (1+⋯+*n*)²
+이므로 넓이가 맞아떨어진다. 해가 있는 가장 작은 차수는 8이다. 이제 값을 매기자.
+판 한가운데에 *z*×*z* 구역을 정하고, 그 안에 **온전히** 들어앉는 조각마다 1을
+물린다. 값이 0인 덮개는 모든 조각이 구역의 테두리를 걸치는 판, 곧 *텅 빈 심장*이다.
 
-Pencil and paper settle half the question. A piece of side ≤ *n* covering a cell
-reaches at most *n*−1 away from it, so cells at least that far inside the zone
-can only be covered by pieces trapped in the zone. Those *trapped cells* form a
-(*z*−2*n*+2)×(*z*−2*n*+2) block, and it is non-empty as soon as *z* ≥ 2*n*−1:
+연필과 종이가 물음의 절반을 매듭짓는다. 변이 *n* 이하인 조각은 제가 덮는 칸에서
+많아야 *n*−1만큼 뻗으므로, 구역 안으로 그만큼 이상 들어간 칸은 구역에 갇힌 조각만이
+덮을 수 있다. 그 *갇힌 칸*들은 (*z*−2*n*+2)×(*z*−2*n*+2) 덩이를 이루고, *z* ≥ 2*n*−1
+이면 곧바로 비지 않는다.
 
-> A hollow heart is possible only for *z* ≤ 2*n*−2.
+> 텅 빈 심장은 *z* ≤ 2*n*−2일 때에만 가능하다.
 
-The bound is that argument, made dynamic. Sweep `Frame.Live`; for each uncovered
-cell take the cheapest option still covering it; keep those that cost something
-and are pairwise ≥ *n* apart in Chebyshev distance, so no single piece can pay
-for two; sum. It finds cells that start out free and become trapped as options
-die. On the order-8 board (36×36), with a 2-minute cap:
+하한은 그 논증을 움직이게 만든 것이다. 필드 `Frame.Live`를 훑어 아직 덮이지 않은
+칸마다 그것을 아직 덮는 가장 싼 옵션을 집고, 값이 0이 아닌 것들 가운데 체비쇼프
+거리로 서로 *n* 이상 떨어진 것만 남겨 한 조각이 둘을 대신 물 수 없게 한 다음, 그
+값을 더한다. 그러면 처음에는 자유로웠다가 옵션이 죽어 가며 갇히게 되는 칸을
+찾아낸다. 차수 8의 판(36×36)에서 2분을 넘기지 않기로 하고 재면 이렇다.
 
-| z | minimum | tax and sweep only | `Need` bound | trapped-cell bound |
+| z | 최솟값 | 세금과 쓸기만 | `Need` 하한 | 갇힌 칸 하한 |
 | --: | --: | --: | --: | --: |
 | 8 | 0 | 7,347 / 139ms | 7,347 / 1.76s | 7,347 / 1.78s |
 | 12 | 0 | 9,128 / 156ms | 9,128 / 2.09s | 9,128 / 2.06s |
 | 14 | ≤ 1 | — | — | — |
 | 16 | **1** | **7,413 / 132ms** | 7,413 / 1.74s | 7,413 / 1.77s |
 
-At *z* ≤ 12 a price-0 cover turns up almost at once, the cutoff drops to 0, and
-every branch dies on `cost + rest >= cutoff` — the bound is pure overhead.
+구역이 *z* ≤ 12이면 값 0짜리 덮개가 거의 대뜸 나와 cutoff가 0으로 떨어지고 모든 가지가
+`cost + rest >= cutoff`에서 죽으니, 하한은 순전히 짐이다.
 
-At *z* = 16 the story changed after the write-up was first finished. Without a
-bound, two minutes and 6.4M nodes proved nothing; the trapped-cell bound
-collapsed the tree in under two seconds. Then the engine started taxing items
-(see [Least-cost covers](#least-cost-covers-minimize)), and now the search
-with no `Bound` at all finishes in 0.13 s. The tax does the pencil argument
-unaided. Every option covering a trapped cell costs 1, so that cell's tax is 1.
-The block's other three cells pay nothing, because each of them shares a piece
-with the first cell, and that piece has already been taxed down to 0. That
-is exactly the double counting the trapped-cell bound avoids by keeping its
-cells ≥ *n* apart. The root bound is 1 and the tree dies once a price-1 cover
-is in hand. The tax is levied once at input, so it cannot see cells that
-become trapped *during* the search; for a while that was what the
-hand-written bound still added, 9% fewer nodes at 11× the time. Then the
-engine began sweeping away the options each node can no longer afford, and a
-cell trapped mid-search is simply a cell whose last affordable option has just
-been swept, so the branch dies there. All three columns now visit the same
-nodes. The only thing left for the hand-written bound would be several
-far-apart cells trapped *together*, whose costs add up where the sweep looks
-at one cell at a time, and on this board that never pays.
+구역이 *z* = 16일 때는 글을 처음 마친 뒤에 이야기가 달라졌다. 하한이 없을 때는 2분과 마디
+640만 개로 아무것도 증명하지 못했고, 갇힌 칸 하한은 2초도 안 되어 나무를 무너뜨렸다.
+그러다 엔진이 아이템에 세금을 걷기 시작하면서
+([가장 싼 덮개](#가장-싼-덮개-minimize)를 보라), 이제 `Bound`가 아예 없는 탐색이
+0.13초에 끝난다. 세금이 연필 논증을 혼자 해내는 것이다. 갇힌 칸을 덮는 옵션은 모두
+값이 1이므로 그 칸의 세금이 1이다. 덩이의 남은 세 칸은 아무것도 물지 않는데, 저마다
+첫 칸과 조각 하나를 함께 쓰고 그 조각은 이미 순값 0으로 깎였기 때문이다. 갇힌 칸
+하한이 제 칸들을 *n* 이상 떼어 놓아 피하던 이중 계산이 바로 그것이다. 뿌리의 하한이
+1이고 값 1짜리 덮개가 손에 들어오면 나무가 죽는다. 세금은 입력 때 한 번 걷으므로
+탐색 *도중에* 갇히는 칸은 보지 못한다. 한동안은 그것이 손으로 쓴 하한이 더해 주던
+몫이었는데, 마디는 9% 적고 시간은 11배였다. 그러다 엔진이 마디마다 감당할 수 없는
+옵션을 쓸어 내기 시작했고, 탐색 도중에 갇히는 칸이란 감당할 수 있던 마지막 옵션이
+방금 쓸려 나간 칸일 뿐이니 가지는 거기서 죽는다. 이제 세 칸 모두 같은 마디를 들른다.
+손으로 쓴 하한에 남은 것이 있다면 멀리 떨어진 칸 여럿이 *함께* 갇히는 경우일 텐데,
+쓸기가 칸을 하나씩 보는 자리에서 그 값들이 더해지기 때문이다. 다만 이 판에서는
+그런 일이 값을 하지 않는다.
 
-The `Need` bound — *size k still needs t copies but only u of its surviving
-placements are free, so t−u must be paid* — is the one that reads `Frame.Need`,
-which means something only under multiplicities. It is honest to report that it
-does not pay here: whether a piece gets trapped depends on **where** it lands,
-and lumping placements together by size cannot see that. Both bounds ship behind
-`-bound`, so the table above is reproducible.
+하한 `Need`는 — *크기 k는 아직 t장이 더 필요한데 살아남은 놓을 자리 가운데 공짜인
+것이 u개뿐이니 t−u는 치러야 한다* — 필드 `Frame.Need`를 읽는 하한이고, 그것은
+다중도가 있어야 뜻이 있다. 여기서는 값을 하지 못한다고 정직하게 적어 둔다. 조각이
+갇히느냐는 그것이 **어디에** 내려앉느냐에 달렸는데, 놓을 자리를 크기로 뭉뚱그려서는
+그것을 볼 수 없다. 두 하한 모두 `-bound` 뒤에 딸려 있으니 위의 표는 다시 재어 볼 수
+있다.
 
-*z* = 14 = 2*n*−2 stays open: price 1 is found in two seconds, price 0 is
-neither found nor ruled out. It is exactly the largest zone the pencil argument
-permits, and exactly the last one where the bound returns 0 at the root. With
-no trapped cell at the root, the tax is 0 there too. Once a price-1 cover is
-found the sweep deletes every price-1 option, so what remains is the bare exact
-cover question *can the free placements tile the board?* — and even that does
-not finish in two minutes.
+구역 *z* = 14 = 2*n*−2는 열린 채로 남았다. 값 1은 2초에 찾지만, 값 0은 찾지도 못하고
+없다고 가리지도 못한다. 연필 논증이 허락하는 가장 큰 구역이 바로 그것이고, 하한이
+뿌리에서 0을 돌려주는 마지막 자리가 바로 그것이다. 뿌리에 갇힌 칸이 없으니 거기서는
+세금도 0이다. 값 1짜리 덮개를 한 번 찾고 나면 쓸기가 값 1짜리 옵션을 모두 지우므로,
+남는 것은 *자유로운 자리들만으로 판을 덮을 수 있는가*라는 맨 정확 덮개 물음이다.
+그런데 그것조차 2분 안에 끝나지 않는다.
 
-The write-up is [`examples/hollow/hollow.w`](examples/hollow/hollow.w).
+글은 [`examples/hollow/hollow.w`](examples/hollow/hollow.w)에 있다.
 
 ````console
 $ go run ./examples/hollow -z 16
@@ -735,74 +709,71 @@ $ go run ./examples/hollow -z 16
 갇힌 조각 1개, 노드 7413개, 1.749s
 ````
 
-## The source is a literate program
+## 소스는 문학적 프로그램이다
 
-The engine is written in the [literate-programming](https://en.wikipedia.org/wiki/Literate_programming)
-style Knuth invented for `TeX`, and it follows the same tradition as the `SSXCC`
-and `SSMCC` programs it was ported from, which Knuth himself wrote as literate
-`CWEB`. Knuth kept `DLX1`, `DLX2`, `DLX3` as separate programs rather than one
-program with switches, and so do we:
+엔진은 크누스가 `TeX`을 쓰려고 지어낸
+[문학적 프로그래밍](https://en.wikipedia.org/wiki/Literate_programming) 방식으로
+쓰였고, 이식해 온 `SSXCC`와 `SSMCC`가 선 자리와 같은 전통을 따른다. 크누스 자신이
+그것을 문학적 `CWEB`으로 썼다. 크누스가 `DLX1`, `DLX2`, `DLX3`을 깃발 달린 한
+프로그램이 아니라 따로 선 프로그램으로 둔 것처럼 우리도 그렇게 한다.
 
-| Document | What it is |
+| 문서 | 무엇인가 |
 | --- | --- |
-| [`dcells.w`](dcells.w) | the common ground — the public API (`Option`, `Result`, `Frame`), the node array both engines dance on, and the `DLX` scanner. Its opening pages tell the sparse-set story. |
-| [`ssxcc.w`](ssxcc.w) | the **XCC** engine: exact cover with colors, *d*-way branching, and a closing chapter on least-cost covers. Reads start to finish on its own. |
-| [`ssmcc.w`](ssmcc.w) | the **MCC** engine: multiplicities, binary branching, and its own chapter on least-cost covers. Likewise self-contained. |
-| [`xccdc.w`](xccdc.w) | the **XCC** engine again, this time maintaining domain consistency: witnesses, trigger lists, ages and hints, and a search whose stages each span several levels. Self-contained as well, down to its own node type. |
-| [`zdd/zdd.w`](zdd/zdd.w) | the **ZDD** engine: the same search, but memoized on a signature of the remaining items, returning the family of all solutions as a decision diagram. Its own package, and the one document that leans on another library. |
+| [`dcells.w`](dcells.w) | 공용 바탕 — 공개 API(`Option`, `Result`, `Frame`), XCC와 MCC 두 엔진이 함께 춤추는 노드 배열, 그리고 `DLX` 훑개. 첫 쪽들이 희소 집합 이야기를 들려준다. |
+| [`ssxcc.w`](ssxcc.w) | **XCC** 엔진 — 색깔이 붙은 정확 덮개, *d*갈래 분기, 그리고 가장 싼 덮개를 다루는 마지막 장. 처음부터 끝까지 홀로 읽힌다. |
+| [`ssmcc.w`](ssmcc.w) | **MCC** 엔진 — 다중도, 이진 분기, 그리고 가장 싼 덮개를 다루는 제 몫의 장. 마찬가지로 홀로 선다. |
+| [`xccdc.w`](xccdc.w) | **XCC** 엔진을 다시, 이번에는 도메인 일관성을 지키며 — 증인, 방아쇠 목록, 나이와 귀띔, 그리고 한 단계가 여러 층에 걸치는 탐색. 제 노드 타입까지 따로 둘 만큼 이 역시 홀로 선다. |
+| [`zdd/zdd.w`](zdd/zdd.w) | **ZDD** 엔진 — 같은 탐색이되 남은 아이템의 서명으로 메모해 두고, 모든 해의 집합족을 결정 다이어그램으로 돌려준다. 제 패키지로 따로 서고, 다른 라이브러리에 기대는 유일한 문서다. |
 
-The first four tangle into the one Go package `dcells`, so `NewXCC()`,
-`NewMCC()`, and `NewXCCDC()` come from a single import; the fifth is the
-package `dcells/zdd` beside it.
+앞의 넷은 Go 패키지 `dcells` 하나로 tangle되므로 `NewXCC()`, `NewMCC()`,
+`NewXCCDC()`가 한 번의 import로 딸려 온다. 다섯째는 그 옆의 패키지 `dcells/zdd`다.
 
-Three Makefiles drive the GWEB tools, one per part of the repository — the
-[library](Makefile), the [examples](examples/Makefile), and the [exercise
-readings](taocp-7.2.2.1-exercises/Makefile). Each stands alone and each has the
-same targets:
+Makefile 셋이 GWEB 도구를 몬다. 저장소의 부분마다 하나씩으로
+[라이브러리](Makefile), [예제](examples/Makefile),
+[연습문제 읽기](taocp-7.2.2.1-exercises/Makefile)다. 저마다 홀로 서고 저마다 같은
+타깃을 지닌다.
 
 ```sh
-make            # gtangle the .w files → .go, then build
-make pdf        # gweave → typeset every document
-make clean      # remove the generated files, keeping the committed ones
+make            # .w 파일을 gtangle해 .go로 만든 다음 빌드
+make pdf        # gweave로 모든 문서를 조판
+make clean      # 생성된 파일을 지우되 커밋된 것은 남긴다
 ```
 
-so a fresh clone is set up by
+그러니 갓 클론한 저장소는 이렇게 채비한다.
 
 ```sh
 make && make -C examples && make -C taocp-7.2.2.1-exercises
 ```
 
-The `.w` files are the source of truth: every `.go` that has a `.w` beside it,
-and every typeset document, is generated, so those are the first things to run
-in a fresh clone. Two kinds of generated file are checked in anyway — the five
-engine `.go` files, so that the package can be imported without running GWEB
-first, and each exercise reading's `verify.pdf`, so that it can be read the
-same way — and neither should ever be edited by hand. Because `gtangle` emits
-`//line` directives, a Go compiler error points straight back at the line in
-the `.w` file it came from.
+진짜 원본은 `.w` 파일이다. 옆에 `.w`가 있는 `.go`는 모두, 조판된 문서도 모두
+생성물이므로, 갓 클론했다면 그것부터 돌려야 한다. 그래도 커밋해 두는 생성물이 두
+갈래 있다. 하나는 생성된 `.go` 파일 다섯으로, GWEB을 돌리지 않고도 패키지를
+import할 수 있게 하려는 것이다. 다른 하나는 연습문제 읽기마다 딸린 `verify.pdf`로,
+마찬가지로 그냥 읽을 수 있게 하려는 것이다. 둘 다 손으로 고쳐서는 안 된다. 도구
+`gtangle`이 `//line` 지시문을 내주므로, Go 컴파일러의 오류는 그것이 비롯한 `.w`
+파일의 줄을 곧장 가리킨다.
 
-The examples are literate programs as well, and they are where the *modelling*
-gets explained rather than the engine — how a puzzle turns into items and
-options, which items are primary and which secondary, and what the colors are
-made to mean. All twelve are written in Korean, live as
-`examples/<name>/<name>.w`, and are typeset with `luatex` (kotexgweb). Three of
-them carry original work and read as essays; the rest explain one modelling idea
-each.
+위의 다섯 문서와 아래의 예제 문서는 모두 한글로 쓰였고
+`luatex`(kotexgweb)으로 조판한다(연습문제 읽기만 영문이다). 예제도 문학적
+프로그램인데, 거기서 설명되는 것은 엔진이 아니라 *모형 세우기*다. 퍼즐이 어떻게
+아이템과 옵션이 되는지, 어느 아이템이 주이고 어느 것이 부인지, 색이 무엇을 뜻하도록
+만들었는지다. 열둘 모두 `examples/<name>/<name>.w`에 산다. 그 가운데 셋은 새로 한
+일을 담아 에세이로 읽히고, 나머지는 저마다 모형 세우기의 착상 하나씩을 풀어 놓는다.
 
-| Document | What it is |
+| 문서 | 무엇인가 |
 | --- | --- |
-| [`examples/domino/domino.w`](examples/domino/domino.w) | counting domino tilings with the `zdd` engine — Kasteleyn's formula checked against an exact count, the arctic circle of a uniformly random Aztec-diamond tiling, and a maximum-weight matching found by walking the diagram rather than searching. |
-| [`examples/words/words.w`](examples/words/words.w) | how *is there a set of five five-letter words covering 24 letters of the alphabet?* turns into a DLX input. Its answer is that colors alone — no multiplicities — pin the word count at exactly five. Carries a MetaPost figure, [`words.mp`](examples/words/words.mp). |
-| [`examples/transversal/transversal.w`](examples/transversal/transversal.w) | *Hungarian Dance No. 5* — the cheapest transversal of a Latin square, branched by dancing cells and bounded by the Hungarian algorithm. Where to find a lower bound, why this one is exact, and where else the trick applies. |
-| [`examples/hollow/hollow.w`](examples/hollow/hollow.w) | *A Partridge in a Pear Tree* — how large a hollow can the partridge puzzle keep at its centre. A geometric lower bound that turns a hopeless search into a two-second proof, and a `Need`-based one that honestly does not pay. |
-| [`examples/queen/queen.w`](examples/queen/queen.w) | *n* queens — the cleanest illustration of primary versus secondary items: rows and columns must be covered exactly once, diagonals at most once. Also why the *order* of the item line matters, since ties in the branching rule go to the leftmost item. |
-| [`examples/langford/langford.w`](examples/langford/langford.w) | Langford pairs — exact cover with nothing else in it: no secondary items, no colors. Its one subtlety is breaking the mirror symmetry, which needs an *odd* value, and the arithmetic that says so. |
-| [`examples/pentominoes/pentominoes.w`](examples/pentominoes/pentominoes.w) | the twelve pentominoes — a problem whose options were generated elsewhere, so the document is about reading a `.dlx` file and its conventions rather than writing one. |
-| [`examples/filomino/filomino.w`](examples/filomino/filomino.w) | Fillomino — secondary items used as the *edges* of a region, which is what makes "two regions of the same size may not touch" fall out for free. |
-| [`examples/zebra/zebra.w`](examples/zebra/zebra.w) | the zebra puzzle — colors as *values*: a secondary item is a blank to be filled, its color is what goes in it, and two clues touching the same blank must agree. Including what the encoding never says (that the five nationalities differ) and why the answer comes out anyway. |
-| [`examples/wordsearch/wordsearch.w`](examples/wordsearch/wordsearch.w) | building a word-search grid — colors as *letters*, so that two words crossing agree on the letter at the crossing with no crossing test written anywhere. |
-| [`examples/sudoku/sudoku.w`](examples/sudoku/sudoku.w) | sudoku, in bulk — trimming the problem with the clues before the search starts, and an ordered fan-in that solves a whole puzzle file across every CPU while printing in input order. |
-| [`examples/partridge/partridge.w`](examples/partridge/partridge.w) | the partridge puzzle — the one example that needs `NewMCC()`, because *k* pieces of size *k* is a multiplicity; plus the box-drawing printer that fits a 36 × 36 tiling into 37 lines. |
+| [`examples/domino/domino.w`](examples/domino/domino.w) | 엔진 `zdd`로 도미노 덮기 세기 — Kasteleyn의 공식을 정확한 셈과 맞춰 보고, 고르게 뽑은 아즈텍 다이아몬드 덮기에서 북극원을 보며, 최대 무게 짝짓기를 탐색이 아니라 다이어그램을 걸어 찾는다. |
+| [`examples/words/words.w`](examples/words/words.w) | *알파벳 스물넉 자를 덮는 다섯 글자 낱말 다섯이 있는가?*가 어떻게 DLX 입력이 되는가. 그 답은 다중도 없이 색만으로 낱말 수가 꼭 다섯으로 묶인다는 것이다. MetaPost 그림 [`words.mp`](examples/words/words.mp)를 데리고 있다. |
+| [`examples/transversal/transversal.w`](examples/transversal/transversal.w) | *헝가리 무곡 제5번* — 라틴 방진의 가장 싼 횡단을 춤추는 칸으로 분기하고 헝가리안 알고리즘으로 한정한다. 하한을 어디서 찾을지, 이 하한이 왜 정확한지, 그리고 이 재주가 또 어디에 먹히는지. |
+| [`examples/hollow/hollow.w`](examples/hollow/hollow.w) | *A Partridge in a Pear Tree* — 파티지 퍼즐이 한가운데에 얼마나 큰 구멍을 지킬 수 있는가. 가망 없던 탐색을 2초짜리 증명으로 바꾸는 기하학적 하한, 그리고 정직하게 말해 값을 하지 못하는 `Need` 하한. |
+| [`examples/queen/queen.w`](examples/queen/queen.w) | *n*-퀸 — 주 아이템과 부 아이템의 차이를 가장 말끔하게 보여 준다. 행과 열은 꼭 한 번 덮여야 하고 대각선은 많아야 한 번이다. 아이템 줄의 *차례*가 왜 중요한지도 나오는데, 분기 규칙이 비길 때 왼쪽 아이템이 이기기 때문이다. |
+| [`examples/langford/langford.w`](examples/langford/langford.w) | 랭포드 짝 — 다른 것이라고는 아무것도 없는 정확 덮개다. 부 아이템도 색도 없다. 하나뿐인 미묘함은 거울 대칭을 깨는 일인데, *홀수* 값이 있어야 하고 그렇다고 말해 주는 셈이 나온다. |
+| [`examples/pentominoes/pentominoes.w`](examples/pentominoes/pentominoes.w) | 펜토미노 열둘 — 옵션이 다른 데서 만들어진 문제라, 이 글은 옵션을 쓰는 이야기가 아니라 `.dlx` 파일과 그 약속을 읽는 이야기다. |
+| [`examples/filomino/filomino.w`](examples/filomino/filomino.w) | 필로미노 — 부 아이템을 영역의 *가장자리*로 쓴다. "같은 크기의 두 영역은 맞닿을 수 없다"가 거저 떨어지는 것이 그 덕이다. |
+| [`examples/zebra/zebra.w`](examples/zebra/zebra.w) | 얼룩말 퍼즐 — 색을 *값*으로 쓴다. 부 아이템은 채울 빈칸이고 그 색이 거기 들어가는 것이며, 같은 빈칸을 건드리는 두 단서는 뜻을 모아야 한다. 이 표현이 결코 말하지 않는 것(다섯 나라가 서로 다르다는 것)과 그런데도 답이 나오는 까닭까지. |
+| [`examples/wordsearch/wordsearch.w`](examples/wordsearch/wordsearch.w) | 낱말 찾기 판 짓기 — 색을 *글자*로 쓴다. 그러면 교차하는 두 낱말이 만나는 자리의 글자에 뜻을 모으는데, 교차를 따지는 코드는 어디에도 없다. |
+| [`examples/sudoku/sudoku.w`](examples/sudoku/sudoku.w) | 스도쿠, 무더기로 — 탐색을 시작하기 전에 단서로 문제를 깎아 내는 일, 그리고 퍼즐 파일 하나를 모든 CPU에 흩어 풀면서도 입력 차례로 찍어 내는 순서 있는 팬인. |
+| [`examples/partridge/partridge.w`](examples/partridge/partridge.w) | 파티지 퍼즐 — `NewMCC()`가 있어야 하는 하나뿐인 예제인데, 크기 *k*짜리 조각 *k*장이 곧 다중도이기 때문이다. 36 × 36 덮기를 37줄에 담아 내는 상자 그림 출력기도 있다. |
 
 ## Careful readings of TAOCP 7.2.2.1
 
