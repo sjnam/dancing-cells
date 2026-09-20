@@ -1,4 +1,4 @@
-//line xccdc.w:45
+//line xccdc.w:41
 package dcells
 
 import (
@@ -11,28 +11,28 @@ import (
 	"time"
 )
 
-//line xccdc.w:182
+//line xccdc.w:175
 func (s *XCCDC) trigger(opt int) int { return int(s.nd[opt].clr) }
 
-//line xccdc.w:183
+//line xccdc.w:176
 func (s *XCCDC) fixit(opt int) int { return int(s.nd[opt].xtra) }
 
-//line xccdc.w:184
+//line xccdc.w:177
 func (s *XCCDC) age(opt int) int { return int(s.nd[opt+1].xtra) }
 
 func (s *XCCDC) setTrigger(opt, v int) { s.nd[opt].clr = int32(v) }
 
-//line xccdc.w:187
+//line xccdc.w:180
 func (s *XCCDC) setFixit(opt, v int) { s.nd[opt].xtra = int32(v) }
 
-//line xccdc.w:188
+//line xccdc.w:181
 func (s *XCCDC) setAge(opt, v int) { s.nd[opt+1].xtra = int32(v) }
 
-//line xccdc.w:196
+//line xccdc.w:189
 func (s *XCCDC) getavail() int {
 	if p := int(s.pool[0].r); p != 0 {
 		s.pool[0].r = s.pool[p].r
-		return p // whatever info(p) held is the caller's business
+		return p // info(p)에 무엇이 있었든 부르는 쪽이 알아서 한다
 	}
 	s.poolptr++
 	s.pool = ensure(s.pool, s.poolptr)
@@ -44,10 +44,10 @@ func (s *XCCDC) putavail(p int) {
 	s.pool[0].r = int32(p)
 }
 
-//line xccdc.w:227
+//line xccdc.w:218
 func (s *XCCDC) markItems(opt int) {
 
-//line xccdc.w:243
+//line xccdc.w:234
 	if s.compatStamp == maxStamp {
 		for k := 0; k < s.itemlen; k++ {
 			s.setMark(int(s.item[k]), 0)
@@ -56,7 +56,7 @@ func (s *XCCDC) markItems(opt int) {
 	}
 	s.compatStamp++
 
-//line xccdc.w:229
+//line xccdc.w:220
 	for nn := opt + 1; s.nd[nn].itm > 0; nn++ {
 		ii := int(s.nd[nn].itm)
 		s.setMark(ii, s.compatStamp)
@@ -64,20 +64,20 @@ func (s *XCCDC) markItems(opt int) {
 			if c := int(s.nd[nn].clr); c != 0 {
 				s.setMatch(ii, c)
 			} else {
-				s.setMatch(ii, -1) // an uncolored item matches no color
+				s.setMatch(ii, -1) // 색 없는 아이템은 어느 색과도 맞지 않는다
 			}
 		}
 	}
 }
 
-//line xccdc.w:261
+//line xccdc.w:251
 func (s *XCCDC) compatible(p int) (opt int, ok bool) {
 	opt = p
 	for nn := p + 1; nn != p; nn++ {
 		jj := int(s.nd[nn].itm)
 		switch {
 		case jj <= 0:
-			opt = nn + jj - 1 // a spacer; jump back to the option's own
+			opt = nn + jj - 1 // 사이막이다. 그 옵션 제 사이막으로 되돌아간다
 			nn = opt
 		case s.mark(jj) == s.compatStamp:
 			if jj < s.second || s.nd[nn].clr == 0 ||
@@ -89,10 +89,10 @@ func (s *XCCDC) compatible(p int) (opt int, ok bool) {
 	return opt, true
 }
 
-//line xccdc.w:294
+//line xccdc.w:283
 func (s *XCCDC) optOut(opt, act int) bool {
 
-//line xccdc.w:329
+//line xccdc.w:317
 	for nn := opt + 1; ; nn++ {
 		ii := int(s.nd[nn].itm)
 		if ii <= 0 {
@@ -100,12 +100,12 @@ func (s *XCCDC) optOut(opt, act int) bool {
 		}
 		p := int(s.nd[nn].loc)
 		if p >= s.second && s.pos(ii) >= act {
-			continue // ii was purified before this branch began
+			continue // 아이템 ii는 이 가지가 열리기 전에 씻겼다
 		}
 		sz := s.size(ii) - 1
 		if sz == 0 && p < s.second {
 
-//line xccdc.w:354
+//line xccdc.w:342
 			for s.qfront != s.qrear {
 				p := s.qfront
 				s.qfront = int(s.pool[p].r)
@@ -115,7 +115,7 @@ func (s *XCCDC) optOut(opt, act int) bool {
 			}
 			return false
 
-//line xccdc.w:341
+//line xccdc.w:329
 		}
 		nnp := int(s.set[ii+sz])
 		s.setSize(ii, sz)
@@ -124,7 +124,7 @@ func (s *XCCDC) optOut(opt, act int) bool {
 		s.updates++
 	}
 
-//line xccdc.w:296
+//line xccdc.w:285
 	s.setAge(opt, s.curAge)
 	s.purges++
 	tmin, cutoff := infiniteAge, -1
@@ -135,23 +135,23 @@ func (s *XCCDC) optOut(opt, act int) bool {
 		pp = int(s.pool[q].r)
 		if optp < 0 {
 
-//line xccdc.w:978
+//line xccdc.w:944
 			c := -optp - 1
 			if c < s.curAge && ii == int(s.stageStamp[(c+1)>>1]) {
 				hintP, hintQ, cutoff = p, q, c
-				break // everything below is known to be inactive
+				break // 이 아래는 모두 살아 있지 않음이 알려져 있다
 			}
-			s.putavail(p) // the hint has gone stale
+			s.putavail(p) // 이 귀띔은 철이 지났다
 			s.putavail(q)
 			continue
 
-//line xccdc.w:306
+//line xccdc.w:295
 		}
 
-//line xccdc.w:389
+//line xccdc.w:376
 		t, dead := -1, false
 		if a := s.age(optp); a <= s.curAge {
-			jj := int(s.nd[optp+1].itm) // optp's first item, always primary
+			jj := int(s.nd[optp+1].itm) // optp의 첫 아이템, 언제나 주 아이템이다
 			if int(s.nd[optp+1].loc) >= jj+s.size(jj) {
 				t, dead = a, true
 			}
@@ -160,10 +160,10 @@ func (s *XCCDC) optOut(opt, act int) bool {
 			t, dead = s.curAge, true
 		}
 
-//line xccdc.w:308
+//line xccdc.w:297
 		if !dead {
 
-//line xccdc.w:405
+//line xccdc.w:392
 			s.pool[p].l = int32(opt)
 			s.pool[q].r = int32(s.fixit(optp))
 			if s.fixit(optp) == 0 {
@@ -175,16 +175,16 @@ func (s *XCCDC) optOut(opt, act int) bool {
 			}
 			s.setFixit(optp, p)
 
-//line xccdc.w:310
+//line xccdc.w:299
 			continue
 		}
 		if t < 0 {
-			s.putavail(p) // an option this young will never be back
+			s.putavail(p) // 이만큼 어린 옵션은 영영 돌아오지 않는다
 			s.putavail(q)
 			continue
 		}
 
-//line xccdc.w:417
+//line xccdc.w:404
 		if s.trigHead[t] == 0 {
 			s.trigTail[t] = int32(q)
 		}
@@ -194,15 +194,15 @@ func (s *XCCDC) optOut(opt, act int) bool {
 			tmin = t
 		}
 
-//line xccdc.w:318
+//line xccdc.w:307
 	}
 
-//line xccdc.w:994
+//line xccdc.w:959
 	pp = 0
 	if hintP != 0 {
 		pp = hintP
 		if tmin <= cutoff {
-			pp = int(s.pool[hintQ].r) // the buckets subsume this hint
+			pp = int(s.pool[hintQ].r) // 바구니들이 이 귀띔을 품는다
 			s.putavail(hintP)
 			s.putavail(hintQ)
 		}
@@ -213,7 +213,7 @@ func (s *XCCDC) optOut(opt, act int) bool {
 		}
 		s.pool[int(s.trigTail[t])].r = int32(pp)
 
-//line xccdc.w:1021
+//line xccdc.w:986
 		p := s.getavail()
 		q := s.getavail()
 		s.pool[p].l = int32(-t - 1)
@@ -222,7 +222,7 @@ func (s *XCCDC) optOut(opt, act int) bool {
 		s.pool[q].r = s.trigHead[t]
 		pp = p
 
-//line xccdc.w:1009
+//line xccdc.w:974
 		s.trigHead[t] = 0
 	}
 	if s.curAge >= 0 && s.trigHead[s.curAge] != 0 {
@@ -232,11 +232,11 @@ func (s *XCCDC) optOut(opt, act int) bool {
 	}
 	s.setTrigger(opt, pp)
 
-//line xccdc.w:320
+//line xccdc.w:309
 	return true
 }
 
-//line xccdc.w:366
+//line xccdc.w:354
 func (s *XCCDC) revertFixits(opt int) {
 	var pp int
 	for p := s.fixit(opt); p != 0; p = pp {
@@ -250,7 +250,7 @@ func (s *XCCDC) revertFixits(opt int) {
 	s.setFixit(opt, 0)
 }
 
-//line xccdc.w:433
+//line xccdc.w:419
 func (s *XCCDC) emptyQueue() bool {
 	for s.qfront != s.qrear {
 		p := s.qfront
@@ -258,52 +258,52 @@ func (s *XCCDC) emptyQueue() bool {
 		s.qfront = int(s.pool[p].r)
 		s.putavail(p)
 		if s.age(opt) != infiniteAge {
-			s.revertFixits(opt) // opt itself was purged in the meantime
+			s.revertFixits(opt) // 그사이에 opt 자신이 솎였다
 			continue
 		}
 		s.markItems(opt)
 
-//line xccdc.w:450
+//line xccdc.w:436
 		var pp int
 		for p := s.fixit(opt); p != 0; p = pp {
 			q := int(s.pool[p].r)
-			ii := int(s.pool[q].l) // a primary item not in opt
+			ii := int(s.pool[q].l) // opt에 없는 주 아이템
 			pp = int(s.pool[q].r)
 			found := false
 			for c, end := ii, ii+s.size(ii); c < end; c++ {
 				if optp, ok := s.compatible(int(s.set[c])); ok {
 
-//line xccdc.w:473
+//line xccdc.w:459
 					s.pool[p].l = int32(opt)
 					s.pool[q].r = int32(s.trigger(optp))
 					s.setTrigger(optp, p)
 
-//line xccdc.w:459
+//line xccdc.w:445
 					found = true
 					break
 				}
 			}
 			if !found {
 
-//line xccdc.w:481
+//line xccdc.w:467
 				s.setFixit(opt, p)
 				s.revertFixits(opt)
 				if !s.optOut(opt, s.active) {
 					return false
 				}
 
-//line xccdc.w:465
+//line xccdc.w:451
 				break
 			}
 		}
 		s.setFixit(opt, 0)
 
-//line xccdc.w:445
+//line xccdc.w:431
 	}
 	return true
 }
 
-//line xccdc.w:495
+//line xccdc.w:480
 func (s *XCCDC) establishDC() bool {
 	s.curAge = -1
 	s.qfront = s.getavail()
@@ -311,11 +311,11 @@ func (s *XCCDC) establishDC() bool {
 	for opt := 0; opt < s.lastNode; opt += int(s.nd[opt].loc) + 1 {
 		s.markItems(opt)
 
-//line xccdc.w:511
+//line xccdc.w:496
 		for k := 0; k < s.osecond; k++ {
 			ii := int(s.item[k])
 			if s.mark(ii) == s.compatStamp {
-				continue // ii is in opt, so no witness is called for
+				continue // ii는 opt 안에 있으니 증인이 필요 없다
 			}
 			found := false
 			for c, end := ii, ii+s.size(ii); c < end; c++ {
@@ -325,12 +325,12 @@ func (s *XCCDC) establishDC() bool {
 					s.pool[p].r = int32(q)
 					s.pool[q].l = int32(ii)
 
-//line xccdc.w:473
+//line xccdc.w:459
 					s.pool[p].l = int32(opt)
 					s.pool[q].r = int32(s.trigger(optp))
 					s.setTrigger(optp, p)
 
-//line xccdc.w:524
+//line xccdc.w:509
 					found = true
 					break
 				}
@@ -339,42 +339,42 @@ func (s *XCCDC) establishDC() bool {
 				if !s.optOut(opt, s.active) {
 					return false
 				}
-				break // opt is gone; on to the next one
+				break // opt는 사라졌다. 다음 것으로 간다
 			}
 		}
 
-//line xccdc.w:502
+//line xccdc.w:487
 	}
 	return s.emptyQueue()
 }
 
-//line xccdc.w:609
+//line xccdc.w:589
 const (
-	dcExtra     = 5       // set entries reserved below each item's base
-	dcIprop     = 5       // input-phase slot spacing
-	infiniteAge = 1 << 29 // an age no purged option can have
+	dcExtra     = 5       // 아이템 밑자리 아래에 맡아 두는 set 칸
+	dcIprop     = 5       // 입력 단계의 자리 간격
+	infiniteAge = 1 << 29 // 솎인 옵션이 가질 수 없는 나이
 	maxStamp    = 1<<31 - 1
 
-//line xccdc.w:614
+//line xccdc.w:594
 )
 
 type dcnode struct {
-	itm, loc, clr, xtra int32 // itm and clr are fixed after input; loc dances
+	itm, loc, clr, xtra int32 // itm과 clr은 입력 뒤 굳고, loc이 춤춘다
 }
 
-//line xccdc.w:642
+//line xccdc.w:621
 type XCCDC struct {
 
-//line xccdc.w:91
-	Debug         bool          // print input summary and final stats to stderr
-	PulseInterval time.Duration // if > 0, offer periodic Heartbeat strings
+//line xccdc.w:87
+	Debug         bool          // 입력 요약과 마무리 통계를 stderr에 찍는다
+	PulseInterval time.Duration // 양수이면 이따금 Heartbeat 문자열을 내준다
 
-//line xccdc.w:644
+//line xccdc.w:623
 	ctx context.Context
 
-//line xccdc.w:646
+//line xccdc.w:625
 
-//line xccdc.w:655
+//line xccdc.w:634
 	nd       []dcnode
 	lastNode int
 	item     []int32
@@ -388,62 +388,62 @@ type XCCDC struct {
 	baditem  int
 	osecond  int
 
-//line xccdc.w:647
+//line xccdc.w:626
 
-//line xccdc.w:98
-	names      []string // interned item names, by item number (1-based)
+//line xccdc.w:94
+	names      []string // 아이템 번호(1부터)로 찾는, 가둬 둔 아이템 이름
 	nameIndex  map[string]int
-	colorNames []string // interned colors, by id (1-based; 0 means "no color")
+	colorNames []string // 색 번호(1부터, 0은 "색 없음")로 찾는, 가둬 둔 색 이름
 	colorIndex map[string]int
 
-//line xccdc.w:648
+//line xccdc.w:627
 
-//line xccdc.w:674
-	pool         []twoints // info in .l, link in .r; cell 0 heads the free list
+//line xccdc.w:652
+	pool         []twoints // info는 .l, link는 .r. 0번 칸이 빈 목록의 머리다
 	poolptr      int
 	qfront       int
 	qrear        int
-	trigHead     []int32 // buckets, indexed by age, used while rebuilding a list
+	trigHead     []int32 // 나이로 찾는 바구니, 목록을 다시 지을 때 쓴다
 	trigTail     []int32
 	compatStamp  int
 	curStamp     int32
 	biggestStamp int32
 
-//line xccdc.w:649
+//line xccdc.w:628
 
-//line xccdc.w:690
+//line xccdc.w:668
 	chosen     []int32
 	stageStamp []int32
 	savestack  []twoints
 	saveptr    int
 	curAge     int
 
-//line xccdc.w:650
+//line xccdc.w:629
 
-//line xccdc.w:107
+//line xccdc.w:103
 	updates uint64
 	nodes   uint64
 	purges  uint64
 	options uint64
 	count   uint64
 
-//line xccdc.w:651
+//line xccdc.w:630
 
-//line xccdc.w:114
+//line xccdc.w:110
 	solStream chan []Option
 	heartbeat chan string
 	pulse     *time.Ticker
 
-//line xccdc.w:652
+//line xccdc.w:631
 }
 
-//line xccdc.w:703
+//line xccdc.w:681
 func NewXCCDC() *XCCDC {
 	return &XCCDC{
 		second:     secondUnset,
-		names:      []string{""}, // item numbers are 1-based
+		names:      []string{""}, // 아이템 번호는 1부터다
 		nameIndex:  make(map[string]int),
-		colorNames: []string{""}, // color 0 means "no color"
+		colorNames: []string{""}, // 0번 색은 "색 없음"이다
 		colorIndex: make(map[string]int),
 		pool:       make([]twoints, 2),
 		poolptr:    1,
@@ -462,42 +462,42 @@ func (s *XCCDC) WithContext(ctx context.Context) *XCCDC {
 
 func (s *XCCDC) Updates() uint64 { return s.updates }
 
-//line xccdc.w:726
+//line xccdc.w:704
 func (s *XCCDC) Nodes() uint64 { return s.nodes }
 
-//line xccdc.w:727
+//line xccdc.w:705
 func (s *XCCDC) Purges() uint64 { return s.purges }
 
-//line xccdc.w:733
+//line xccdc.w:711
 func (s *XCCDC) size(x int) int { return int(s.set[x-1]) }
 
-//line xccdc.w:734
+//line xccdc.w:712
 func (s *XCCDC) pos(x int) int { return int(s.set[x-2]) }
 
-//line xccdc.w:735
+//line xccdc.w:713
 func (s *XCCDC) itemNo(x int) int { return int(s.set[x-3]) }
 
-//line xccdc.w:736
+//line xccdc.w:714
 func (s *XCCDC) mark(x int) int { return int(s.set[x-4]) }
 
-//line xccdc.w:737
+//line xccdc.w:715
 func (s *XCCDC) match(x int) int { return int(s.set[x-5]) }
 
 func (s *XCCDC) setSize(x, v int) { s.set[x-1] = int32(v) }
 
-//line xccdc.w:740
+//line xccdc.w:718
 func (s *XCCDC) setPos(x, v int) { s.set[x-2] = int32(v) }
 
-//line xccdc.w:741
+//line xccdc.w:719
 func (s *XCCDC) setItemNo(x, v int) { s.set[x-3] = int32(v) }
 
-//line xccdc.w:742
+//line xccdc.w:720
 func (s *XCCDC) setMark(x, v int) { s.set[x-4] = int32(v) }
 
-//line xccdc.w:743
+//line xccdc.w:721
 func (s *XCCDC) setMatch(x, v int) { s.set[x-5] = int32(v) }
 
-//line xccdc.w:751
+//line xccdc.w:728
 func (s *XCCDC) internName(name string) (num int, ok bool) {
 	if _, dup := s.nameIndex[name]; dup {
 		return 0, false
@@ -518,7 +518,7 @@ func (s *XCCDC) internColor(name string) int {
 	return id
 }
 
-//line xccdc.w:778
+//line xccdc.w:754
 func (s *XCCDC) Dance(rd io.Reader) *Result {
 	s.inputMatrix(rd)
 	s.solStream = make(chan []Option)
@@ -528,25 +528,25 @@ func (s *XCCDC) Dance(rd io.Reader) *Result {
 		defer close(s.solStream)
 		defer close(s.heartbeat)
 
-//line xccdc.w:787
+//line xccdc.w:763
 
-//line xccdc.w:816
+//line xccdc.w:790
 		if s.Debug {
 			fmt.Fprintf(os.Stderr,
 				"(%d options, %d+%d items, %d entries successfully read)\n",
 				s.options, s.osecond, s.itemlen-s.osecond, s.lastNode)
 		}
 
-//line xccdc.w:788
+//line xccdc.w:764
 		if s.PulseInterval > 0 {
 			s.pulse = time.NewTicker(s.PulseInterval)
 			defer s.pulse.Stop()
 		}
 
-//line xccdc.w:804
+//line xccdc.w:779
 		if s.baditem == 0 && s.establishDC() {
 
-//line xccdc.w:540
+//line xccdc.w:524
 			for opt := 0; opt < s.lastNode; opt += int(s.nd[opt].loc) + 1 {
 				if s.age(opt) < 0 {
 					continue
@@ -570,21 +570,21 @@ func (s *XCCDC) Dance(rd io.Reader) *Result {
 				}
 			}
 
-//line xccdc.w:806
+//line xccdc.w:781
 
-//line xccdc.w:823
+//line xccdc.w:797
 			if s.Debug {
 				fmt.Fprintf(os.Stderr, "Domain consistency purged %d of %d options.\n",
 					s.purges, s.options)
 			}
 
-//line xccdc.w:807
+//line xccdc.w:782
 			s.search(0)
 		}
 
-//line xccdc.w:793
+//line xccdc.w:769
 
-//line xccdc.w:829
+//line xccdc.w:803
 		if s.Debug {
 			plural := "s"
 			if s.count == 1 {
@@ -595,25 +595,25 @@ func (s *XCCDC) Dance(rd io.Reader) *Result {
 				s.count, plural, s.updates, s.nodes, s.purges)
 		}
 
-//line xccdc.w:794
+//line xccdc.w:770
 	}()
 
 	return &Result{Solutions: s.solStream, Heartbeat: s.heartbeat}
 }
 
-//line xccdc.w:849
+//line xccdc.w:822
 func (s *XCCDC) search(stage int) bool {
 
-//line xccdc.w:885
+//line xccdc.w:858
 	s.stageStamp = ensure(s.stageStamp, stage+1)
 	s.trigHead = ensure(s.trigHead, 2*stage+2)
 	s.trigTail = ensure(s.trigTail, 2*stage+2)
 
-//line xccdc.w:1038
+//line xccdc.w:1001
 	s.biggestStamp++
 	if s.biggestStamp == maxStamp {
 
-//line xccdc.w:1052
+//line xccdc.w:1015
 		for k := 0; k < s.lastNode; k += int(s.nd[k].loc) + 1 {
 			for p := s.trigger(k); p != 0; p = int(s.pool[p].r) {
 				if s.pool[p].l < 0 {
@@ -626,7 +626,7 @@ func (s *XCCDC) search(stage int) bool {
 			}
 		}
 
-//line xccdc.w:1041
+//line xccdc.w:1004
 		for k := 0; k < stage; k++ {
 			s.stageStamp[k] = int32(k)
 		}
@@ -634,10 +634,10 @@ func (s *XCCDC) search(stage int) bool {
 	}
 	s.curStamp = s.biggestStamp
 
-//line xccdc.w:889
+//line xccdc.w:862
 	s.stageStamp[stage] = s.curStamp
 
-//line xccdc.w:851
+//line xccdc.w:824
 	mark := s.saveptr
 	for {
 		s.nodes++
@@ -659,7 +659,7 @@ func (s *XCCDC) search(stage int) bool {
 			s.saveSizes()
 		}
 
-//line xccdc.w:896
+//line xccdc.w:869
 		s.curAge = stage + stage + 1
 		if s.includeOption(opt) && s.emptyQueue() {
 			if !s.search(stage + 1) {
@@ -667,29 +667,29 @@ func (s *XCCDC) search(stage int) bool {
 			}
 		}
 
-//line xccdc.w:872
+//line xccdc.w:845
 		if t == 1 {
-			return true // the choice was forced; there is no alternative
+			return true // 고를 것이 없었으니 달리 갈 길도 없다
 		}
 
-//line xccdc.w:909
+//line xccdc.w:881
 		s.restoreSizes(mark)
 		s.curAge = stage + stage
 		if !s.purgeOption(opt, s.active) || !s.emptyQueue() {
 			return true
 		}
 
-//line xccdc.w:876
+//line xccdc.w:849
 	}
 }
 
-//line xccdc.w:922
+//line xccdc.w:893
 func (s *XCCDC) chooseItem() (best, score int) {
 	score = infSize
 	for k := 0; score > 1 && k < s.active; k++ {
 		x := int(s.item[k])
 		if x >= s.second {
-			continue // secondary items are not branched on
+			continue // 부 아이템에서는 분기하지 않는다
 		}
 		switch sz := s.size(x); {
 		case sz < score:
@@ -701,11 +701,11 @@ func (s *XCCDC) chooseItem() (best, score int) {
 	return best, score
 }
 
-//line xccdc.w:1074
+//line xccdc.w:1035
 func (s *XCCDC) includeOption(node int) bool {
 	opt := s.optionOf(node)
 
-//line xccdc.w:1095
+//line xccdc.w:1055
 	p := s.active
 	s.oactive = s.active
 	for q := opt + 1; s.nd[q].itm > 0; q++ {
@@ -725,13 +725,13 @@ func (s *XCCDC) includeOption(node int) bool {
 	}
 	s.active = p
 
-//line xccdc.w:1077
+//line xccdc.w:1038
 	for k := s.active; k < s.oactive; k++ {
 		x := int(s.item[k])
 		end := x + s.size(x) - 1
 		if x >= s.second && s.match(x) != 0 {
 
-//line xccdc.w:1118
+//line xccdc.w:1078
 			c := s.match(x)
 			for ; end >= x; end-- {
 				optp := int(s.set[end])
@@ -740,10 +740,10 @@ func (s *XCCDC) includeOption(node int) bool {
 				}
 			}
 
-//line xccdc.w:1082
+//line xccdc.w:1043
 		} else {
 
-//line xccdc.w:1127
+//line xccdc.w:1087
 			for ; end >= x; end-- {
 				optp := s.optionOf(int(s.set[end]))
 				if optp != opt && !s.optOut(optp, s.oactive) {
@@ -751,11 +751,11 @@ func (s *XCCDC) includeOption(node int) bool {
 				}
 			}
 
-//line xccdc.w:1084
+//line xccdc.w:1045
 		}
 	}
 
-//line xccdc.w:1142
+//line xccdc.w:1101
 	for k := s.active; k < s.oactive; k++ {
 		x := int(s.item[k])
 		if x < s.second {
@@ -764,11 +764,11 @@ func (s *XCCDC) includeOption(node int) bool {
 	}
 	s.setAge(opt, s.curAge)
 
-//line xccdc.w:1087
+//line xccdc.w:1048
 	return true
 }
 
-//line xccdc.w:1154
+//line xccdc.w:1113
 func (s *XCCDC) purgeOption(node, act int) bool {
 	return s.optOut(s.optionOf(node), act)
 }
@@ -779,7 +779,7 @@ func (s *XCCDC) optionOf(node int) int {
 	return node
 }
 
-//line xccdc.w:1173
+//line xccdc.w:1132
 func (s *XCCDC) saveSizes() {
 	s.savestack = ensure(s.savestack, s.saveptr+s.active)
 	for p := 0; p < s.active; p++ {
@@ -798,7 +798,7 @@ func (s *XCCDC) restoreSizes(mark int) {
 	}
 }
 
-//line xccdc.w:1197
+//line xccdc.w:1155
 func (s *XCCDC) visit(stage int) bool {
 	s.count++
 	sol := make([]Option, stage)
@@ -813,7 +813,7 @@ func (s *XCCDC) visit(stage int) bool {
 	}
 }
 
-//line xccdc.w:1215
+//line xccdc.w:1173
 func (s *XCCDC) tick() {
 	if s.pulse == nil {
 		return
@@ -829,10 +829,10 @@ func (s *XCCDC) tick() {
 	}
 }
 
-//line xccdc.w:1239
+//line xccdc.w:1195
 func (s *XCCDC) option(p int) Option {
 	for s.nd[p-1].itm > 0 {
-		p-- // move to the option's first node
+		p-- // 옵션의 첫 노드로 간다
 	}
 	var opt Option
 	for q := p; s.nd[q].itm > 0; q++ {
@@ -845,17 +845,17 @@ func (s *XCCDC) option(p int) Option {
 	return opt
 }
 
-//line xccdc.w:1263
+//line xccdc.w:1218
 func (s *XCCDC) inputMatrix(rd io.Reader) {
 	br := bufio.NewReader(rd)
 	s.readItemNames(br)
 	s.readOptions(br)
 }
 
-//line xccdc.w:1279
+//line xccdc.w:1234
 func (s *XCCDC) readItemNames(br *bufio.Reader) {
 
-//line xccdc.w:1302
+//line xccdc.w:1257
 	var buf []byte
 	var p int
 	found := false
@@ -873,14 +873,14 @@ func (s *XCCDC) readItemNames(br *bufio.Reader) {
 		failf("no items")
 	}
 
-//line xccdc.w:1281
+//line xccdc.w:1236
 	for buf[p] != 0 {
 		name, next := token(buf, p, false)
 		if name == "|" {
 			if s.second != secondUnset {
 				failf("item name line contains | twice")
 			}
-			s.second = len(s.names) // the next item's number
+			s.second = len(s.names) // 다음 아이템의 번호
 		} else {
 			if strings.ContainsAny(name, ":|") {
 				failf("illegal character in item name: %q", name)
@@ -891,10 +891,10 @@ func (s *XCCDC) readItemNames(br *bufio.Reader) {
 		}
 		p = skipSpace(buf, next)
 	}
-	s.lastItm = len(s.names) // items + 1 (names[0] is unused)
+	s.lastItm = len(s.names) // 아이템 수 + 1 (names[0]은 쓰지 않는다)
 }
 
-//line xccdc.w:1322
+//line xccdc.w:1277
 func (s *XCCDC) readOptions(br *bufio.Reader) {
 	for {
 		buf, ok := nextLine(br)
@@ -909,13 +909,13 @@ func (s *XCCDC) readOptions(br *bufio.Reader) {
 	s.finalize()
 }
 
-//line xccdc.w:1342
+//line xccdc.w:1296
 func (s *XCCDC) readOption(buf []byte) {
 	spacer := s.lastNode
 	hasPrimary := false
 	for p := skipSpace(buf, 0); buf[p] != 0; {
 
-//line xccdc.w:1364
+//line xccdc.w:1318
 		name, next := token(buf, p, true)
 		if name == "" {
 			failf("empty item name")
@@ -938,12 +938,12 @@ func (s *XCCDC) readOption(buf []byte) {
 		}
 		p = skipSpace(buf, next)
 
-//line xccdc.w:1347
+//line xccdc.w:1301
 	}
 
 	if !hasPrimary {
 
-//line xccdc.w:1390
+//line xccdc.w:1344
 		for s.lastNode > spacer {
 			slot := int(s.nd[s.lastNode+1].itm) * dcIprop
 			s.setSize(slot, s.size(slot)-1)
@@ -951,7 +951,7 @@ func (s *XCCDC) readOption(buf []byte) {
 			s.lastNode--
 		}
 
-//line xccdc.w:1351
+//line xccdc.w:1305
 		return
 	}
 	s.nd[spacer].loc = int32(s.lastNode - spacer)
@@ -961,7 +961,7 @@ func (s *XCCDC) readOption(buf []byte) {
 	s.nd[s.lastNode].itm = int32(spacer + 1 - s.lastNode)
 }
 
-//line xccdc.w:1409
+//line xccdc.w:1362
 func (s *XCCDC) createNode(m, spacer int, hasPrimary *bool) int {
 	slot := m * dcIprop
 	s.set = ensure(s.set, slot)
@@ -987,13 +987,13 @@ func (s *XCCDC) createNode(m, spacer int, hasPrimary *bool) int {
 	return at
 }
 
-//line xccdc.w:1437
+//line xccdc.w:1389
 func (s *XCCDC) finalize() {
 
-//line xccdc.w:1448
+//line xccdc.w:1400
 	s.active, s.itemlen = s.lastItm-1, s.lastItm-1
 	s.item = ensure(s.item, s.itemlen)
-	s.set = ensure(s.set, s.itemlen*dcIprop+1) // all input slots readable
+	s.set = ensure(s.set, s.itemlen*dcIprop+1) // 입력 자리를 모두 읽을 수 있게
 
 	j := dcExtra
 	k := 0
@@ -1009,9 +1009,9 @@ func (s *XCCDC) finalize() {
 		s.osecond = s.second - 1
 	}
 
-//line xccdc.w:1439
+//line xccdc.w:1391
 
-//line xccdc.w:1471
+//line xccdc.w:1422
 	for ; k != 0; k-- {
 		base := int(s.item[k-1])
 		if k == s.second {
@@ -1026,9 +1026,9 @@ func (s *XCCDC) finalize() {
 		s.setMark(base, 0)
 	}
 
-//line xccdc.w:1440
+//line xccdc.w:1392
 
-//line xccdc.w:1489
+//line xccdc.w:1440
 	for k = 1; k < s.lastNode; k++ {
 		if s.nd[k].itm <= 0 {
 			continue
@@ -1040,5 +1040,5 @@ func (s *XCCDC) finalize() {
 		s.set[loc] = int32(k)
 	}
 
-//line xccdc.w:1441
+//line xccdc.w:1393
 }

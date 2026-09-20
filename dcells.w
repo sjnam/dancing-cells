@@ -1,3 +1,5 @@
+\input kotexgweb
+
 \def\title{Dancing Cells}
 
 @s Context int
@@ -8,75 +10,73 @@
 @s Time int
 @s any int
 
-@** Introduction.
-Every so often a problem that looks like a puzzle turns out to be the same
-problem wearing a different hat. Packing the squares $1{\times}1$, $2{\times}2$,
-\dots, $n{\times}n$ into a tray---the {\it partridge puzzle\/}; pencilling
-digits into a Sudoku grid; strewing pentominoes across a chessboard; timetabling
-exams so that no student sits two at once---each of these is, underneath, a
-single austere question. It is the {\it exact cover\/} problem: given a universe
-of {\it items\/} and a collection of {\it options}, each option being a subset of
-the items, can we select options so that every item is covered exactly once?
+@** 들어가며.
+퍼즐처럼 보이는 문제가 실은 모자만 바꿔 쓴 같은 문제일 때가 있다. 쟁반에
+정사각형 $1\times1$, $2\times2$, \dots, $n\times n$을 채워 넣는 {\it 파티지
+퍼즐}, 스도쿠 격자에 숫자를 적어 넣는 일, 체스판에 펜토미노를 흩어 놓는 일,
+한 학생이 두 과목을 같은 시각에 치르지 않도록 시험 시간표를 짜는 일. 이들
+밑에는 하나같이 담백한 물음이 놓여 있다. {\it 정확 덮개\/}(exact cover)
+문제다. {\it 아이템\/}들의 전체 집합과 {\it 옵션\/}들---저마다 아이템의 부분
+집합이다---이 주어졌을 때, 아이템마다 꼭 한 번씩 덮이도록 옵션을 골라낼 수
+있는가?
 
-Donald Knuth taught a generation to answer that question with {\it Algorithm~X},
-backtracking made vivid by the {\it dancing links\/} data structure. There, the
-sparse matrix of options and items is threaded by doubly linked lists, so that
-covering an item unstitches it from every list at once, and uncovering it---on
-the way back up the search tree---stitches it right back, the links dancing out
-and in as the search advances and retreats. It is one of the prettiest ideas in
-all of combinatorial computing.
+크누스는 그 물음에 {\it 알고리즘~X\/}로 답하는 법을 한 세대에게 가르쳤다.
+{\it 춤추는 링크\/}(dancing links) 자료 구조가 되짚기 탐색을 눈앞에 그려
+보이는 그 방법이다. 거기서는 옵션과 아이템의 성긴 행렬을 겹연결 리스트로
+꿰어 두므로, 아이템을 덮는다는 것은 그 아이템이 걸린 모든 리스트에서 한꺼번에
+실을 뽑아내는 일이 되고, 탐색 나무를 거슬러 올라오며 덮개를 푸는 것은 그 실을
+도로 꿰어 넣는 일이 된다. 링크가 춤추듯 빠지고 들어가며 탐색이 나아갔다
+물러선다. 계산 조합론에서 가장 어여쁜 착상 가운데 하나다.
+@^Knuth, Donald Ervin@>
 
-And then, as the idea neared its thirtieth birthday, Knuth wrote it out again
-{\it the other way}. In his programs {\tt SSXCC} and {\tt SSMCC} he threw out the
-links and kept the dance, storing each item's surviving options in a {\it sparse
-set\/}---the little two-array structure that Preston Briggs and Linda Torczon
-had distilled in 1993 from a throwaway exercise of Aho, Hopcroft, and Ullman. He
-wrote it, he tells us, ``as if I live on a planet where the sparse-set ideas are
-well known, but doubly linked links are almost unheard-of.'' This program is a Go
-citizen of that planet: a port of {\tt SSXCC} and {\tt SSMCC}, dancing cells in
-place of dancing links.
+그러다 그 착상이 서른 살이 될 무렵, 크누스는 그것을 {\it 다른 방식으로\/} 다시
+썼다. 프로그램 {\tt SSXCC}와 {\tt SSMCC}에서 그는 링크를 버리고 춤만 남겨,
+아이템마다 살아남은 옵션을 {\it 희소 집합\/}(sparse set)에 담았다. Preston
+Briggs와 Linda Torczon이 1993년에 Aho, Hopcroft, Ullman의 교과서에 실린
+연습문제 하나에서 길어 올린 그 작은 두 배열짜리 구조다. 크누스는 그것을 이렇게
+적었다. ``희소 집합의 착상은 널리 알려져 있는데 겹연결 링크는 들어 본 이가
+거의 없는 행성에 내가 산다고 치고 썼다.'' 이 프로그램은 그 행성의 Go 시민이다.
+춤추는 링크 자리에 춤추는 칸이 들어앉았다.
+@^Briggs, Preston@>
+@^Torczon, Linda@>
 
-@ We keep two engines under one roof, because ``exactly once'' has two natural
-loosenings and each earns its own machine.
+@ 엔진을 둘 두고 한 지붕 아래 산다. ``꼭 한 번''이 느슨해지는 길이 자연스럽게
+둘이고, 그 둘이 저마다 제 기계를 가질 만해서다.
 
-The first, |XCC|, is exact cover {\it with colors}. Items come in two flavors:
-{\it primary\/} items, which must be covered exactly once, and {\it secondary\/}
-items, which may be covered any number of times {\it provided all the options
-that touch one agree on its color}. Colors let options negotiate---``I will use
-this square only if you paint it blue''---and turn out to express a startling
-range of constraints. |XCC| branches the way Algorithm~X does: it picks the item
-with the fewest surviving options and tries them all, a {\it $d$-way\/} fan-out.
+첫째 |XCC|는 {\it 색깔이 붙은\/} 정확 덮개다. 아이템이 두 갈래인데, {\it 주
+아이템\/}은 꼭 한 번 덮여야 하고 {\it 부 아이템\/}은 몇 번이든 덮여도 좋되
+{\it 그것을 건드리는 옵션들이 모두 같은 색에 뜻을 모아야\/} 한다. 색은 옵션들이
+흥정을 하게 해 준다---``이 칸이 파란색이라면 나도 쓰겠다''---그러면 놀랍도록
+여러 가지 제약이 이 꼴로 적힌다. 분기는 알고리즘~X가 하던 그대로다. 남은 옵션이
+가장 적은 아이템을 골라 그 옵션을 모두 시도하는 {\it $d$갈래\/} 뻗기다.
 
-The second, |MCC|, is exact cover {\it with multiplicities}. Here a primary item
-may ask to be covered not once but between $u$ and $v$ times. This small change
-alters the arithmetic of the search enough that a {\it binary\/} branch ---
-include this one option, or banish it---serves better than a $d$-way one, so
-|MCC| is a separate engine rather than a coat of paint on the first.
+둘째 |MCC|는 {\it 다중도가 붙은\/} 정확 덮개다. 여기서는 주 아이템이 꼭 한 번이
+아니라 $u$번에서 $v$번 사이로 덮이기를 요구할 수 있다. 이 작은 차이가 탐색의
+셈을 제법 바꾸어 놓아서, $d$갈래보다 {\it 이진\/} 분기---이 옵션을 넣거나,
+내치거나---가 더 낫다. 그래서 |MCC|는 첫째 엔진에 덧칠한 것이 아니라 따로 선
+엔진이다.
 
-@ One Go-flavored liberty runs through both. Knuth's solvers print each solution
-to the standard error stream and press on; ours hand each solution back through a
-channel. A caller constructs a solver with |dcells.NewXCC()| or
-|dcells.NewMCC()|, calls |Dance(reader)| on the input, and ranges over
-|res.Solutions|; each value that arrives is a |[]Option|, and each |Option| is a
-|[]string| of item names---a colored secondary item appearing as |name:color|.
-The search runs in its own goroutine and blocks on every send, so ranging over
-the solutions paces it, and a consumer who stops listening stops the search.
-This API deliberately mirrors the |dlx| library
-(\.{github.com/sjnam/dlx}), our dancing-links sibling, so programs migrate
-between the two without noticing; item names and colors may be arbitrary,
-possibly multibyte, strings in both. The input, likewise, we do not touch: it is
-exactly the {\tt DLX} text format of Knuth's earlier solvers, so any file that
-fed {\tt DLX2} or {\tt DLX3} feeds us unchanged.
+@ Go다운 자유를 하나 누렸는데, 그것이 두 엔진에 두루 흐른다. 크누스의 풀이기는
+해를 하나 찾을 때마다 표준 오류 스트림에 찍고 내처 나아가지만, 이쪽은 해마다
+채널로 돌려준다. 부르는 쪽은 |dcells.NewXCC()|나 |dcells.NewMCC()|로 풀이기를
+짓고, 입력에 대고 |Dance(reader)|를 부른 뒤 |res.Solutions|를 훑으면 된다.
+닿는 값마다 |[]Option|이고 |Option| 하나는 아이템 이름의 |[]string|인데, 색이
+붙은 부 아이템은 |name:color| 꼴로 나온다. 탐색은 제 고루틴에서 돌며 보낼 때마다
+막히므로, 해를 훑는 쪽이 탐색의 걸음을 쥔다. 듣기를 그만두면 탐색도 멈춘다. 이
+API는 춤추는 링크 쪽 형제인 |dlx| 라이브러리(\.{github.com/sjnam/dlx})를 일부러
+빼닮게 두었다. 프로그램이 두 라이브러리 사이를 눈치채지 못한 채 건너다니라는
+뜻이다. 아이템 이름과 색은 양쪽 모두 여러 바이트짜리를 포함한 아무 문자열이어도
+좋다. 입력도 손대지 않았다. 크누스의 앞선 풀이기들이 쓰던 그 {\tt DLX} 텍스트
+형식 그대로이니, {\tt DLX2}나 {\tt DLX3}에 넣던 파일이 그대로 들어온다.
 
-The library is one Go package told as three literate documents. This one holds
-the common ground: the shape of the public API, the node array that both
-engines dance on, and the hands that read {\tt DLX} text. The engines
-themselves live next door---{\tt SSXCC} in \.{ssxcc.w} and {\tt SSMCC} in
-\.{ssmcc.w}---and each of those can be read start to finish without the other,
-in the manner of Knuth's {\tt DLX1}, {\tt DLX2}, {\tt DLX3}. Here is the
-skeleton of the common ground.
+라이브러리는 하나의 Go 패키지이되 문학적 프로그램 여럿으로 나뉘어 있다. 이 글은
+그 공용 바탕이다. 공개 API의 모양, 두 엔진이 함께 춤추는 노드 배열, 그리고
+{\tt DLX} 텍스트를 읽어 들이는 손이 여기 있다. 엔진은 이웃에 산다---{\tt
+SSXCC}는 \.{ssxcc.w}에, {\tt SSMCC}는 \.{ssmcc.w}에 있고, 크누스의 {\tt
+DLX1}, {\tt DLX2}, {\tt DLX3}이 그랬듯 어느 쪽이든 다른 쪽 없이 처음부터 끝까지
+읽힌다. 아래가 그 공용 바탕의 뼈대다.
 @c
-// Package dcells solves exact cover (XCC, MCC) with dancing cells.
+// dcells 패키지는 춤추는 칸으로 정확 덮개(XCC, MCC)를 푼다.
 package dcells
 
 import (
@@ -84,79 +84,76 @@ import (
 	"fmt"
 )
 
-@<Shared declarations@>
-@<The input scanner@>
+@<공용 선언@>
+@<입력 훑개@>
 
-@** Data structures.
-Sparse-set data structures were introduced by Preston Briggs and Linda Torczon
-[{\sl ACM Letters on Programming Languages and Systems\/ \bf2} (1993), 59--69],
-who realized that an exercise in Aho, Hopcroft, and Ullman's classic text was
-much more than a slick trick to avoid initializing an array. The idea is
-astonishingly simple. To represent a subset $S$ of a universe
-$U=\{x_0,\ldots,x_{n-1}\}$, keep two arrays $p$ and $q$ that are inverse
-permutations of each other, and a count $s$. The members of $S$ are exactly
-$x_{p_0},\ldots,x_{p_{s-1}}$. Then $x_k\in S$ iff $q_k<s$; to delete a member,
-decrease $s$ and swap it to position~$s$; to insert, swap it to position~$s$ and
-increase~$s$. No list, no links---just two permutations learning to dance.
+@** 자료 구조.
+희소 집합 자료 구조를 처음 선보인 이는 Preston Briggs와 Linda Torczon이다
+[{\sl ACM Letters on Programming Languages and Systems\/ \bf2} (1993),
+59--69]. 둘은 Aho, Hopcroft, Ullman의 고전에 실린 연습문제 하나가 배열
+초기화를 건너뛰는 잔재주에 그치지 않음을 알아보았다. 착상은 놀랍도록
+단출하다. 전체 집합 $U=\{x_0,\ldots,x_{n-1}\}$의 부분 집합 $S$를 나타내려면,
+서로 역순열인 두 배열 $p$와 $q$, 그리고 개수 $s$를 두면 된다. 그러면 $S$의
+원소는 정확히 $x_{p_0},\ldots,x_{p_{s-1}}$이다. 원소 $x_k$가 $S$에 든 것은
+$q_k<s$와 같은 말이고, 원소를 빼려면 $s$를 줄이고 그 자리로 맞바꾸면 되며,
+넣으려면 $s$번 자리로 맞바꾸고 $s$를 늘리면 된다. 리스트도 링크도 없다. 춤을
+배운 두 순열이 있을 뿐이다.
 
-Our sets never start empty and grow; they start {\it full\/} (every option is a
-candidate) and shrink as the search commits to choices, so we keep genuine
-inverse permutations rather than the half-defined arrays of the original
-application.
+우리 집합은 비어 있다가 자라지 않는다. {\it 가득 찬\/} 채로---옵션이 모두
+후보인 채로---시작해서 탐색이 고를 때마다 줄어든다. 그래서 원래 응용의 반쯤만
+정의된 배열이 아니라 참된 역순열을 간직한다.
 
-@ The whole matrix lives in three flat arrays. An array |item| holds, for each
-still-active item, an index |x| into a much larger array |set|. Beginning at
-|set[x]| and running for |size(x)| entries are the options that currently
-contain that item; so |item| plays the role of the permutation~$p$, and a
-companion field |pos(x)| plays~$q$, recording that this item sits at
-|item[pos(x)]|. Covering an item is then nothing but shrinking a count and
-swapping two array slots---the sparse-set delete, done over and over. The
-slots just below each item's base in |set| hold its bookkeeping (its size, its
-position, its item number, and for MCC its multiplicity bounds); named accessor
-methods, defined with each engine, read and write them.
+@ 행렬 전체가 납작한 배열 셋에 들어앉는다. 배열 |item|은 아직 살아 있는
+아이템마다 훨씬 큰 배열 |set|의 색인 |x|를 담는다. 자리 |set[x]|에서 |size(x)|
+칸이 그 아이템을 지금 담고 있는 옵션들이다. 그러니 배열 |item|이 위 순열~$p$
+노릇을 하고, 짝이 되는 필드 |pos(x)|가 $q$ 노릇을 하여 이 아이템이
+|item[pos(x)]|에 앉아 있음을 적어 둔다. 그러면 아이템을 덮는다는 것은 개수를
+하나 줄이고 배열 칸 둘을 맞바꾸는 일에 지나지 않는다. 희소 집합의 삭제를 그저
+되풀이하는 것이다. 각 아이템의 밑자리 바로 아래 칸들이 그 살림살이를 담는데,
+크기와 위치와 아이템 번호, 그리고 MCC라면 다중도의 위아래 끝이다. 이름 붙인
+접근자는 엔진마다 따로 두고 그것으로 읽고 쓴다.
 
-The small vocabulary that both engines share is collected here:
-@<Shared declarations@>=
-@<Bookkeeping constants@>
-@<The node type@>
-@<Solutions and heartbeats@>
-@<The bound's peephole@>
-@<The line of options@>
-@<The slice grower@>
+두 엔진이 함께 쓰는 작은 어휘를 여기 모은다.
+@<공용 선언@>=
+@<살림살이 상수@>
+@<노드 타입@>
+@<해와 맥박@>
+@<하한이 내다보는 창@>
+@<옵션 줄@>
+@<조각 늘리개@>
 
-@ Three sentinels are shared by both engines. |infSize| is larger than any real
-option count, so a chooser that never improves on it has learned that no item
-remains to branch on---which is to say, that the partial solution is a
-solution. |secondUnset| marks an item line that has not yet met its
-\.{\|} separator. And |infCost| is worse than any real cover, so that a search
-for the cheapest cover has something to start out beating.
-@<Bookkeeping constants@>=
+@ 두 엔진이 나눠 쓰는 파수꾼이 셋이다. 값 |infSize|는 실제 옵션 수보다 언제나
+크므로, 고르는 쪽이 이 값을 끝내 못 줄였다면 분기할 아이템이 하나도 남지
+않았다는 뜻이고, 그것은 곧 부분해가 해라는 뜻이다. 값 |secondUnset|은 아이템
+줄에서 아직 \.{\|} 가름막을 만나지 못했음을 나타낸다. 그리고 값 |infCost|는
+어떤 실제 덮개보다도 비싸므로, 가장 싼 덮개를 찾는 탐색이 처음에 이길 상대로
+삼을 것이 생긴다.
+@<살림살이 상수@>=
 const (
-	infSize     = 1 << 30 // "no item to branch on" => a solution
-	secondUnset = 1 << 30 // sentinel for "no primary/secondary boundary yet"
-	infCost     = int64(1) << 62 // "no cover found yet"
+	infSize     = 1 << 30 // "분기할 아이템이 없다" 곧 해를 찾았다
+	secondUnset = 1 << 30 // "주/부 아이템의 경계가 아직 없다"는 파수꾼
+	infCost     = int64(1) << 62 // "아직 덮개를 하나도 못 찾았다"
 )
 
-@ The options themselves are stored as runs of {\it nodes\/} in the third flat
-array, |nd|, one node per item of the option, with ``spacer'' nodes marking the
-seams between consecutive options. A node's |itm| field names its item and its
-|loc| field records where, within that item's active run, this node presently
-sits; |clr| is an interned color (0 meaning none). The |itm| and |clr| fields
-are frozen once input is read, but |loc| moves as options dance in and out.
-@<The node type@>=
+@ 옵션 자체는 셋째 납작한 배열 |nd|에 {\it 노드\/}의 토막으로 담긴다. 옵션의
+아이템마다 노드 하나이고, 잇달은 옵션 사이의 솔기는 ``사이막'' 노드가 짚어
+준다. 노드의 |itm| 필드는 제 아이템의 이름을 대고, |loc| 필드는 그 아이템의
+살아 있는 토막 안에서 이 노드가 지금 어디에 앉아 있는지를 적어 두며, |clr|은
+색을 뜻하는 번호다(0이면 색이 없다). 필드 |itm|과 |clr|은 입력을 읽고 나면
+굳지만, |loc|은 옵션이 들고 날 때마다 춤을 춘다.
+@<노드 타입@>=
 type node struct {
-	itm, loc, clr int32 // itm and clr are fixed after input; loc dances
+	itm, loc, clr int32 // itm과 clr은 입력 뒤에 굳고, loc은 춤춘다
 }
 
-@ A solution is reported as the list of its options, and each option as the
-list of its item names---a colored secondary item appearing as \.{name:color}.
-This is deliberately the same shape that the |dlx| library produces, so that
-programs can migrate between the two without noticing. |Result| carries the two
-channels a caller consumes: every exact cover arrives on |Solutions|, and ---
-when the solver's pulse is switched on---occasional progress strings arrive
-on |Heartbeat|. Both channels close when the search finishes or its context is
-cancelled.
-@<Solutions and heartbeats@>=
+@ 해는 그것을 이루는 옵션의 목록으로 돌려주고, 옵션 하나는 그 아이템 이름의
+목록으로 돌려준다. 색이 붙은 부 아이템은 \.{name:color} 꼴이다. 이것은 |dlx|
+라이브러리가 내놓는 모양과 일부러 같게 두었다. 프로그램이 두 라이브러리 사이를
+눈치채지 못한 채 건너다니라는 뜻이다. 타입 |Result|는 부르는 쪽이 받아 쓰는
+채널 둘을 싣는다. 정확 덮개는 모두 |Solutions|로 닿고, 풀이기의 맥박을 켜 두면
+이따금 진행 상황을 적은 문자열이 |Heartbeat|로 닿는다. 탐색이 끝나거나 그
+문맥이 끊기면 두 채널 모두 닫힌다.
+@<해와 맥박@>=
 type Option []string
 
 type Result struct {
@@ -165,21 +162,20 @@ type Result struct {
 }
 
 
-@ Either engine can be asked for the {\it cheapest\/} cover rather than every
-cover, and a caller who knows something about its own problem can help by
-supplying a lower bound on what finishing the current partial cover must still
-cost. That bound function is handed a |Frame|: a peephole into the search,
-valid only for the duration of the call that receives it.
+@ 어느 엔진에게든 덮개를 모조리 내놓으라는 대신 {\it 가장 싼\/} 덮개를
+내놓으라고 할 수 있고, 제 문제를 잘 아는 쪽이라면 지금까지 지은 부분 덮개를
+마저 짓는 데 적어도 얼마가 드는지를 일러 주어 거들 수 있다. 그 하한 함수가
+받는 것이 |Frame|이다. 탐색을 들여다보는 창이되, 그것을 받은 그 부름이 끝나면
+함께 스러진다.
 
-Through it the caller sees what is left of the problem. |Live| runs over every
-pair (active primary item, surviving option of that item), which is exactly
-the part of the matrix still in play, and it yields all of one item's options
-before moving to the next, so a bound that thinks in rows of a matrix gets
-them a row at a time. |Cost| and |Name| turn the two numbers back into terms
-the caller chose, and |Need| says how many more times an item must still be
-covered---always~1 under |XCC|, but under |MCC| an item may be waiting for
-several more.
-@<The bound's peephole@>=
+창으로 내다보이는 것은 문제의 남은 몫이다. 필드 |Live|는 (살아 있는 주 아이템,
+그 아이템의 살아남은 옵션) 쌍을 모두 훑는데, 그것이 곧 아직 판에 남아 있는
+행렬이다. 한 아이템의 옵션을 모두 내준 다음에야 다음 아이템으로 넘어가므로,
+행렬의 행 단위로 생각하는 하한은 그 모양 그대로 받아 보게 된다. 그리고 |Cost|와
+|Name|이 두 숫자를 부르는 쪽이 고른 말로 되돌려 주고, |Need|는 그 아이템이
+앞으로 몇 번 더 덮여야 하는지를 일러 준다. 엔진 |XCC|에서는 언제나 1이지만
+|MCC|에서는 여러 번을 기다리는 아이템이 있을 수 있다.
+@<하한이 내다보는 창@>=
 type Frame struct{ v frameView }
 
 func (f Frame) Live(yield func(item, opt int) bool) { f.v.eachLive(yield) }
@@ -187,11 +183,10 @@ func (f Frame) Cost(opt int) int                    { return f.v.optionCost(opt)
 func (f Frame) Name(item int) string                { return f.v.itemName(item) }
 func (f Frame) Need(item int) int                   { return f.v.itemNeed(item) }
 
-@ The peephole looks through whichever engine is dancing, so the four
-questions are asked of an interface that each engine answers for itself. It is
-unexported: a |Frame| is the only way in, and there is no other implementation
-to be had.
-@<The bound's peephole@>=
+@ 창은 지금 춤추고 있는 엔진 쪽을 내다보므로, 물음 넷은 엔진마다 제 나름으로
+답하는 인터페이스에 던져진다. 이 인터페이스는 내보내지 않는다. 창으로 들어가는
+길은 |Frame| 하나뿐이고, 달리 구현할 것도 없기 때문이다.
+@<하한이 내다보는 창@>=
 type frameView interface {
 	eachLive(yield func(item, opt int) bool)
 	optionCost(opt int) int
@@ -199,22 +194,22 @@ type frameView interface {
 	itemNeed(item int) int
 }
 
-@ When either engine minimizes, it lines up all the options by {\it net
-cost\/}---price less tax, as \.{ssxcc.w} explains---so that it can sweep away,
-at every node, the options the node can no longer afford. Each entry of the
-line names an option by its first node, which is where a deletion starts
-walking, and carries the option's net cost.
-@<The line of options@>=
+@ 두 엔진 가운데 어느 쪽이든 값을 따져 풀 때는 옵션을 모두 {\it 순값\/}---값에서
+세금을 뺀 것으로, \.{ssxcc.w}에 적어 두었다---순서로 줄을 세워 둔다. 마디마다
+그 마디가 더는 감당할 수 없는 옵션을 쓸어 내기 위해서다. 줄의 칸마다 옵션을 그
+첫 노드로 가리키는데 그 자리가 곧 지우기를 시작할 자리이고, 그 옵션의 순값을
+함께 싣는다.
+@<옵션 줄@>=
 type pricedOpt struct {
-	node int32 // the option's first node
-	net  int64 // its price less the tax it pays
+	node int32 // 옵션의 첫 노드
+	net  int64 // 값에서 그 옵션이 무는 세금을 뺀 것
 }
 
-@ One generic helper appears on nearly every page: |ensure| returns a slice at
-least |n| long, preserving contents and growing the backing array geometrically
-when it must. The dancing arrays grow only during input and while a save stack
-deepens, so amortized doubling keeps the whole run allocation-light.
-@<The slice grower@>=
+@ 거의 모든 쪽에 나오는 두루 쓰는 도우미가 하나 있다. 함수 |ensure|는 적어도
+|n|만큼 긴 조각을 돌려주되, 담긴 것은 그대로 두고 자리가 모자라면 바탕 배열을
+등비로 늘린다. 춤추는 배열들이 자라는 때는 입력을 읽는 동안과 되돌리기 스택이
+깊어지는 동안뿐이라, 곱절로 늘리는 것만으로 실행 내내 자리 잡는 일이 드물어진다.
+@<조각 늘리개@>=
 func ensure[T any](s []T, n int) []T {
 	if n <= len(s) {
 		return s
@@ -228,33 +223,30 @@ func ensure[T any](s []T, n int) []T {
 }
 
 
-@** Reading the DLX input.
-Both engines eat the same format, the {\tt DLX} text that Knuth's solvers have
-used for years. A problem is a stream of lines. The {\it first\/} non-blank,
-non-comment line names the items: the primary items, then a lone \.{\|}, then
-the secondary items. Every line after that is one option, naming the items it
-contains; a secondary item in an option may carry a color as \.{name:color}.
-Item names and colors are whitespace-free strings, and a line beginning with
-\.{\|} is a comment. The multiplicity engine reads one thing more: a primary
-item may be written \.{high\|name} or \.{low:high\|name} to declare that it
-wants covering between |low| and |high| times, the bare name meaning $[1..1]$.
+@** DLX 입력 읽기.
+두 엔진은 같은 형식을 먹는다. 크누스의 풀이기들이 오래 써 온 {\tt DLX}
+텍스트다. 문제 하나는 줄의 흐름이다. {\it 첫\/} 빈 줄 아닌 주석 아닌 줄이
+아이템의 이름을 댄다. 주 아이템을 죽 적고, \.{\|} 하나를 적고, 부 아이템을
+적는다. 그 뒤의 줄은 저마다 옵션 하나이고, 그 옵션이 담은 아이템을 댄다. 옵션
+안의 부 아이템에는 \.{name:color}로 색을 달 수 있다. 아이템 이름과 색은 공백이
+없는 문자열이고, \.{\|}로 시작하는 줄은 주석이다. 다중도 엔진은 한 가지를 더
+읽는다. 주 아이템은 \.{high\|name}이나 \.{low:high\|name}이라고 적어 |low|번
+에서 |high|번 사이로 덮이기를 바란다고 밝힐 수 있고, 이름만 적으면 $[1..1]$이다.
 
-Parsing happens in two phases per engine---the item line, then the options
---- followed by a {\it finalization\/} that lays out the sparse sets the
-dance expects. The two engines' phases differ only where multiplicities
-intrude, but Go's type system makes sharing the code more trouble than it is
-worth, so each engine gets its own copy and the MCC prose dwells only on the
-differences.
-@<The input scanner@>=
-@<Parse failures@>
-@<Reading one line@>
-@<Scanning tokens@>
+읽기는 엔진마다 두 걸음을 밟는다. 아이템 줄을 읽고, 옵션을 읽는다. 그런 다음
+춤이 기다리는 희소 집합을 깔아 두는 {\it 마무리\/}가 따른다. 두 엔진의 걸음은
+다중도가 끼어드는 자리에서만 갈리는데, Go의 타입 체계로는 그 코드를 함께 쓰려다
+더 번거로워지므로 엔진마다 제 사본을 두었다. 그리고 MCC 쪽 글은 달라지는
+대목만 짚는다.
+@<입력 훑개@>=
+@<읽기 실패@>
+@<한 줄 읽기@>
+@<낱말 훑기@>
 
-@* Scanning the input.
-A malformed input is a programming error, not a runtime condition to be
-nursed along, so the parser announces trouble by panicking with a
-|parseError|.
-@<Parse failures@>=
+@* 입력 훑기.
+입력이 틀린 것은 프로그램을 짠 이의 잘못이지 달래 가며 굴러가야 할 실행 중의
+사정이 아니다. 그러니 파서는 탈이 나면 |parseError|로 당황하며 알린다.
+@<읽기 실패@>=
 type parseError struct{ msg string }
 
 func (e *parseError) Error() string { return e.msg }
@@ -263,11 +255,11 @@ func failf(format string, a ...any) {
 	panic(&parseError{fmt.Sprintf(format, a...)})
 }
 
-@ |nextLine| reads one line into a NUL-terminated, NUL-padded buffer, so that
-scanning one byte past the content stays in bounds and stops at the
-terminating NUL---a small trick borrowed from the C originals that spares
-every scanner below an end-of-buffer test.
-@<Reading one line@>=
+@ 함수 |nextLine|은 한 줄을 읽어 NUL로 끝맺고 NUL로 메운 버퍼에 담는다.
+그러면 내용 한 바이트 너머를 훑어도 자리를 벗어나지 않고 끝의 NUL에서 멎는다.
+\CEE/ 원본에서 빌려 온 작은 재주인데, 덕분에 아래의 훑개마다 버퍼 끝을
+살피는 검사를 덜게 된다.
+@<한 줄 읽기@>=
 func isspace(c byte) bool {
 	return c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r'
 }
@@ -282,10 +274,9 @@ func nextLine(br *bufio.Reader) (buf []byte, ok bool) {
 	return buf, true
 }
 
-@ |token| lifts the next word, stopping at whitespace, the NUL, or---when
-|stopColon| is set---a colon, which is how an option's \.{name:color} is
-split.
-@<Scanning tokens@>=
+@ 함수 |token|은 다음 낱말을 떠 올린다. 공백이나 NUL에서 멎고, |stopColon|이
+켜져 있으면 쌍점에서도 멎는데, 옵션의 \.{name:color}를 가르는 것이 그 길이다.
+@<낱말 훑기@>=
 func skipSpace(buf []byte, p int) int {
 	for isspace(buf[p]) {
 		p++
@@ -301,4 +292,4 @@ func token(buf []byte, p int, stopColon bool) (string, int) {
 	return string(buf[start:p]), p
 }
 
-@** Index.
+@** 색인.

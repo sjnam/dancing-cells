@@ -1,3 +1,5 @@
+\input kotexgweb
+
 \def\title{SSMCC}
 
 @s Context int
@@ -7,21 +9,20 @@
 @s Builder int
 @s Time int
 
-@** Introduction.
-This is {\tt SSMCC}: exact cover with {\it multiplicities\/}, danced on sparse
-sets. It is the second engine of the |dcells| package, and like its sibling it
-reads on its own; the |Option| and |Result| types, the |node| array, |ensure|,
-and the {\tt DLX} scanner belong to the companion document \.{dcells.w}. The
-sparse sets both engines dance on are recalled below in brief, and told at
-more leisure there.
+@** 들어가며.
+이 글은 {\tt SSMCC}다. {\it 다중도\/}가 붙은 정확 덮개를 희소 집합 위에서 추는
+춤이고, |dcells| 패키지의 둘째 엔진이며, 형제가 그렇듯 그것만 떼어 읽어도 되도록
+썼다. 타입 |Option|과 |Result|, 배열 |nd|, 함수 |ensure|, 그리고 {\tt DLX}
+훑개는 짝이 되는 글 \.{dcells.w}의 것이다. 두 엔진이 함께 춤추는 바탕인 희소
+집합도 아래에 짧게 되새기되, 느긋한 이야기는 거기에 있다.
 
-A primary item here carries a range $[u..v]$: it must be covered at least $u$
-and at most $v$ times, plain exact cover being the case $[1..1]$. That small
-change alters the arithmetic of the search enough that a {\it binary\/}
-branch---include this one option, or banish it---serves better than the
-$d$-way fan-out of {\tt SSXCC} (\.{ssxcc.w}), which is why the two engines are
-separate programs. Filip Stappers added these extensions to Knuth's line of
-solvers in 2023.
+여기서 주 아이템은 범위 $[u..v]$를 달고 다닌다. 적어도 $u$번, 많아야 $v$번
+덮여야 한다는 뜻이고, 맨 정확 덮개는 $[1..1]$인 경우다. 그 작은 차이가 탐색의
+셈법을 꽤 바꾸어 놓아서, {\tt SSXCC}(\.{ssxcc.w})의 $d$갈래 뻗기보다 {\it
+이진\/} 분기---이 옵션을 들이거나, 내치거나---가 더 낫게 된다. 두 엔진이 따로
+선 프로그램인 까닭이 그것이다. 크누스의 풀이기 계보에 이 확장을 더한 것은 Filip
+Stappers로, 2023년의 일이다.
+@^Stappers, Filip@>
 @c
 package dcells
 
@@ -38,144 +39,141 @@ import (
 	"time"
 )
 
-@<The engine@>
-@<The optimizer@>
-@<The input phase@>
+@<엔진@>
+@<값 따지기@>
+@<입력 단계@>
 
-@ Sparse sets are the whole trick, so here they are in a paragraph. To
-represent a subset $S$ of a universe $U=\{x_0,\ldots,x_{n-1}\}$, keep two
-arrays $p$ and $q$ that are inverse permutations of each other, together with
-a count~$s$; the members of $S$ are exactly $x_{p_0},\ldots,x_{p_{s-1}}$. Then
-$x_k\in S$ iff $q_k<s$; to delete a member, swap it to position $s-1$ and
-decrease~$s$; to insert, swap it to position~$s$ and increase~$s$. No list, no
-links---just two permutations learning to dance. Preston Briggs and Linda
-Torczon distilled the idea in 1993 [{\sl ACM Letters on Programming Languages
-and Systems\/ \bf2}, 59--69] from an exercise of Aho, Hopcroft, and Ullman.
+@ 희소 집합이 이 춤의 전부이니, 한 문단으로 적어 둔다. 전체 집합
+$U=\{x_0,\ldots,x_{n-1}\}$의 부분 집합 $S$를 나타내려면, 서로 역순열인 두 배열
+$p$와 $q$, 그리고 개수~$s$를 둔다. 그러면 $S$의 원소는 정확히
+$x_{p_0},\ldots,x_{p_{s-1}}$이다. 원소 $x_k$가 $S$에 든 것은 $q_k<s$와 같은
+말이다. 원소를 빼려면 $s-1$번 자리로 맞바꾸고 $s$를 줄이며, 넣으려면 $s$번
+자리로 맞바꾸고 $s$를 늘린다. 리스트도 링크도 없다. 춤을 배운 두 순열이 있을
+뿐이다. Preston Briggs와 Linda Torczon이 Aho, Hopcroft, Ullman의 연습문제
+하나에서 이 착상을 길어 올린 것이 1993년이다 [{\sl ACM Letters on Programming
+Languages and Systems\/ \bf2}, 59--69].
+@^Briggs, Preston@>
+@^Torczon, Linda@>
 
-@ The matrix lives in three flat arrays. |nd| holds the options as runs of
-{\it nodes}, one node per item of an option, with spacer nodes marking the
-seams. |item| lists the still-active items, playing the role of the
-permutation~$p$ above. And |set| holds, for each item, the options that
-currently contain it: an item is named by its base index~|x| into |set|, its
-surviving options are |set[x]| and the |size(x)-1| entries after it, and
-|pos(x)| plays~$q$, recording that this item sits at |item[pos(x)]|. Deleting
-an option from an item is then nothing but shrinking a count and swapping two
-array slots---the sparse-set delete, done over and over. The slots just below
-each base hold that bookkeeping, which here includes the item's slack and
-bound; named accessors below read and write them.
+@ 행렬은 납작한 배열 셋에 들어앉는다. 배열 |nd|는 옵션을 {\it 노드\/}의
+토막으로 담는데, 옵션의 아이템마다 노드 하나이고 솔기는 사이막 노드가 짚어
+준다. 배열 |item|은 아직 살아 있는 아이템을 늘어놓아 위 순열~$p$ 노릇을 한다.
+그리고 배열 |set|은 아이템마다 그것을 지금 담고 있는 옵션들을 간직한다.
+아이템의 이름은 배열 |set|의 밑자리 색인~|x|이고, 살아남은 옵션은 |set[x]|와
+그 뒤의 |size(x)-1|칸이며, |pos(x)|가 $q$ 노릇을 하여 이 아이템이
+|item[pos(x)]|에 앉아 있음을 적어 둔다. 그러면 아이템에서 옵션 하나를 지운다는
+것은 개수를 줄이고 배열 칸 둘을 맞바꾸는 일에 지나지 않는다. 희소 집합의 삭제를
+그저 되풀이하는 것이다. 밑자리 바로 아래 칸들이 그 살림살이를 담는데, 여기서는
+아이템의 여유와 한도까지 거기에 든다. 아래에 이름 붙인 접근자가 그것을 읽고
+쓴다.
 
-@ The solver struct is assembled from several blocks of state, given names
-here so that the struct itself reads as a list of its concerns. First, the
-public knobs. |Debug| turns on the same terse input-summary and final-tally
-lines that the |dlx| library prints to |stderr|; |PulseInterval|, if positive,
-asks for periodic heartbeats.
-@<Solver knobs@>=
-Debug         bool          // print input summary and final stats to stderr
-PulseInterval time.Duration // if > 0, offer periodic Heartbeat strings
+@ 풀이기 구조체는 상태의 덩이 여럿을 모아 지었다. 덩이마다 이름을 붙였으니
+구조체 자체가 제 관심사의 목록으로 읽힌다. 먼저 공개된 손잡이다. 필드 |Debug|는
+|dlx| 라이브러리가 |stderr|에 찍는 것과 같은 짤막한 입력 요약과 마무리 통계를
+켠다. 필드 |PulseInterval|이 양수이면 이따금 맥박을 보내 달라는 뜻이다.
+@<풀이기 손잡이@>=
+Debug         bool          // 입력 요약과 마무리 통계를 stderr에 찍는다
+PulseInterval time.Duration // 양수이면 이따금 Heartbeat 문자열을 내준다
 
-@ Names and colors are arbitrary strings, so the engine interns them: each
-distinct name becomes a small integer (1-based, since index~0 is a
-placeholder), and each color likewise. The maps double as duplicate detectors.
-@<Naming tables@>=
-names      []string // interned item names, by item number (1-based)
+@ 이름과 색은 아무 문자열이어도 좋으므로 엔진이 그것을 작은 정수로 가둔다.
+이름 하나하나가 작은 정수가 되고(0번은 자리지기이므로 1부터다) 색도 마찬가지다.
+맵은 겹친 이름을 찾아내는 구실도 함께 한다.
+@<이름표@>=
+names      []string // 아이템 번호(1부터)로 찾는, 가둬 둔 아이템 이름
 nameIndex  map[string]int
-colorNames []string // interned colors, by id (1-based; 0 means "no color")
+colorNames []string // 색 번호(1부터, 0은 "색 없음")로 찾는, 가둬 둔 색 이름
 colorIndex map[string]int
 
-@ The search keeps a {\it force stack\/} of items whose next move is no longer
-a choice---forced moves will be a recurring character in this story---and
-counters of search effort. An ``update'' is one sparse-set swap; a ``node'' is
-one visit to the recursive search.
-@<The force stack@>=
+@ 탐색은 다음 수가 더는 선택이 아닌 아이템을 {\it 강제 스택\/}에 쌓아 두고---강제
+이동은 이 이야기에 거듭 나오는 인물이다---탐색에 든 품을 세는 계수기를 지닌다.
+``업데이트''는 희소 집합의 맞바꿈 한 번이고, ``노드''는 되도는 탐색에 한 번
+들르는 것이다.
+@<강제 스택@>=
 force  []int32
 forced int
 
-@ @<Search statistics@>=
+@ @<탐색 통계@>=
 updates uint64
 nodes   uint64
 options uint64
 count   uint64
 
-@ @<Output channels@>=
+@ @<출력 채널@>=
 solStream chan []Option
 heartbeat chan string
 pulse     *time.Ticker
 
 
-@** The engine.
-This solver answers a richer question than plain exact cover does. In |MCC| a
-primary item carries a
-{\it multiplicity\/} $[u..v]$: it must be covered at least $u$ and at most $v$
-times, plain exact cover being the case $[1..1]$. Two numbers travel with each
-such item. Its {\it bound\/} is its residual capacity---how many more times
-it still wants covering, counting down as options are chosen. Its {\it slack\/}
-is $v-u$, the give in the constraint, and it never changes. Filip Stappers
-added these extensions to Knuth's line of solvers in 2023.
+@** 엔진.
+이 풀이기는 맨 정확 덮개보다 넉넉한 물음에 답한다. 엔진 |MCC|에서 주 아이템은
+{\it 다중도\/} $[u..v]$를 달고 다닌다. 적어도 $u$번, 많아야 $v$번 덮여야 한다는
+뜻이고, 맨 정확 덮개는 $[1..1]$인 경우다. 그런 아이템마다 두 수가 따라다닌다.
+아이템의 {\it 한도\/}는 남은 그릇이다. 앞으로 몇 번 더 덮이기를 바라는가이고,
+옵션이 들어올 때마다 하나씩 줄어든다. 아이템의 {\it 여유\/}는 $v-u$, 곧 제약이
+가진 헐렁함이며 끝까지 변하지 않는다. 크누스의 풀이기 계보에 이 확장을 더한 것은
+Filip Stappers로, 2023년의 일이다.
 
-Multiplicities change the shape of the branch. An item that may be covered
-several times is not disposed of by one $d$-way fan-out over its options, so
-|MCC| branches {\it in binary}: each search node names one item and one of its
-options and asks two questions---{\it include\/} the option, or {\it
-remove\/} it and choose again. The item to branch on is the one of least {\it
-branching degree\/} $\ell+s-b+1$, where $\ell$ is its number of surviving
-options, $b$ its bound, and $s=\min({\rm slack},b)$; degree~1 means the move
-is forced. Two search coordinates must not be confused: the {\it stage\/}
-counts options included so far (left branches only), while right branches
-re-enter the same stage with one option fewer.
+다중도는 분기의 모양을 바꾼다. 여러 번 덮여도 되는 아이템은 제 옵션을 $d$갈래로
+한 번 뻗는다고 해서 치워지지 않으므로, 엔진 |MCC|는 {\it 이진\/}으로 분기한다.
+탐색의 마디마다 아이템 하나와 그 옵션 하나를 대고 두 가지를 묻는 것이다. 그
+옵션을 {\it 들일까}, 아니면 {\it 내치고\/} 다시 고를까. 분기할 아이템은 {\it
+분기 차수\/} $\ell+s-b+1$이 가장 작은 것인데, 여기서 $\ell$은 살아남은 옵션의
+수, $b$는 한도, $s=\min(\hbox{여유},b)$이다. 차수가~1이면 그 수는 강제된
+것이다. 탐색의 두 좌표를 헷갈려서는 안 된다. {\it 단계\/}는 이제껏 들인 옵션의
+수(왼쪽 가지만)를 세는 데 반해, 오른쪽 가지는 옵션 하나가 줄어든 채 같은 단계로
+다시 들어간다.
 
-The engine unfolds like its sibling, in the same four movements: state and
-construction; the binary dance with its chooser; the branch actions ---
-including and excluding an option, with their shared sparse-set surgery and
-the undo machinery; and the closing reporting offices.
-@<The engine@>=
-@<Constants@>
-@<The solver state@>
-@<Creating a solver@>
-@<Set accessors@>
-@<Interning@>
-@<Launching the dance@>
-@<The search@>
-@<Forced moves@>
-@<Choosing the item@>
-@<Including an option@>
-@<Excluding an option@>
-@<Deactivating an item@>
-@<The undo machinery@>
-@<Visiting a solution@>
-@<The heartbeat@>
-@<Reporting an option@>
+엔진은 형제와 같은 네 악장으로 펼쳐진다. 상태와 짓기, 고르개를 거느린 이진 춤,
+분기의 동작---옵션을 들이고 내치는 일과 둘이 함께 쓰는 희소 집합 수술, 그리고
+되돌리기 장치---끝으로 알리는 부서들이다.
+@<엔진@>=
+@<살림살이@>
+@<풀이기 상태@>
+@<풀이기 짓기@>
+@<집합 접근자@>
+@<이름 가두기@>
+@<춤 띄우기@>
+@<탐색@>
+@<강제 이동@>
+@<아이템 고르기@>
+@<옵션 들이기@>
+@<옵션 내치기@>
+@<아이템 물리기@>
+@<되돌리기 장치@>
+@<해에 들르기@>
+@<맥박@>
+@<옵션 알리기@>
 
-@* State and construction.
-Each MCC item needs two reserved slots more than an XCC item, for its slack
-and bound.
-@<Constants@>=
+@* 상태와 짓기.
+엔진 |MCC|의 아이템은 |XCC|의 아이템보다 자리 둘이 더 있어야 한다. 여유와 한도를
+둘 자리다.
+@<살림살이@>=
 const (
-	mccExtra = 5 // set entries below each item base: size, pos, itemNo, slack, bound
-	mccIprop = 5 // input-phase slot spacing
+	mccExtra = 5 // 아이템 밑자리 아래의 set 칸: size, pos, itemNo, slack, bound
+	mccIprop = 5 // 입력 단계의 자리 간격
 )
 
 type threeints struct{ l, s, b int32 }
 
-@ The |MCC| state mirrors |XCC| almost field for field---the shared blocks
-are literally the same sections---but there is no |oactive|, no |choice|,
-and no |saved|: binary branching records its path in |included| (one option
-per stage, ready for output) and rewinds through a save stack of
-size-and-bound triples.
-@<The solver state@>=
+@ 엔진 |MCC|의 상태는 |XCC|의 그것을 거의 필드 하나하나까지 되비춘다---함께 쓰는
+덩이는 아예 같은 절이다---다만 |oactive|도 |choice|도 |saved|도 없다. 이진 분기는
+제가 걸어온 길을 |included|에 적고(단계마다 옵션 하나씩, 그대로 내놓을 수 있게),
+크기와 한도의 세값 쌍을 쌓아 둔 스택으로 되감기 때문이다.
+@<풀이기 상태@>=
 type MCC struct {
-	@<Solver knobs@>
+	@<풀이기 손잡이@>
 	ctx context.Context
 
-	@<The matrix arrays@>
-	@<Naming tables@>
-	@<The force stack@>
-	@<The backtrack arrays@>
-	@<Cost bookkeeping@>
-	@<Search statistics@>
-	@<Output channels@>
+	@<행렬 배열@>
+	@<이름표@>
+	@<강제 스택@>
+	@<되짚기 배열@>
+	@<값 살림살이@>
+	@<탐색 통계@>
+	@<출력 채널@>
 }
 
-@ @<The matrix arrays@>=
+@ @<행렬 배열@>=
 nd       []node
 lastNode int
 item     []int32
@@ -188,13 +186,13 @@ active   int
 baditem  int
 osecond  int
 
-@ @<The backtrack arrays@>=
-included  []int32 // option included at each stage, for solution output
+@ @<되짚기 배열@>=
+included  []int32 // 단계마다 들인 옵션, 해를 내놓을 때 쓴다
 savestack []threeints
 saveptr   int
 
-@ Construction and cancellation retell the |XCC| story.
-@<Creating a solver@>=
+@ 짓기와 끊기는 |XCC|의 이야기를 되풀이한다.
+@<풀이기 짓기@>=
 func NewMCC() *MCC {
 	return &MCC{
 		second:     secondUnset,
@@ -218,8 +216,8 @@ func (m *MCC) WithContext(ctx context.Context) *MCC {
 func (m *MCC) Updates() uint64 { return m.updates }
 func (m *MCC) Nodes() uint64   { return m.nodes }
 
-@ The accessor family grows by two, for the |slack| and |bound| slots.
-@<Set accessors@>=
+@ 접근자 식구는 둘이 늘었다. 자리 |slack|과 |bound|를 맡는 것들이다.
+@<집합 접근자@>=
 func (m *MCC) size(x int) int   { return int(m.set[x-1]) }
 func (m *MCC) pos(x int) int    { return int(m.set[x-2]) }
 func (m *MCC) itemNo(x int) int { return int(m.set[x-3]) }
@@ -232,10 +230,9 @@ func (m *MCC) setItemNo(x, v int) { m.set[x-3] = int32(v) }
 func (m *MCC) setSlack(x, v int)  { m.set[x-4] = int32(v) }
 func (m *MCC) setBound(x, v int)  { m.set[x-5] = int32(v) }
 
-@ Interning is verbatim the |XCC| code with the other receiver; Go gives us no
-graceful way to share a method body between two types, and six small lines are
-cheaper than an abstraction.
-@<Interning@>=
+@ 이름 가두기는 |XCC|의 코드를 받는 쪽만 바꾸어 그대로 옮긴 것이다. Go에는 메서드
+몸통 하나를 두 타입이 곱게 나눠 쓸 방법이 없고, 작은 여섯 줄이 추상 하나보다 싸다.
+@<이름 가두기@>=
 func (m *MCC) internName(name string) (num int, ok bool) {
 	if _, dup := m.nameIndex[name]; dup {
 		return 0, false
@@ -256,18 +253,17 @@ func (m *MCC) internColor(name string) int {
 	return id
 }
 
-@* The binary dance.
-Launching, too, is the twin of |XCC|'s |Dance|.
-@<Launching the dance@>=
+@* 이진 춤.
+띄우는 일도 |XCC|의 |Dance|와 쌍둥이다.
+@<춤 띄우기@>=
 func (m *MCC) Dance(rd io.Reader) *Result {
 	m.inputMatrix(rd)
-	@<Launch the search goroutine@>
+	@<탐색 고루틴을 띄운다@>
 }
 
-@ The launch is set down as a section rather than a function, because
-|Minimize| in a later chapter wants exactly these lines after it has done its
-own preparation.
-@<Launch the search goroutine@>=
+@ 띄우기를 함수가 아니라 절로 적어 둔 까닭은, 뒷장의 |Minimize|가 제 채비를 마친
+뒤에 바로 이 줄들을 원하기 때문이다.
+@<탐색 고루틴을 띄운다@>=
 m.solStream = make(chan []Option)
 m.heartbeat = make(chan string)
 
@@ -275,7 +271,7 @@ go func() {
 	defer close(m.solStream)
 	defer close(m.heartbeat)
 
-	@<Report the input summary@>
+	@<입력 요약을 알린다@>
 	if m.PulseInterval > 0 {
 		m.pulse = time.NewTicker(m.PulseInterval)
 		defer m.pulse.Stop()
@@ -285,19 +281,19 @@ go func() {
 		m.search(0)
 	}
 
-	@<Report the totals@>
+	@<총계를 알린다@>
 }()
 
 return &Result{Solutions: m.solStream, Heartbeat: m.heartbeat}
 
-@ @<Report the input summary@>=
+@ @<입력 요약을 알린다@>=
 if m.Debug {
 	fmt.Fprintf(os.Stderr,
 		"(%d options, %d+%d items, %d entries successfully read)\n",
 		m.options, m.osecond, m.itemlen-m.osecond, m.lastNode)
 }
 
-@ @<Report the totals@>=
+@ @<총계를 알린다@>=
 if m.Debug {
 	plural := "s"
 	if m.count == 1 {
@@ -307,24 +303,22 @@ if m.Debug {
 		m.count, plural, m.updates, m.nodes)
 }
 
-@ Now the binary dance. After the usual node count, abort check, and pulse, a
-forced item left over from a covering at some shallower node takes absolute
-priority; then---if we are out for the cheapest cover---we ask whether this
-branch could beat the best one yet; then the chooser speaks, possibly
-discovering new forced items of its own; and a degree of |infSize| means no
-primary item remains---a solution. Only then do we truly branch.
+@ 이제 이진 춤이다. 여느 때처럼 마디를 세고 끊겼는지 살피고 맥박을 뛴 다음,
+더 얕은 마디에서 덮다가 남겨 둔 강제 아이템이 있으면 그것이 무엇보다 먼저다.
+그다음---가장 싼 덮개를 찾는 길이라면---이 가지가 이제껏 가장 좋은 것을 이길 수
+있기나 한지 묻는다. 그다음 고르개가 말하는데, 고르는 김에 새 강제 아이템을
+찾아내기도 한다. 그리고 차수가 |infSize|라는 것은 주 아이템이 하나도 남지
+않았다는 뜻이니 해다. 참되게 분기하는 것은 그러고 나서다.
 
-The order of those first two is not a matter of taste. Giving up on a branch
-means returning from the middle of |search|, and that is only safe where the
-force stack is empty---which is exactly where the dispatch loop above leaves
-it. Abandon a branch with entries still on the stack and the {\it next\/}
-node will find them there and take them for its own, and under binary
-branching a forced move is not a branch at all: it includes one option and
-never looks at the alternatives. The search would quietly lose solutions. (Its
-sibling is spared this, because a stale forced item there merely picks the
-item to fan out on, and fanning out on any active primary item is always
-sound.)
-@<The search@>=
+앞의 둘을 어느 쪽에 둘지는 취향의 문제가 아니다. 가지를 버린다는 것은 |search|의
+한복판에서 돌아 나온다는 뜻이고, 그것이 안전한 곳은 강제 스택이 비어 있는
+자리뿐인데, 위의 처리 반복문이 스택을 비워 두고 나오는 자리가 바로 거기다. 스택에
+무언가 남은 채로 가지를 버리면 {\it 다음\/} 마디가 그것을 제 것인 양 주워 갈
+터이고, 이진 분기에서 강제 이동은 분기가 아예 아니다. 옵션 하나를 들이고 다른
+것은 거들떠보지도 않는다. 그러면 탐색이 소리 없이 해를 잃는다. (형제는 이 일을
+겪지 않는다. 거기서 철 지난 강제 아이템은 어느 아이템으로 뻗을지를 고를 뿐이고,
+살아 있는 주 아이템이라면 무엇으로 뻗든 언제나 성하기 때문이다.)
+@<탐색@>=
 func (m *MCC) search(stage int) bool {
 	m.nodes++
 	select {
@@ -334,9 +328,9 @@ func (m *MCC) search(stage int) bool {
 	}
 	m.tick()
 
-	@<Dispatch a leftover forced item@>
-	@<Give up on this branch if it cannot beat the cutoff@>
-	@<Sweep away the options this node can no longer afford@>
+	@<남아 있던 강제 아이템을 처리한다@>
+	@<이 가지가 cutoff를 이길 수 없으면 그만둔다@>
+	@<이 마디가 더는 감당할 수 없는 옵션을 쓸어 낸다@>
 
 	best, score := m.chooseBest()
 	if m.forced != 0 {
@@ -346,13 +340,12 @@ func (m *MCC) search(stage int) bool {
 	if score == infSize {
 		return m.visit(stage)
 	}
-	@<Branch left and right on |best|@>
+	@<아이템 |best|에서 왼쪽과 오른쪽으로 분기한다@>
 	return true
 }
 
-@ Items on the force stack may have been deactivated since they were pushed;
-those are silently discarded.
-@<Dispatch a leftover forced item@>=
+@ 강제 스택에 쌓인 아이템은 쌓인 뒤에 물러났을 수도 있다. 그런 것은 말없이 버린다.
+@<남아 있던 강제 아이템을 처리한다@>=
 for m.forced != 0 {
 	m.forced--
 	if bi := int(m.force[m.forced]); m.pos(bi) < m.active {
@@ -360,19 +353,19 @@ for m.forced != 0 {
 	}
 }
 
-@ The branch proper. We save the state once and probe |best|'s first surviving
-option, |opt|. The {\it left\/} child includes it and moves to |stage+1|; the
-{\it right\/} child restores the state, removes the option, and re-enters the
-{\it same\/} stage to choose afresh. When the degree is~1 there is no right
-child---excluding the option would starve the item---so half the work
-vanishes. Either way we leave with the save stack exactly as we found it.
-@<Branch left and right on |best|@>=
+@ 분기 자체다. 상태를 한 번 저장해 두고 아이템 |best|에 살아남은 첫 옵션 |opt|를
+떠본다. {\it 왼쪽\/} 자식은 그것을 들이고 |stage+1|로 나아가며, {\it 오른쪽\/}
+자식은 상태를 되돌린 뒤 그 옵션을 내치고 {\it 같은\/} 단계로 다시 들어가 새로
+고른다. 차수가~1이면 오른쪽 자식은 없다. 그 옵션을 내치면 아이템이 굶어 죽기
+때문이다. 그래서 품의 절반이 사라진다. 어느 쪽이든 나올 때 저장 스택은 들어올
+때 그대로다.
+@<아이템 |best|에서 왼쪽과 오른쪽으로 분기한다@>=
 mark, swept := m.saveState(), m.swept
 opt := int(m.set[best])
 m.included = ensure(m.included, stage+1)
 m.included[stage] = int32(opt)
 
-@<Price this option@>
+@<이 옵션의 값을 셈한다@>
 m.cost += price
 m.taxDue -= tax
 if m.includeOption(opt) {
@@ -395,18 +388,18 @@ if score != 1 {
 }
 m.saveptr = mark
 
-@ A forced item has exactly one admissible move and no alternative, so we
-commit it and step forward {\it without saving anything\/}---that is the
-whole point of recognizing forced moves, per Solnon's 2023 improvement. Some
-ancestor's |restoreState| will undo its effects when the time comes. Note the
-quiet |true| when the inclusion fails: the branch is dead, but the search as a
-whole goes on.
-@<Forced moves@>=
+@ 강제된 아이템에는 둘 수 있는 수가 딱 하나뿐이고 달리 갈 길이 없으니, 그것을
+두고 {\it 아무것도 저장하지 않은 채\/} 앞으로 나아간다. Solnon이 2023년에 일러
+준 대로, 강제 이동을 알아보는 뜻이 온통 거기에 있다. 그것이 남긴 자취는 때가
+되면 어느 조상의 |restoreState|가 지운다. 들이기가 실패했을 때 조용히 |true|를
+돌려주는 것을 눈여겨보라. 그 가지는 죽었어도 탐색 전체는 계속된다.
+@^Solnon, Christine@>
+@<강제 이동@>=
 func (m *MCC) forcedMove(stage, bi int) bool {
 	opt := int(m.set[bi])
 	m.included = ensure(m.included, stage+1)
 	m.included[stage] = int32(opt)
-	@<Price this option@>
+	@<이 옵션의 값을 셈한다@>
 	m.cost += price
 	m.taxDue -= tax
 	ok := true
@@ -418,13 +411,13 @@ func (m *MCC) forcedMove(stage, bi int) bool {
 	return ok
 }
 
-@ The chooser weighs every active primary item by the branching degree
-$\ell+s-b+1$ and keeps the smallest, breaking ties by smaller slack, then
-larger size, then leftmost position---a cascade tuned by Knuth's
-experiments. An item whose degree falls to~1 is forced, and, because it may
-still need covering more than once, it is pushed |bound-slack| times so that
-each required covering gets its turn.
-@<Choosing the item@>=
+@ 고르개는 살아 있는 주 아이템마다 분기 차수 $\ell+s-b+1$을 달아 보고 가장 작은
+것을 쥔다. 비기면 여유가 작은 쪽, 그다음 크기가 큰 쪽, 그다음 왼쪽에 있는
+쪽인데, 크누스가 실험으로 다듬은 차례다. 차수가~1로 떨어진 아이템은 강제된
+것이고, 그것이 아직 한 번보다 많이 덮이기를 바랄 수 있으므로 |bound-slack|번
+쌓는다. 그래야 꼭 덮여야 하는 횟수마다 차례가 돌아온다.
+@^Knuth, Donald Ervin@>
+@<아이템 고르기@>=
 func (m *MCC) chooseBest() (best, score int) {
 	score = infSize
 	bestS, bestL := 0, 0
@@ -453,13 +446,13 @@ func (m *MCC) chooseBest() (best, score int) {
 	return best, score
 }
 
-@* The branch actions.
-Including an option walks its nodes---first rewinding to the option's
-start---and settles accounts with each item in turn via |coverOrCommit|. An
-item found already inactive is fine if secondary (it was purified earlier)
-and impossible if primary. A |false| from anywhere means some item became
-uncoverable and the caller's branch is dead.
-@<Including an option@>=
+@* 분기의 동작.
+옵션을 들인다는 것은---먼저 그 옵션의 첫머리로 되감은 다음---그 노드를 걸으며
+아이템마다 |coverOrCommit|으로 셈을 치르는 일이다. 이미 살아 있지 않은 아이템을
+만났을 때, 부 아이템이면 괜찮고(앞서 씻긴 것이다) 주 아이템이면 있을 수 없는
+일이다. 어디서든 |false|가 나오면 어떤 아이템이 덮일 수 없게 되었다는 뜻이고,
+부르는 쪽의 가지는 죽는다.
+@<옵션 들이기@>=
 func (m *MCC) includeOption(opt int) bool {
 	for m.nd[opt-1].itm > 0 {
 		opt--
@@ -472,9 +465,9 @@ func (m *MCC) includeOption(opt int) bool {
 		pp := int(m.nd[opt].loc)
 		if m.pos(ii) >= m.active {
 			if ii >= m.second {
-				continue // secondary item already purified
+				continue // 이미 씻긴 부 아이템
 			}
-			return false // cannot happen for a well-formed active option
+			return false // 성한 살아 있는 옵션이라면 일어날 수 없다
 		}
 		if !m.coverOrCommit(ii, opt, pp) {
 			return false
@@ -483,30 +476,30 @@ func (m *MCC) includeOption(opt int) bool {
 	return true
 }
 
-@ For one item |ii| of the included option (whose node is |cur|, sitting at
-slot |p| of |ii|'s set) there are two futures. A primary item first pays one
-unit of bound; if that exhausts it---or if |ii| is secondary---the item is
-finished and leaves the field. Otherwise |ii| still wants more coverings and
-merely drops this option from its set.
-@<Including an option@>=
+@ 들인 옵션의 아이템 |ii| 하나에게는(그 노드는 |cur|이고 아이템 |ii|의 집합
+|p|번 자리에 앉아 있다) 두 갈래 앞날이 있다. 주 아이템이라면 먼저 한도 한 칸을
+치르고, 그것으로 한도가 바닥나면---또는 아이템 |ii|가 부 아이템이면---그
+아이템은 할 일을 다 했으니 판을 떠난다. 그렇지 않으면 아이템 |ii|는 아직 더
+덮이기를 바라므로 제 집합에서 이 옵션만 떨군다.
+@<옵션 들이기@>=
 func (m *MCC) coverOrCommit(ii, cur, p int) bool {
 	if ii < m.second {
 		m.setBound(ii, m.bound(ii)-1)
 	}
 	if ii >= m.second || m.bound(ii) == 0 {
-		@<Cover or purify item |ii| outright@>
+		@<아이템 |ii|를 아주 덮거나 씻어 낸다@>
 	} else {
-		@<Drop option |cur| from item |ii|, which wants more@>
+		@<더 덮이길 바라는 아이템 |ii|에서 옵션 |cur|를 떨군다@>
 	}
 	return true
 }
 
-@ Finishing an item means removing every {\it competing\/} option from the
-rest of the matrix---except, when |ii| is secondary and the committed node
-carries a color, the options that agree with that color: they are purified,
-not removed. The item itself is then deactivated. (The loop runs downward
-because |removeFromOtherSets| reshuffles the set as it works.)
-@<Cover or purify item |ii| outright@>=
+@ 아이템을 마치게 한다는 것은 {\it 부딪히는\/} 옵션을 모두 나머지 행렬에서
+치운다는 뜻이다. 다만 아이템 |ii|가 부 아이템이고 맡긴 노드가 색을 달고 있으면,
+그 색에 뜻을 모으는 옵션은 치우지 않고 씻어 낸다. 그러고 나서 아이템 자신이
+물러난다. (반복문이 거꾸로 도는 것은 |removeFromOtherSets|가 일하면서 집합을
+뒤섞기 때문이다.)
+@<아이템 |ii|를 아주 덮거나 씻어 낸다@>=
 ss := m.size(ii)
 c := 0
 if ii >= m.second {
@@ -525,36 +518,36 @@ for s := ii + ss - 1; s >= ii; s-- {
 }
 m.deactivate(ii)
 
-@ An item that still wants coverings loses just this one option---unless
-that would push its set below |bound-slack|, the minimum it can still hope to
-collect, in which case the branch dies. Dropping the last option of an item
-whose remaining demand is zero simply retires it.
-@<Drop option |cur| from item |ii|, which wants more@>=
+@ 아직 더 덮이기를 바라는 아이템은 이 옵션 하나만 잃는다. 다만 그러다 제 집합이
+|bound-slack|보다 작아진다면, 곧 앞으로 모을 수 있으리라 바라는 최소치 아래로
+밀린다면 그 가지는 죽는다. 바라는 바가 이미 0인 아이템의 마지막 옵션을 떨구는
+것은 그저 그 아이템을 물러나게 하는 일이다.
+@<더 덮이길 바라는 아이템 |ii|에서 옵션 |cur|를 떨군다@>=
 ss := m.size(ii) - 1
 if ss < m.bound(ii)-m.slack(ii) {
 	m.forced = 0
-	return false // ii would be wiped out
+	return false // 아이템 ii가 지워질 참이다
 }
 if ss == 0 {
 	m.deactivate(ii)
 } else {
-	@<Swap option |cur| out of slot |p| of item |ii|'s set@>
+	@<아이템 |ii|의 집합 |p|번 자리에서 옵션 |cur|를 맞바꿔 뺀다@>
 }
 
-@ Three different passages need the same five lines of sparse-set surgery, so
-we name them once: the departing option trades places with the last live entry
-of |ii|'s set, and both |loc| fields are repaired.
-@<Swap option |cur| out of slot |p| of item |ii|'s set@>=
+@ 서로 다른 세 대목이 똑같은 다섯 줄의 희소 집합 수술을 바라므로, 한 번만
+이름 붙여 둔다. 떠나는 옵션이 아이템 |ii|의 집합에서 마지막으로 살아 있는 칸과
+자리를 바꾸고, 양쪽의 |loc| 필드를 고쳐 준다.
+@<아이템 |ii|의 집합 |p|번 자리에서 옵션 |cur|를 맞바꿔 뺀다@>=
 nnp := int(m.set[ii+ss])
 m.setSize(ii, ss)
 m.set[ii+ss], m.set[p] = int32(cur), int32(nnp)
 m.nd[cur].loc, m.nd[nnp].loc = int32(ii+ss), int32(p)
 m.updates++
 
-@ Removing a competing option deletes it from every active set it belongs to,
-skipping purified secondary items, and watching---as always---for a
-primary item pushed below its coverable minimum.
-@<Excluding an option@>=
+@ 부딪히는 옵션을 치운다는 것은 그것이 든 살아 있는 집합에서 모두 지우는
+일이다. 씻긴 부 아이템은 건너뛰고, 늘 그렇듯 덮일 수 있는 최소치 아래로 밀리는
+주 아이템이 없는지 살핀다.
+@<옵션 내치기@>=
 func (m *MCC) removeFromOtherSets(optp int) bool {
 	cur := optp
 	for m.nd[cur-1].itm > 0 {
@@ -580,17 +573,17 @@ func (m *MCC) removeFromOtherSets(optp int) bool {
 			}
 		}
 		if ss > 0 {
-			@<Swap option |cur| out of slot |p| of item |ii|'s set@>
+			@<아이템 |ii|의 집합 |p|번 자리에서 옵션 |cur|를 맞바꿔 뺀다@>
 		}
 	}
 	return true
 }
 
-@ The right branch of the search needs the same deletion---remove option
-|cur| without committing it---and differs from |removeFromOtherSets| in one
-detail only: a |false| here is an ordinary ``can't cover,'' reported to a
-caller who is about to backtrack anyway, so the force stack is left in peace.
-@<Excluding an option@>=
+@ 탐색의 오른쪽 가지도 똑같은 지우기를 바란다. 옵션 |cur|를 맡기지 않은 채
+치우는 일인데, |removeFromOtherSets|와 딱 한 군데가 다르다. 여기서 |false|는
+여느 ``덮을 수 없다''일 뿐이고, 그것을 듣는 쪽은 어차피 되짚으려던 참이므로 강제
+스택을 건드리지 않고 둔다.
+@<옵션 내치기@>=
 func (m *MCC) removeOption(cur int) bool {
 	for m.nd[cur-1].itm > 0 {
 		cur--
@@ -614,14 +607,15 @@ func (m *MCC) removeOption(cur int) bool {
 			}
 		}
 		if ss > 0 {
-			@<Swap option |cur| out of slot |p| of item |ii|'s set@>
+			@<아이템 |ii|의 집합 |p|번 자리에서 옵션 |cur|를 맞바꿔 뺀다@>
 		}
 	}
 	return true
 }
 
-@ Deactivating an item is the sparse-set delete on the |item| array once more.
-@<Deactivating an item@>=
+@ 아이템을 물러나게 하는 것은 배열 |item| 위에서 하는 희소 집합 삭제, 그것을 또
+한 번 하는 일이다.
+@<아이템 물리기@>=
 func (m *MCC) deactivate(ii int) {
 	m.active--
 	p := m.pos(ii)
@@ -631,11 +625,11 @@ func (m *MCC) deactivate(ii int) {
 	m.setPos(iii, p)
 }
 
-@ Binary branching cannot get away with saving only sizes: bounds change too.
-So |saveState| snapshots each active item's size and (for primary items) its
-bound, returning a mark for |restoreState| to rewind to---the multiplicity
-analogue of the |XCC| undo machinery.
-@<The undo machinery@>=
+@ 이진 분기는 크기만 저장하고 넘어갈 수 없다. 한도도 바뀌기 때문이다. 그래서
+메서드 |saveState|는 살아 있는 아이템마다 크기를, 주 아이템이면 한도까지 함께
+찍어 두고, |restoreState|가 되감을 표를 돌려준다. 엔진 |XCC|의 되돌리기 장치를
+다중도에 맞게 옮긴 것이다.
+@<되돌리기 장치@>=
 func (m *MCC) saveState() int {
 	mark := m.saveptr
 	m.savestack = ensure(m.savestack, m.saveptr+m.active)
@@ -663,14 +657,14 @@ func (m *MCC) restoreState(mark int) {
 	m.saveptr = mark
 }
 
-@* Reporting.
-Emitting a solution reads the |included| stack; the pacing select, and the
-podium that a minimizing search keeps, are the same as |XCC|'s.
-@<Visiting a solution@>=
+@* 알리기.
+해를 내놓는 일은 스택 |included|를 읽는 일이다. 발을 맞추는 select도, 값을
+따지는 탐색이 지키는 연단도 |XCC|의 그것과 같다.
+@<해에 들르기@>=
 func (m *MCC) visit(stage int) bool {
 	m.count++
 	if m.minimizing {
-		@<Put the new cover on the podium@>
+		@<새 덮개를 연단에 올린다@>
 	}
 	sol := make([]Option, stage)
 	for k := 0; k < stage; k++ {
@@ -684,7 +678,7 @@ func (m *MCC) visit(stage int) bool {
 	}
 }
 
-@ @<The heartbeat@>=
+@ @<맥박@>=
 func (m *MCC) tick() {
 	if m.pulse == nil {
 		return
@@ -699,7 +693,7 @@ func (m *MCC) tick() {
 	}
 }
 
-@ @<Reporting an option@>=
+@ @<옵션 알리기@>=
 func (m *MCC) option(p int) Option {
 	for m.nd[p-1].itm > 0 {
 		p--
@@ -715,104 +709,100 @@ func (m *MCC) option(p int) Option {
 	return opt
 }
 
-@** Least-cost covers.
-Multiplicities let a problem say how {\it many}; prices let it say how {\it
-dear}. Put a price on every option and the question stops being ``is there a
-cover?'' and becomes ``what is the cheapest one?''---and the same search
-answers it by branch and bound, exactly as its sibling does. Keep an {\it
-incumbent}, the price of the best cover so far, infinite until the first one
-turns up; at every node ask whether this branch could possibly beat it, and if
-not, turn back. \.{ssxcc.w} tells that story at more length; here we need only
-say where the binary dance differs.
+@** 가장 싼 덮개.
+다중도가 문제에게 {\it 몇 번\/}이냐를 말하게 해 주었다면, 값은 {\it 얼마나
+비싸냐\/}를 말하게 해 준다. 옵션마다 값을 매기고 나면 물음은 ``덮개가 있는가''가
+아니라 ``가장 싼 덮개는 무엇인가''가 되고, 형제가 그러듯 같은 탐색이 분기한정으로
+거기에 답한다. 이제껏 찾은 가장 좋은 덮개의 값인 {\it 최선값\/}을 쥐고 있되 첫
+덮개가 나오기 전에는 무한대이고, 마디마다 이 가지가 그것을 이길 수 있기나 한지
+묻고, 아니면 돌아선다. 그 이야기는 \.{ssxcc.w}가 느긋하게 한다. 여기서는 이진
+춤이 어디서 다른지만 말하면 된다.
 
-It differs in one pleasant way. The running cost rises only on a {\it left\/}
-branch, where an option is included, and a forced move---which is an inclusion
-with the choosing left out---pays the same way. A {\it right\/} branch merely
-banishes an option and re-enters the same stage, buying nothing and owing
-nothing. So there is exactly one place where the price of an option is added
-and taken back, plus its twin in the forced move.
+다른 데가 하나 있는데 반가운 쪽이다. 쌓이는 값은 옵션을 들이는 {\it 왼쪽\/}
+가지에서만 오르고, 고르는 일을 뺀 들이기인 강제 이동도 같은 식으로 문다.
+{\it 오른쪽\/} 가지는 옵션 하나를 내치고 같은 단계로 다시 들어갈 뿐이니, 사는
+것도 무는 것도 없다. 그래서 옵션의 값을 더했다가 도로 빼는 자리가 딱 한 군데,
+그리고 강제 이동에 그 쌍둥이가 하나 있을 뿐이다.
 
-The three refinements that \.{ssxcc.w} borrows from Knuth's {\tt DLX5} come
-along: a tax on the primary items, which gives a lower bound for free; a sweep
-that deletes, at every node, the options the node can no longer afford; and a
-podium of the $k$ cheapest covers found so far, whose dearest member is the
-{\it cutoff\/} that a branch must beat. The tax and the sweep both need some
-rethinking here, and each is rethought below where it happens.
+크누스의 {\tt DLX5}에서 \.{ssxcc.w}가 빌려 온 다듬기 셋도 함께 따라온다. 주
+아이템에 매겨 하한을 공짜로 내주는 {\it 세금}, 마디마다 그 마디가 더는 감당할 수
+없는 옵션을 지우는 {\it 쓸기}, 그리고 이제껏 찾은 가장 싼 덮개 $k$개를 올려 두고
+그 가운데 가장 비싼 것을 가지가 이겨야 할 {\it cutoff\/}로 삼는 {\it 연단\/}이다.
+세금과 쓸기는 여기서 둘 다 다시 생각해야 하고, 그 생각은 저마다 그 일이 일어나는
+자리에 적는다.
+@^Knuth, Donald Ervin@>
 
-@ Nothing here disturbs |Dance|. The optimizing entry point is a second one,
-|Minimize|, and when it is not in use the search runs the code it ran before,
-one boolean test the poorer. The |Frame| that a bound function looks through
-belongs to \.{dcells.w}, since both engines offer the same one; what is left
-here is the four answers this engine gives it.
-@<The optimizer@>=
-@<The minimizing entry point@>
-@<Answering the frame@>
+@ 이 장의 어느 것도 |Dance|를 건드리지 않는다. 값을 따지는 출발점은 |Minimize|라는
+둘째 출발점이고, 그것을 쓰지 않을 때 탐색은 예전에 돌던 코드를 그대로 돌되 불리언
+검사 하나만큼 가난해진다. 하한 함수가 들여다보는 |Frame|은 두 엔진이 같은 것을
+내주므로 \.{dcells.w}에 있고, 여기 남는 것은 이 엔진이 그 창에 내놓는 답 넷이다.
+@<값 따지기@>=
+@<값 따지는 출발점@>
+@<창에 답하기@>
 
-@ The bound oracle is a knob like the others, and like the others it may be
-left alone. |Bound| is called at every node of a minimizing search and must
-return a lower bound on the price of {\it completing\/} the partial cover
-before it---never an overestimate, or the search will prune away the answer.
-Returning~0 is always safe and always useless.
-@<Solver knobs@>=
-Bound func(Frame) int // lower bound on the cost still to come; may be nil
+@ 하한 신탁도 다른 것과 같은 손잡이이고, 다른 것처럼 그냥 두어도 된다. 필드
+|Bound|는 값을 따지는 탐색의 마디마다 불리며, 제 앞의 부분 덮개를 {\it 마저
+짓는\/} 데 드는 값의 하한을 돌려주어야 한다. 넘겨짚어 크게 말하면 안 된다.
+그러면 탐색이 답을 가지치기로 날려 버린다. 0을 돌려주는 것은 언제나 안전하고
+언제나 쓸모없다.
+@<풀이기 손잡이@>=
+Bound func(Frame) int // 앞으로 치를 값의 하한, nil이어도 된다
 
-@ |Best| asks for the |Best| cheapest covers; left at zero it means one.
-@<Solver knobs@>=
-Best int // with Minimize, how many of the cheapest covers to hunt for
+@ 필드 |Best|는 가장 싼 덮개 |Best|개를 찾아 달라는 뜻이고, 0으로 두면 하나를
+뜻한다.
+@<풀이기 손잡이@>=
+Best int // Minimize에서 가장 싼 덮개를 몇 개나 찾을 것인가
 
-@ The private half of the bookkeeping, field for field the same as |XCC|'s.
-Options are numbered $1,2,\ldots$ in the order they were read, |optNo| maps
-each node to the number of the option it belongs to, |optCost| holds the price
-the caller put on each, |optTax| the part of that price that is tax, and
-|itemBase| bridges the numbers the frame speaks in to the bases the dance
-uses. All of them stay nil until |Minimize| builds them, which is what
-|minimizing| really means.
-@<Cost bookkeeping@>=
+@ 살림살이의 감춰진 절반인데, 필드 하나하나가 |XCC|의 그것과 같다. 옵션은 읽힌
+차례로 $1,2,\ldots$의 번호를 받고, 배열 |optNo|는 노드마다 그것이 속한 옵션의
+번호를 알려 주며, |optCost|는 부르는 쪽이 매긴 값을, |optTax|는 그 값 가운데
+세금인 몫을 담고, |itemBase|는 창이 쓰는 번호와 춤이 쓰는 밑자리를 이어 준다.
+모두 |Minimize|가 지어 주기 전까지는 nil인 채인데, 필드 |minimizing|이 뜻하는
+바가 바로 그것이다.
+@<값 살림살이@>=
 minimizing bool
-optNo      []int32 // node -> the option that node belongs to
-optCost    []int32 // option number -> the price the caller put on it
-optTax     []int64 // option number -> the tax included in that price
-itemBase   []int32 // item number -> its base in |set|
-cost       int64   // price of the options included so far
-taxDue     int64   // tax still owed by the coverings yet to come
-podium     []int64 // prices of the |Best| cheapest covers so far, a max-heap
-byNet      []pricedOpt // every option, dearest net cost first
-swept      int         // how far along |byNet| the current node has swept
+optNo      []int32 // 노드 -> 그 노드가 속한 옵션
+optCost    []int32 // 옵션 번호 -> 부르는 쪽이 매긴 값
+optTax     []int64 // 옵션 번호 -> 그 값에 든 세금
+itemBase   []int32 // 아이템 번호 -> set 안의 밑자리
+cost       int64   // 이제껏 들인 옵션들의 값
+taxDue     int64   // 앞으로 올 덮기가 아직 물어야 할 세금
+podium     []int64 // 이제껏 가장 싼 덮개 Best개의 값, 최대 힙
+byNet      []pricedOpt // 모든 옵션, 순값이 비싼 것부터
+swept      int         // 지금 마디가 byNet의 어디까지 쓸었는가
 
-@ |Minimize| reads the same input |Dance| does, prices it, and starts the same
-search. What arrives on |Solutions| is a chain of covers each strictly cheaper
-than the last, so a caller who keeps only the newest ends up holding an
-optimal one. The price list is a function rather than a slice because an
-option's number is an awkward thing for a caller to keep count of: blank
-lines, comments, and options that mention no primary item all pass by without
-consuming a number. So we hand the caller both the number and the option
-itself, in the very shape solutions arrive in, and let it answer.
-With |Best| set to some $k>1$ a cover arrives whenever it beats the $k$th
-cheapest seen so far, and at the end the $k$ cheapest arrivals are $k$
-cheapest covers of the problem, for the reason given in \.{ssxcc.w}.
-@<The minimizing entry point@>=
+@ 메서드 |Minimize|는 |Dance|와 같은 입력을 읽고, 값을 매기고, 같은 탐색을
+띄운다. 채널 |Solutions|로 닿는 것은 앞의 것보다 반드시 싼 덮개의 사슬이니, 가장
+새것만 쥐고 있던 쪽은 끝에 최적인 것을 쥐게 된다. 값표를 조각이 아니라 함수로
+받는 까닭은, 옵션의 번호가 부르는 쪽이 세고 있기에는 성가신 것이기 때문이다. 빈
+줄과 주석과 주 아이템을 하나도 대지 않은 옵션은 번호를 쓰지 않고 지나간다. 그래서
+번호와 옵션 자신을, 그것도 해가 닿을 때와 똑같은 모양으로 건네고 답을 받는다.
+필드 |Best|를 $k>1$로 두면 이제껏 본 $k$번째로 싼 것보다 싸면 그때마다 덮개가
+닿고, 끝에 닿은 것 가운데 가장 싼 $k$개가 이 문제의 가장 싼 덮개 $k$개다. 까닭은
+\.{ssxcc.w}에 적혀 있다.
+@<값 따지는 출발점@>=
 func (m *MCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 	m.inputMatrix(rd)
-	@<Price the options@>
-	@<Levy a tax on every item of fixed multiplicity@>
-	@<Refuse a negative net cost@>
-	@<Line up the options by net cost@>
-	@<Set up the podium@>
+	@<옵션에 값을 매긴다@>
+	@<다중도가 정해진 아이템마다 세금을 걷는다@>
+	@<순값이 음수이면 물리친다@>
+	@<옵션을 순값 순서로 줄 세운다@>
+	@<연단을 차린다@>
 	m.minimizing = true
-	@<Launch the search goroutine@>
+	@<탐색 고루틴을 띄운다@>
 }
 
-@ Pricing is one sweep over the nodes. Real nodes have a positive |itm| and
-spacers do not, so a node whose predecessor is a spacer begins a fresh option:
-we advance the option number, ask the caller what that option is worth, and
-paint the number over the run of nodes that follows.
-@<Price the options@>=
+@ 값매기기는 노드를 한 번 훑는 일이다. 참된 노드는 |itm|이 양수이고 사이막은
+그렇지 않으므로, 앞의 것이 사이막인 노드가 새 옵션을 여는 노드다. 거기서 옵션
+번호를 하나 올리고, 그 옵션이 얼마인지 부르는 쪽에 묻고, 뒤따르는 노드의 토막에
+그 번호를 칠한다.
+@<옵션에 값을 매긴다@>=
 m.optNo = make([]int32, m.lastNode+1)
 m.optCost = make([]int32, int(m.options)+1)
 o := int32(0)
 for k := 1; k < m.lastNode; k++ {
 	if m.nd[k].itm <= 0 {
-		continue // a spacer between two options
+		continue // 옵션과 옵션 사이의 사이막
 	}
 	if m.nd[k-1].itm <= 0 {
 		o++
@@ -820,36 +810,34 @@ for k := 1; k < m.lastNode; k++ {
 	}
 	m.optNo[k] = o
 }
-@<Index the items by number@>
+@<아이템을 번호로 찾을 표를 짓는다@>
 
-@ The frame answers questions about an item by its {\it number}, while the
-dance knows items by their {\it base\/} in |set|, so one table has to bridge
-the two. Finalization may have deactivated an item or two by now, which shuffles
-|item|, but every base is still somewhere in it and carries its own number.
-@<Index the items by number@>=
+@ 창은 아이템을 그 {\it 번호\/}로 묻는데 춤은 아이템을 배열 |set| 안의 {\it
+밑자리\/}로 알고 있으니, 그 둘을 이어 줄 표가 하나 있어야 한다. 마무리가 아이템
+하나둘을 이미 물러나게 했을 수 있고 그러면 배열 |item|이 흐트러지지만, 밑자리는
+저마다 그 안 어딘가에 제 번호를 달고 있다.
+@<아이템을 번호로 찾을 표를 짓는다@>=
 m.itemBase = make([]int32, m.itemlen+1)
 for k := 0; k < m.itemlen; k++ {
 	base := int(m.item[k])
 	m.itemBase[m.itemNo(base)] = int32(base)
 }
 
-@ The tax of \.{ssxcc.w} rested on one fact: every cover takes exactly one
-option from the set of each primary item. Under |MCC| an item with
-multiplicity $[u..v]$ is covered by somewhere between $u$ and $v$ of its
-options, so a tax of~$t$ on it would take $t$ off one cover and $2t$ off
-another, and the cheapest cover might no longer be the cheapest. When $u=v$,
-though---when the slack is zero---every cover takes exactly $v$ of the item's
-options, every cover gets exactly $vt$ cheaper, and the argument goes through
-as before. So we tax those items and leave the others alone. The item's
-|bound| at the root is its~$v$.
+@ 글 \.{ssxcc.w}의 세금은 사실 하나에 기대고 있었다. 어느 덮개든 주 아이템마다
+그 집합에서 옵션을 꼭 하나 가져간다는 것이다. 엔진 |MCC|에서 다중도 $[u..v]$인
+아이템은 제 옵션 가운데 $u$개에서 $v$개 사이로 덮이므로, 거기에 세금~$t$를 매기면
+어떤 덮개는 $t$만큼, 어떤 덮개는 $2t$만큼 싸지고, 가장 싼 덮개가 더는 가장 싸지
+않을 수 있다. 그렇지만 $u=v$일 때는, 곧 여유가 0일 때는 어느 덮개든 그 아이템의
+옵션을 꼭 $v$개 가져가므로 모든 덮개가 똑같이 $vt$만큼 싸지고, 논증이 예전처럼
+지나간다. 그래서 그런 아이템에만 세금을 걷고 나머지는 그냥 둔다. 뿌리에서
+아이템의 |bound|가 곧 그 $v$다.
 
-The lower bound goes through as well. The options still to come cover each
-taxed item exactly as many more times as its |bound| now says, so the tax they
-carry adds up to $\sum t\cdot|bound|$ over the active taxed items; and
-including an option lowers the bound of each taxed item in it by one, which
-lowers that sum by exactly the option's own tax. So |taxDue| is kept by the
-same subtraction as before.
-@<Levy a tax on every item of fixed multiplicity@>=
+하한도 그대로 지나간다. 앞으로 올 옵션들은 세금을 문 아이템마다 그 |bound|가
+지금 말하는 횟수만큼 더 덮으므로, 그들이 지고 있는 세금의 합은 살아서 세금을 문
+아이템들에 대한 $\sum t\cdot|bound|$다. 그리고 옵션 하나를 들이면 그 안의 세금
+낸 아이템마다 한도가 하나씩 줄어드니 그 합은 정확히 그 옵션 제 세금만큼 줄어든다.
+그러니 필드 |taxDue|는 예전과 똑같은 뺄셈으로 지킬 수 있다.
+@<다중도가 정해진 아이템마다 세금을 걷는다@>=
 m.optTax = make([]int64, len(m.optCost))
 m.taxDue = 0
 for k := 0; k < m.active; k++ {
@@ -857,27 +845,26 @@ for k := 0; k < m.active; k++ {
 	if x >= m.second || m.slack(x) != 0 || m.size(x) == 0 {
 		continue
 	}
-	@<Find the least net cost |t| among the options of item |x|@>
+	@<아이템 |x|의 옵션 가운데 가장 작은 순값 |t|를 찾는다@>
 	for c := x; c < x+m.size(x); c++ {
 		m.optTax[m.optNo[int(m.set[c])]] += t
 	}
 	m.taxDue += t * int64(m.bound(x))
 }
 
-@ @<Find the least net cost |t| among the options of item |x|@>=
+@ @<아이템 |x|의 옵션 가운데 가장 작은 순값 |t|를 찾는다@>=
 t := infCost
 for c := x; c < x+m.size(x); c++ {
 	o := m.optNo[int(m.set[c])]
 	t = min(t, int64(m.optCost[o])-m.optTax[o])
 }
 
-@ An option that contains a taxed item has a net cost that is not negative,
-as in \.{ssxcc.w}. An option that contains none keeps the price the caller gave
-it, and if that price is negative, both the tax bound and the plain cutoff
-test are unsound: a partial cover already as dear as the cutoff might still
-get cheaper. We cannot search that correctly, so we say so, the way a
-malformed input is announced.
-@<Refuse a negative net cost@>=
+@ 세금을 문 아이템을 담은 옵션은 \.{ssxcc.w}에서처럼 순값이 음수가 아니다. 그런
+아이템을 하나도 담지 않은 옵션은 부르는 쪽이 매긴 값을 그대로 지니는데, 그 값이
+음수이면 세금 하한도 맨 cutoff 검사도 성하지 않다. 이미 cutoff만큼 비싸진 부분
+덮개가 앞으로 더 싸질 수 있기 때문이다. 그런 것은 제대로 뒤질 수 없으니, 틀린
+입력을 알리듯 그렇다고 말한다.
+@<순값이 음수이면 물리친다@>=
 for o := 1; o < len(m.optCost); o++ {
 	if net := int64(m.optCost[o]) - m.optTax[o]; net < 0 {
 		panic(fmt.Sprintf("dcells: option %d has negative net cost %d; "+
@@ -885,15 +872,15 @@ for o := 1; o < len(m.optCost); o++ {
 	}
 }
 
-@ @<Set up the podium@>=
+@ @<연단을 차린다@>=
 m.podium = make([]int64, max(m.Best, 1))
 for i := range m.podium {
 	m.podium[i] = infCost
 }
 m.swept = 0
 
-@ The line of options is laid out as in \.{ssxcc.w}, dearest net cost first.
-@<Line up the options by net cost@>=
+@ 옵션의 줄은 \.{ssxcc.w}에서처럼 순값이 비싼 것부터 늘어놓는다.
+@<옵션을 순값 순서로 줄 세운다@>=
 m.byNet = m.byNet[:0]
 for k := 1; k < m.lastNode; k++ {
 	if m.nd[k].itm > 0 && m.nd[k-1].itm <= 0 {
@@ -906,64 +893,61 @@ slices.SortStableFunc(m.byNet, func(a, b pricedOpt) int {
 	return cmp.Compare(b.net, a.net)
 })
 
-@ The sweep of \.{ssxcc.w} carries over: an option whose net cost is not under
-the node's budget $|cutoff|-|cost|-|taxDue|$ can play no part below it, and
-the options over budget form a prefix of |byNet| that only grows on the way
-down. Two things are different here.
+@ 글 \.{ssxcc.w}의 쓸기는 그대로 옮겨 온다. 순값이 그 마디의 예산
+$|cutoff|-|cost|-|taxDue|$ 아래가 아닌 옵션은 그 마디 아래에서 아무 구실도 할 수
+없고, 예산을 넘는 옵션은 |byNet|의 앞토막을 이루며 내려갈수록 늘기만 한다. 여기서
+다른 것이 둘이다.
 
-The first is how a node learns where its parent stopped. Under binary
-branching the right child re-enters the same stage as its parent, so the
-stage cannot index the stopping points the way the level does in
-\.{ssxcc.w}. Instead |m.swept| holds the stopping point of whichever node is
-running, and the node that branches puts its own value back after the left
-child returns, before the right child starts. A forced move needs no such
-care. It has only one child and hands its answer straight up, and the
-ancestor that branched puts everything back.
+첫째는 마디가 제 부모가 어디서 멈췄는지를 어떻게 아는가다. 이진 분기에서는
+오른쪽 자식이 부모와 같은 단계로 다시 들어가므로, 단계는 \.{ssxcc.w}에서 층이
+하던 것처럼 멈춘 자리를 가리키는 색인 노릇을 하지 못한다. 그래서 필드 |m.swept|가
+지금 돌고 있는 마디의 멈춘 자리를 쥐고 있고, 분기하는 마디가 왼쪽 자식이
+돌아온 뒤 오른쪽 자식이 나서기 전에 제 값을 도로 써 넣는다. 강제 이동은 그런
+시중이 필요 없다. 자식이 하나뿐이고 그 답을 그대로 위로 올릴 뿐이며, 분기한 조상이
+모든 것을 도로 놓기 때문이다.
 
-The second is the deletion itself, which is |removeOption|'s with one
-difference. A primary item that would drop below the number of coverings it
-still demands kills the branch, as there. But where |removeOption| leaves the
-last entry of a set in place and lets the size stay at one, the sweep always
-removes the entry and retires any item whose set runs dry, primary or
-secondary. A retired item cannot be covered or purified again below this
-node, so no later step can take the dead option for a live one; and the
-ancestor's |restoreState| brings the item back. The sets that may be touched
-are those of the active items, and in them only the entries still live. No skipping test is needed before the left
-branch, as it was in \.{ssxcc.w}: the left child includes the option just
-chosen, right after this node has swept, so that option is within budget.
-@<Sweep away the options this node can no longer afford@>=
+둘째는 지우기 자체인데, |removeOption|의 그것과 딱 한 군데가 다르다. 앞으로 더
+덮여야 하는 횟수 아래로 밀리는 주 아이템이 가지를 죽이는 것은 거기서와 같다.
+그렇지만 |removeOption|이 집합의 마지막 칸을 그 자리에 두고 크기를 1로 남겨 두는
+데 반해, 쓸기는 언제나 그 칸을 치우고 집합이 마른 아이템은 주든 부든 물러나게
+한다. 물러난 아이템은 이 마디 아래에서 다시 덮이거나 씻길 일이 없으니, 뒤따르는
+어느 걸음도 죽은 옵션을 산 것으로 잘못 볼 수 없다. 그리고 조상의 |restoreState|가
+그 아이템을 도로 데려온다. 건드려도 되는 것은 살아 있는 아이템의 집합이고, 그
+안에서도 아직 살아 있는 칸뿐이다. 왼쪽 가지에 앞서 건너뛰는 검사는 \.{ssxcc.w}에
+있던 것과 달리 여기에는 필요 없다. 왼쪽 자식은 이 마디가 쓸고 난 바로 다음에
+방금 고른 옵션을 들이므로, 그 옵션은 예산 안에 있다.
+@<이 마디가 더는 감당할 수 없는 옵션을 쓸어 낸다@>=
 if m.minimizing {
 	budget := m.podium[0] - m.cost - m.taxDue
 	for ; m.swept < len(m.byNet) && m.byNet[m.swept].net >= budget; m.swept++ {
-		@<Delete option |m.byNet[m.swept]| from the active sets, or give up@>
+		@<옵션 |m.byNet[m.swept]|를 살아 있는 집합에서 지우거나 그만둔다@>
 	}
 }
 
-@ @<Delete option |m.byNet[m.swept]| from the active sets, or give up@>=
+@ @<옵션 |m.byNet[m.swept]|를 살아 있는 집합에서 지우거나 그만둔다@>=
 for cur := int(m.byNet[m.swept].node); m.nd[cur].itm > 0; cur++ {
 	ii, p := int(m.nd[cur].itm), int(m.nd[cur].loc)
 	if m.pos(ii) >= m.active || p >= ii+m.size(ii) {
-		continue // an inactive item, or one this option has already left
+		continue // 살아 있지 않은 아이템이거나, 이 옵션이 이미 떠난 집합이다
 	}
 	ss := m.size(ii) - 1
 	if ii < m.second && ss < m.bound(ii)-m.slack(ii) {
-		return true // the item can no longer be covered often enough
+		return true // 이 아이템은 더는 넉넉히 덮일 수 없다
 	}
-	@<Swap option |cur| out of slot |p| of item |ii|'s set@>
+	@<아이템 |ii|의 집합 |p|번 자리에서 옵션 |cur|를 맞바꿔 뺀다@>
 	if ss == 0 {
-		m.deactivate(ii) // nothing left in its set
+		m.deactivate(ii) // 집합에 남은 것이 없다
 	}
 }
 
-@ Here is the pruning test, spliced into the head of |search|. Returning
-|true| abandons this branch and lets the search go on elsewhere; only
-cancellation returns |false|. The rest of the cover costs at least the tax
-still owed and at least what the caller's |Bound| says; the cutoff is the top
-of the podium. The comparison is |>=| rather than |>|, so a cover merely tying
-the cutoff is cut off too---which is why, with |Best| at one, the covers that
-do arrive are strictly improving, and why |visit| may put its cover on the
-podium without comparing anything.
-@<Give up on this branch if it cannot beat the cutoff@>=
+@ 여기가 |search|의 머리에 끼워 넣은 가지치기 검사다. 값 |true|를 돌려주면 이
+가지를 버리고 탐색은 다른 데서 이어 간다. 값 |false|를 돌려주는 것은 문맥이
+끊겼을 때뿐이다. 덮개의 나머지가 치를 값은 적어도 아직 물어야 할 세금만큼이고,
+적어도 부르는 쪽의 |Bound|가 말하는 만큼이다. cutoff는 연단의 꼭대기다. 견줌이
+|>|가 아니라 |>=|이므로 cutoff와 비기기만 한 덮개도 잘린다. 손잡이 |Best|가
+하나일 때 닿는 덮개가 반드시 싸지는 까닭이 그것이고, |visit|이 아무것도 견주지
+않고 제 덮개를 연단에 올려도 되는 까닭도 그것이다.
+@<이 가지가 cutoff를 이길 수 없으면 그만둔다@>=
 if m.minimizing {
 	rest := m.taxDue
 	if m.Bound != nil {
@@ -974,22 +958,22 @@ if m.minimizing {
 	}
 }
 
-@ And here is the price of one option, and the tax in it, from a node inside
-it. A plain |Dance| never built the tables, so it pays nothing but the test.
-@<Price this option@>=
+@ 그리고 여기가 옵션 하나의 값과 거기 든 세금을 그 안의 노드로 찾아 오는
+자리다. 맨 |Dance|는 표를 지은 적이 없으니 검사 말고는 무는 것이 없다.
+@<이 옵션의 값을 셈한다@>=
 price, tax := int64(0), int64(0)
 if m.minimizing {
 	o := m.optNo[opt]
 	price, tax = int64(m.optCost[o]), m.optTax[o]
 }
 
-@ The podium is the heap of \.{ssxcc.w}: the newcomer replaces the dearest
-cover at the root and sinks past every dearer child.
-@<Put the new cover on the podium@>=
+@ 연단은 \.{ssxcc.w}의 그 힙이다. 새로 온 것이 뿌리에 있던 가장 비싼 덮개를
+밀어내고, 저보다 비싼 자식이 있는 동안 가라앉는다.
+@<새 덮개를 연단에 올린다@>=
 h, i := m.podium, 0
 for j := 1; j < len(h); j = 2*i + 1 {
 	if j+1 < len(h) && h[j+1] > h[j] {
-		j++ // the dearer child
+		j++ // 더 비싼 자식
 	}
 	if h[j] <= m.cost {
 		break
@@ -999,10 +983,10 @@ for j := 1; j < len(h); j = 2*i + 1 {
 }
 h[i] = m.cost
 
-@ Now this engine's four answers to the frame. Walking the live part of the
-matrix means walking the active items, skipping the secondary ones---they
-demand nothing of their own---and running along each survivor's set.
-@<Answering the frame@>=
+@ 이제 이 엔진이 창에 내놓는 답 넷이다. 행렬의 살아 있는 몫을 걷는다는 것은
+살아 있는 아이템을 걷되 부 아이템은 건너뛰고---그들은 제 몫으로 요구하는 것이
+없다---살아남은 아이템마다 그 집합을 훑는다는 뜻이다.
+@<창에 답하기@>=
 func (m *MCC) eachLive(yield func(item, opt int) bool) {
 	for k := 0; k < m.active; k++ {
 		x := int(m.item[k])
@@ -1018,13 +1002,12 @@ func (m *MCC) eachLive(yield func(item, opt int) bool) {
 	}
 }
 
-@ Two of the remaining three are plain lookups. The third is the one answer
-that means something different here than it does under |XCC|, and it is the
-reason a bound function can be written for multiplicities at all: an item's
-{\it bound\/} is how many more coverings it will still accept and its {\it
-slack\/} is how many of those it could do without, so the number it truly
-still demands is the difference---and never less than zero.
-@<Answering the frame@>=
+@ 남은 셋 가운데 둘은 그냥 찾아보기다. 나머지 하나는 여기서 |XCC|와 다른 것을
+뜻하는 유일한 답이고, 다중도가 있는 문제에 하한 함수를 쓸 수 있게 하는 것이 바로
+그것이다. 아이템의 {\it 한도\/}는 앞으로 몇 번 더 덮여도 받아 주겠는가이고 그
+{\it 여유\/}는 그 가운데 몇 번은 없어도 되는가이니, 참으로 아직 요구하는 수는 그
+차이이고, 0보다 작아지는 일은 없다.
+@<창에 답하기@>=
 func (m *MCC) optionCost(opt int) int  { return int(m.optCost[opt]) }
 func (m *MCC) itemName(item int) string { return m.names[item] }
 
@@ -1036,31 +1019,29 @@ func (m *MCC) itemNeed(item int) int {
 	return max(m.bound(x)-m.slack(x), 0)
 }
 
-@** Reading the DLX input.
-The {\tt DLX} text format and the scanner that chews it into tokens live in
-\.{dcells.w}; only the part that knows about {\it this\/} engine's arrays is
-here. It parallels the XCC input phase of \.{ssxcc.w} closely enough that the
-prose below dwells only on what multiplicities change---which is chiefly the
-item line, where a primary item may be written \.{high\|name} or
-\.{low:high\|name}, the bare name meaning $[1..1]$.
-@<The input phase@>=
+@** DLX 입력 읽기.
+형식 {\tt DLX}와 그것을 낱말로 씹어 주는 훑개는 \.{dcells.w}에 있고, 여기 남는
+것은 {\it 이\/} 엔진의 배열을 아는 몫이다. 글 \.{ssxcc.w}의 XCC 입력 단계와
+꽤나 나란하므로, 아래 이야기는 다중도가 바꾸어 놓는 것만 짚는다. 그것은 주로
+아이템 줄인데, 주 아이템을 \.{high\|name}이나 \.{low:high\|name}으로 적을 수
+있고 이름만 적으면 $[1..1]$을 뜻한다.
+@<입력 단계@>=
 func (m *MCC) inputMatrix(rd io.Reader) {
 	br := bufio.NewReader(rd)
 	m.readItemNames(br)
 	m.readOptions(br)
 }
 
-@<Multiplicity bounds parsing@>
-@<Item-name input@>
-@<Option input@>
-@<Input finalization@>
+@<다중도 읽기@>
+@<아이템 이름 읽기@>
+@<옵션 읽기@>
+@<입력 마무리@>
 
-@ An item token may be \.{name} (defaulting to $[1..1]$), \.{high\|name}, or
-\.{low:high\|name}; the lone \.{\|} separator between primary and secondary
-items is handled by the caller, not here. Secondary items may not carry a
-multiplicity, an upper bound of zero is nonsense, and a lower bound may not
-exceed the upper.
-@<Multiplicity bounds parsing@>=
+@ 아이템 낱말은 \.{name}이거나($[1..1]$이 된다) \.{high\|name}이거나
+\.{low:high\|name}이다. 주 아이템과 부 아이템을 가르는 외따로 선 \.{\|}는 여기가
+아니라 부르는 쪽이 맡는다. 부 아이템은 다중도를 달 수 없고, 위끝이 0인 것은 말이
+되지 않으며, 아래끝이 위끝보다 클 수도 없다.
+@<다중도 읽기@>=
 func mustAtoi(s string) int {
 	n, err := strconv.Atoi(s)
 	if err != nil || n < 0 {
@@ -1071,7 +1052,7 @@ func mustAtoi(s string) int {
 
 func parseItemSpec(tok string, inSecondary bool) (name string, lower, upper int) {
 	if i := strings.IndexByte(tok, '|'); i >= 0 {
-		@<Split the bound prefix from the name@>
+		@<이름 앞에 붙은 다중도를 떼어 낸다@>
 	} else {
 		name, lower, upper = tok, 1, 1
 	}
@@ -1084,7 +1065,7 @@ func parseItemSpec(tok string, inSecondary bool) (name string, lower, upper int)
 	return
 }
 
-@ @<Split the bound prefix from the name@>=
+@ @<이름 앞에 붙은 다중도를 떼어 낸다@>=
 if inSecondary {
 	failf("secondary item cannot have a multiplicity: %q", tok)
 }
@@ -1103,20 +1084,19 @@ if lower > upper {
 }
 name = nm
 
-@ Reading the item line differs from the XCC version in one clause: each
-name arrives through |parseItemSpec|, and its slack ($upper-lower$) and bound
-($upper$) are stashed at the item's coarse input slot for finalization to
-pick up.
-@<Item-name input@>=
+@ 아이템 줄을 읽는 일이 XCC 판과 다른 데는 한 마디뿐이다. 이름은 저마다
+|parseItemSpec|을 거쳐 오고, 그 여유($upper-lower$)와 한도($upper$)는 마무리가
+주워 가도록 아이템의 성긴 입력 자리에 놓인다.
+@<아이템 이름 읽기@>=
 func (m *MCC) readItemNames(br *bufio.Reader) {
-	@<Find the item line@>
+	@<아이템 줄을 찾는다@>
 	for buf[p] != 0 {
 		tok, next := token(buf, p, false)
 		if tok == "|" {
 			if m.second != secondUnset {
 				failf("item name line contains | twice")
 			}
-			m.second = len(m.names) // the next item's number
+			m.second = len(m.names) // 다음 아이템의 번호
 		} else {
 			name, lower, upper := parseItemSpec(tok, m.second != secondUnset)
 			num, ok := m.internName(name)
@@ -1133,7 +1113,7 @@ func (m *MCC) readItemNames(br *bufio.Reader) {
 	m.lastItm = len(m.names)
 }
 
-@ @<Find the item line@>=
+@ @<아이템 줄을 찾는다@>=
 var buf []byte
 var p int
 found := false
@@ -1151,8 +1131,8 @@ if !found {
 	failf("no items")
 }
 
-@ Options are read exactly as in the XCC parser, at |mccIprop| spacing.
-@<Option input@>=
+@ 옵션은 XCC 파서와 똑같이 읽되 자리 간격만 |mccIprop|이다.
+@<옵션 읽기@>=
 func (m *MCC) readOptions(br *bufio.Reader) {
 	for {
 		buf, ok := nextLine(br)
@@ -1167,16 +1147,16 @@ func (m *MCC) readOptions(br *bufio.Reader) {
 	m.finalize()
 }
 
-@ @<Option input@>=
+@ @<옵션 읽기@>=
 func (m *MCC) readOption(buf []byte) {
 	spacer := m.lastNode
 	hasPrimary := false
 	for p := skipSpace(buf, 0); buf[p] != 0; {
-		@<Scan one item name and its color@>
+		@<아이템 이름 하나와 그 색을 훑는다@>
 	}
 
 	if !hasPrimary {
-		@<Unwind the option@>
+		@<옵션을 되감는다@>
 		return
 	}
 	m.nd[spacer].loc = int32(m.lastNode - spacer)
@@ -1186,7 +1166,7 @@ func (m *MCC) readOption(buf []byte) {
 	m.nd[m.lastNode].itm = int32(spacer + 1 - m.lastNode)
 }
 
-@ @<Scan one item name and its color@>=
+@ @<아이템 이름 하나와 그 색을 훑는다@>=
 name, next := token(buf, p, true)
 if name == "" {
 	failf("empty item name")
@@ -1211,7 +1191,7 @@ if buf[next] == ':' {
 }
 p = skipSpace(buf, next)
 
-@ @<Unwind the option@>=
+@ @<옵션을 되감는다@>=
 for m.lastNode > spacer {
 	slot := int(m.nd[m.lastNode].itm) * mccIprop
 	m.setSize(slot, m.size(slot)-1)
@@ -1219,7 +1199,7 @@ for m.lastNode > spacer {
 	m.lastNode--
 }
 
-@ @<Option input@>=
+@ @<옵션 읽기@>=
 func (m *MCC) createNode(num, spacer int, hasPrimary *bool) {
 	slot := num * mccIprop
 	m.set = ensure(m.set, slot)
@@ -1238,20 +1218,20 @@ func (m *MCC) createNode(num, spacer int, hasPrimary *bool) {
 	m.setPos(slot, m.lastNode)
 }
 
-@ Finalization runs the same three sweeps and then retires the items that
-can be seen, already, to play no part.
-@<Input finalization@>=
+@ 마무리는 같은 세 훑기를 돌고 나서, 벌써부터 아무 구실도 못 할 것이 빤한
+아이템을 물러나게 한다.
+@<입력 마무리@>=
 func (m *MCC) finalize() {
-	@<Lay out the set array@>
-	@<Fill in the item headers@>
-	@<Repoint the nodes@>
+	@<set 배열을 깐다@>
+	@<아이템 머리를 채운다@>
+	@<노드가 가리키는 곳을 고친다@>
 	m.deactivateOptionless()
 }
 
-@ @<Lay out the set array@>=
+@ @<set 배열을 깐다@>=
 m.active, m.itemlen = m.lastItm-1, m.lastItm-1
 m.item = ensure(m.item, m.itemlen)
-m.set = ensure(m.set, m.itemlen*mccIprop+1) // all input slots readable
+m.set = ensure(m.set, m.itemlen*mccIprop+1) // 입력 자리를 모두 읽을 수 있게
 
 j := mccExtra
 k := 0
@@ -1267,13 +1247,12 @@ if m.second == secondUnset {
 	m.osecond = m.second - 1
 }
 
-@ Alongside size, position, and number, this sweep copies in each primary
-item's slack and bound, and the notion of |baditem| sharpens: fatal trouble is
-a primary item that cannot even reach its {\it lower\/} bound. A primary item
-with lower bound~0 and no options is not trouble at all---it simply never
-appears---so it is stacked for the closing sweep, as is any optionless
-secondary item.
-@<Fill in the item headers@>=
+@ 크기와 자리와 번호에 더해, 이 훑기는 주 아이템마다 그 여유와 한도를 베껴
+넣는다. 그리고 |baditem|의 뜻이 날카로워진다. 치명적인 말썽은 제 {\it 아래끝\/}에도
+닿지 못하는 주 아이템이다. 아래끝이~0이고 옵션이 없는 주 아이템은 말썽이 아니라
+그저 나타나지 않을 뿐이므로, 옵션 없는 부 아이템과 함께 마지막 훑기를 위해
+쌓아 둔다.
+@<아이템 머리를 채운다@>=
 for ; k != 0; k-- {
 	base := int(m.item[k-1])
 	if k == m.second {
@@ -1294,7 +1273,7 @@ for ; k != 0; k-- {
 	}
 }
 
-@ @<Repoint the nodes@>=
+@ @<노드가 가리키는 곳을 고친다@>=
 for k = 1; k < m.lastNode; k++ {
 	if m.nd[k].itm < 0 {
 		continue
@@ -1306,9 +1285,9 @@ for k = 1; k < m.lastNode; k++ {
 	m.set[loc] = int32(k)
 }
 
-@ The closing sweep drains the stack of optionless items, deactivating each so
-the search never has to consider them.
-@<Input finalization@>=
+@ 마지막 훑기는 옵션 없는 아이템의 스택을 비우며 하나하나 물러나게 하여, 탐색이
+그들을 두고 고민할 일이 아예 없게 한다.
+@<입력 마무리@>=
 func (m *MCC) deactivateOptionless() {
 	for m.forced != 0 {
 		m.forced--
@@ -1322,13 +1301,13 @@ func (m *MCC) deactivateOptionless() {
 	}
 }
 
-@** Tests.
-A literate program ought to carry its own proof of life. This last part is
-woven from the same source, yet it tangles to a {\it separate\/} file,
-\.{ssmcc\_test.go}, by way of GWEB's file-output control code---the one that
-names an auxiliary output rather than the main one. |countMCC| just counts what
-the solver finds, and the cases below probe an exact count (\.{2\|a}), a slack
-range (\.{1:2\|a}), and a richer mix cross-checked against \.{cmd/ssmcc}.
+@** 테스트.
+문학적 프로그램이라면 제가 살아 있다는 증거를 스스로 지니는 것이 옳다. 이 마지막
+부분은 같은 원본에서 짜이되 {\it 따로\/} 선 파일 \.{ssmcc\_test.go}로 tangle되는데,
+주된 출력이 아니라 곁딸린 출력의 이름을 대는 \.{GWEB}의 파일 출력 제어 코드를 쓴
+덕이다. 도우미 |countMCC|는 풀이기가 찾아내는 것의 수를 셀 뿐이고, 아래 경우들은
+꼭 맞는 횟수(\.{2\|a}), 여유가 있는 범위(\.{1:2\|a}), 그리고 \.{cmd/ssmcc}로
+맞춰 본 좀 더 푸짐한 섞음을 떠본다.
 @(ssmcc_test.go@>=
 package dcells
 
@@ -1351,7 +1330,7 @@ func countMCC(t *testing.T, input string) int {
 }
 
 func TestMCCMultiplicity(t *testing.T) {
-	// "a" must be covered exactly twice (2|a); the only cover is {ab, ac}.
+	// 아이템 "a"는 꼭 두 번 덮여야 하고(2|a), 덮개는 {ab, ac} 하나뿐이다.
 	input := "2|a b c\na b\na c\nb c\n"
 	if n := countMCC(t, input); n != 1 {
 		t.Errorf("exact-twice: got %d solutions, want 1", n)
@@ -1359,7 +1338,7 @@ func TestMCCMultiplicity(t *testing.T) {
 }
 
 func TestMCCSlack(t *testing.T) {
-	// "a" covered 1..2 times; b, c exactly once. One cover: {ab, ac}.
+	// 아이템 "a"는 1..2번, b와 c는 꼭 한 번씩. 덮개는 {ab, ac} 하나다.
 	input := "1:2|a b c\na b\na c\nb c\n"
 	if n := countMCC(t, input); n != 1 {
 		t.Errorf("slack: got %d solutions, want 1", n)
@@ -1367,16 +1346,16 @@ func TestMCCSlack(t *testing.T) {
 }
 
 func TestMCCRicher(t *testing.T) {
-	// Cross-checked against cmd/ssmcc: 4 solutions.
+	// cmd/ssmcc로 맞춰 보았다. 해는 4개.
 	input := "1:3|a 2|b c d\na b\na c\na d\nb c\nb d\nc d\na b c\n"
 	if n := countMCC(t, input); n != 4 {
 		t.Errorf("richer: got %d solutions, want 4", n)
 	}
 }
 
-@ Finally, two sanity checks that this engine subsumes the plain one: with
-default multiplicities it must reproduce ordinary XCC---the same 92
-solutions to 8-queens---and the color machinery must work there too.
+@ 끝으로 이 엔진이 맨 엔진을 품고 있음을 살피는 검사 둘이다. 다중도를 그냥 두면
+여느 XCC를 그대로 되풀이해야 하고---8-퀸의 해 92개가 그것이다---색 기계도 거기서
+돌아야 한다.
 @(ssmcc_test.go@>=
 func TestMCCPlainXCC(t *testing.T) {
 	n := 8
@@ -1416,11 +1395,11 @@ func TestMCCColors(t *testing.T) {
 	}
 }
 
-@ Minimization gets a problem small enough to check by hand. Item \.{a} wants
-covering twice, \.{b} and \.{c} once each, and of the six priced options only
-three combinations satisfy all that: $\{ab,ac\}$ at~9, $\{ac,a,b\}$ at~14, and
-$\{ab,a,c\}$ at~15. The prices are keyed by the option's printed form so that
-a returned cover can be added up the same way it was quoted.
+@ 최소화에는 손으로 따져 볼 만큼 작은 문제를 준다. 아이템 \.{a}는 두 번 덮이기를
+바라고 \.{b}와 \.{c}는 한 번씩 바라는데, 값이 매겨진 옵션 여섯 가운데 그것을 모두
+채우는 짜임은 셋뿐이다. 덮개 $\{ab,ac\}$가~9, $\{ac,a,b\}$가~14, $\{ab,a,c\}$가~15이다.
+값은 옵션이 찍히는 모양을 열쇠로 삼아 적어 두었다. 그래야 돌아온 덮개를 매길 때와
+같은 식으로 더할 수 있다.
 @(ssmcc_test.go@>=
 func priceOfCover(sol []Option, price map[string]int) int {
 	c := 0
@@ -1444,9 +1423,9 @@ func TestMCCMinimize(t *testing.T) {
 	}
 }
 
-@ |Need| is what a bound function has here that it does not have under |XCC|,
-so it gets a test of its own: at the root, before anything has been covered,
-each item must still be wanting exactly its lower multiplicity.
+@ 메서드 |Need|는 하한 함수가 |XCC|에서는 갖지 못하는 것이므로 제 몫의 테스트를
+받는다. 뿌리에서, 아직 아무것도 덮이지 않았을 때, 아이템마다 꼭 제 아래끝
+다중도만큼을 바라고 있어야 한다.
 @(ssmcc_test.go@>=
 func TestMCCNeed(t *testing.T) {
 	input := "2|a 1:3|b c\na b\na c\nb\na\nb c\n"
@@ -1470,12 +1449,12 @@ func TestMCCNeed(t *testing.T) {
 	}
 }
 
-@ Here is a bound that is sound whenever no price is negative. An item still
-wanting $k$ more coverings must take $k$ distinct options out of what survives
-in its set, and each of those costs at least the cheapest one there; so
-$k$ times that cheapest is a floor under the item's remaining share, and the
-dearest such floor is a floor under the lot. |Live| hands us one item's
-options at a time, which is exactly the shape this scan wants.
+@ 값이 하나도 음수가 아닐 때면 언제나 성한 하한이 여기 있다. 앞으로 $k$번 더
+덮이기를 바라는 아이템은 제 집합에 살아남은 것 가운데 서로 다른 옵션 $k$개를
+가져가야 하고, 그 하나하나가 적어도 거기서 가장 싼 것만큼은 문다. 그러니 그 가장
+싼 값의 $k$배가 이 아이템이 앞으로 질 몫의 바닥이고, 그런 바닥 가운데 가장 비싼
+것이 전체의 바닥이다. 필드 |Live|는 한 번에 아이템 하나의 옵션들을 건네주므로,
+이 훑기가 바라는 모양이 꼭 그것이다.
 @(ssmcc_test.go@>=
 func cheapestTimesNeed(f Frame) int {
 	bound, item, low, need := 0, -1, 0, 0
@@ -1496,29 +1475,26 @@ func cheapestTimesNeed(f Frame) int {
 	return bound
 }
 
-@ And here is the test that earns its keep. Small multiplicity problems are
-generated at random---every non-empty subset of the items is an option unless
-the dice say to leave it out, and a third of the options also take a
-secondary item~|x| in one of two colors---and the cheapest cover is found
-twice over: by
-enumerating every cover with |Dance|, and by |Minimize|, with a bound and
-without one. All three must agree, four hundred times running.
+@ 그리고 여기, 제 밥값을 하는 테스트가 있다. 다중도가 있는 작은 문제를 마구잡이로
+지어---아이템의 빈 것 아닌 부분 집합마다 옵션 하나씩이되 주사위가 빼라면 빼고,
+옵션의 3분의 1쯤은 부 아이템~|x|를 두 색 가운데 하나로 달고 있다---가장 싼 덮개를
+두 갈래로 구한다. 메서드 |Dance|로 덮개를 모조리 세는 길과, 하한을 주고 또 주지 않고
+|Minimize|로 구하는 길이다. 셋이 모두 맞아야 하고, 그것을 사백 번 잇달아 한다.
 
-This is the shape of test that caught a real bug. Pruning at the wrong point
-in |search| used to leave entries on the force stack, and the next node would
-adopt them as its own forced moves---which under binary branching means
-committing to one option and never trying the others. Every answer stayed
-plausible; they were merely, sometimes, not the cheapest.
+이것이 진짜 버그를 잡아낸 모양의 테스트다. 예전에 |search|의 엉뚱한 자리에서
+가지를 치면 강제 스택에 칸이 남았고, 다음 마디가 그것을 제 강제 이동으로 삼았다.
+이진 분기에서 그것은 옵션 하나에 매달리고 나머지는 아예 시도하지 않는다는 뜻이다.
+답은 모두 그럴듯해 보였다. 다만 이따금, 가장 싼 것이 아니었을 뿐이다.
 @(ssmcc_test.go@>=
 func randomMCCProblem(rng *rand.Rand) (input string, price map[string]int) {
 	names := []string{"a", "b", "c", "d"}[:3+rng.Intn(2)]
 	var b strings.Builder
-	@<Write a random item line@>
-	@<Write a random priced option for most subsets@>
+	@<무작위 아이템 줄을 쓴다@>
+	@<웬만한 부분 집합마다 값이 매겨진 옵션을 쓴다@>
 	return b.String(), price
 }
 
-@ @<Write a random item line@>=
+@ @<무작위 아이템 줄을 쓴다@>=
 for _, name := range names {
 	switch rng.Intn(3) {
 	case 0:
@@ -1531,11 +1507,11 @@ for _, name := range names {
 }
 b.WriteString("| x\n")
 
-@ @<Write a random priced option for most subsets@>=
+@ @<웬만한 부분 집합마다 값이 매겨진 옵션을 쓴다@>=
 price = map[string]int{}
 for mask := 1; mask < 1<<len(names); mask++ {
 	if rng.Intn(3) == 0 {
-		continue // leave this one out
+		continue // 이것은 빼고 간다
 	}
 	var opt []string
 	for i, name := range names {
@@ -1556,15 +1532,15 @@ func TestMCCMinimizeMatchesSearch(t *testing.T) {
 	rng := rand.New(rand.NewSource(7))
 	for trial := 0; trial < 400; trial++ {
 		input, price := randomMCCProblem(rng)
-		@<Enumerate every cover and keep the cheapest@>
-		@<Minimize with a bound and without, and compare@>
-		@<Ask for the three cheapest, and compare@>
+		@<덮개를 모두 세어 가장 싼 것을 쥔다@>
+		@<하한을 주고 또 주지 않고 최소화해 견준다@>
+		@<가장 싼 셋을 달라 하고 견준다@>
 	}
 }
 
-@ The enumeration keeps every price, sorted, because the podium test below
-wants more than the least of them.
-@<Enumerate every cover and keep the cheapest@>=
+@ 모조리 세는 길은 값을 모두 정렬해 쥐고 있는다. 아래 연단 테스트가 그 가운데
+가장 작은 것 말고도 더 바라기 때문이다.
+@<덮개를 모두 세어 가장 싼 것을 쥔다@>=
 var all []int
 res := NewMCC().Dance(strings.NewReader(input))
 for sol := range res.Solutions {
@@ -1576,7 +1552,7 @@ if len(all) > 0 {
 	want = all[0]
 }
 
-@ @<Minimize with a bound and without, and compare@>=
+@ @<하한을 주고 또 주지 않고 최소화해 견준다@>=
 for _, bound := range []func(Frame) int{nil, cheapestTimesNeed} {
 	s := NewMCC()
 	s.Bound = bound
@@ -1595,10 +1571,9 @@ for _, bound := range []func(Frame) int{nil, cheapestTimesNeed} {
 	}
 }
 
-@ With |Best| at three, the three cheapest covers to arrive must cost what the
-three cheapest covers of all cost---or, when the problem has fewer than three,
-every cover must arrive.
-@<Ask for the three cheapest, and compare@>=
+@ 손잡이 |Best|를 셋으로 두면, 닿는 가장 싼 덮개 셋의 값은 이 문제의 가장 싼
+덮개 셋의 값이어야 한다. 덮개가 셋보다 적은 문제라면 그 전부가 닿아야 한다.
+@<가장 싼 셋을 달라 하고 견준다@>=
 s := NewMCC()
 s.Best = 3
 var got []int
@@ -1613,10 +1588,10 @@ if len(got) < k || fmt.Sprint(got[:k]) != fmt.Sprint(all[:k]) {
 	t.Fatalf("trial %d: three cheapest %v, want %v\n%s", trial, got, all[:k], input)
 }
 
-@ Negative prices are legal on an option that contains an item of fixed
-multiplicity, whose tax absorbs them. This is the example of \.{ssxcc.w}: every
-option costs~$-1$, and $\{a\}+\{b\}$ at~$-2$ must beat $\{ab\}$ at~$-1$,
-though the search meets $\{ab\}$ first.
+@ 다중도가 정해진 아이템을 담은 옵션에는 음수 값을 매겨도 된다. 그 아이템의
+세금이 그것을 빨아들이기 때문이다. 글 \.{ssxcc.w}에 나온 그 예다. 옵션마다 값이
+$-1$이고, $\{a\}+\{b\}$가~$-2$로 $\{ab\}$의~$-1$을 이겨야 한다. 탐색은 $\{ab\}$를
+먼저 만나는데도 그렇다.
 @(ssmcc_test.go@>=
 func TestMCCMinimizeNegative(t *testing.T) {
 	res := NewMCC().Minimize(strings.NewReader("a b\na b\na\nb\n"),
@@ -1630,9 +1605,9 @@ func TestMCCMinimizeNegative(t *testing.T) {
 	}
 }
 
-@ Option $\{c\}$ holds only an item with slack, so no tax can absorb its
-negative price, and |Minimize| must refuse rather than answer wrongly. (Option
-$\{a\}$ at~$-1$ is fine by itself.)
+@ 옵션 $\{c\}$는 여유가 있는 아이템만 담고 있으므로 그 음수 값을 빨아들일 세금이
+없고, 그러면 |Minimize|는 틀린 답을 내놓느니 물리쳐야 한다. (옵션 $\{a\}$의~$-1$은
+그것만으로는 괜찮다.)
 @(ssmcc_test.go@>=
 func TestMCCMinimizeRefusesNegative(t *testing.T) {
 	defer func() {
@@ -1644,4 +1619,4 @@ func TestMCCMinimizeRefusesNegative(t *testing.T) {
 		func(_ int, _ Option) int { return -1 })
 }
 
-@** Index.
+@** 색인.

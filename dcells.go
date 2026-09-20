@@ -1,4 +1,4 @@
-// Package dcells solves exact cover (XCC, MCC) with dancing cells.
+// dcells 패키지는 춤추는 칸으로 정확 덮개(XCC, MCC)를 푼다.
 //
 //line dcells.w:79
 //line dcells.w:80
@@ -9,19 +9,19 @@ import (
 	"fmt"
 )
 
-//line dcells.w:134
+//line dcells.w:132
 const (
-	infSize     = 1 << 30        // "no item to branch on" => a solution
-	secondUnset = 1 << 30        // sentinel for "no primary/secondary boundary yet"
-	infCost     = int64(1) << 62 // "no cover found yet"
+	infSize     = 1 << 30        // "분기할 아이템이 없다" 곧 해를 찾았다
+	secondUnset = 1 << 30        // "주/부 아이템의 경계가 아직 없다"는 파수꾼
+	infCost     = int64(1) << 62 // "아직 덮개를 하나도 못 찾았다"
 )
 
-//line dcells.w:147
+//line dcells.w:145
 type node struct {
-	itm, loc, clr int32 // itm and clr are fixed after input; loc dances
+	itm, loc, clr int32 // itm과 clr은 입력 뒤에 굳고, loc은 춤춘다
 }
 
-//line dcells.w:160
+//line dcells.w:157
 type Option []string
 
 type Result struct {
@@ -29,21 +29,21 @@ type Result struct {
 	Heartbeat <-chan string
 }
 
-//line dcells.w:183
+//line dcells.w:179
 type Frame struct{ v frameView }
 
 func (f Frame) Live(yield func(item, opt int) bool) { f.v.eachLive(yield) }
 
-//line dcells.w:186
+//line dcells.w:182
 func (f Frame) Cost(opt int) int { return f.v.optionCost(opt) }
 
-//line dcells.w:187
+//line dcells.w:183
 func (f Frame) Name(item int) string { return f.v.itemName(item) }
 
-//line dcells.w:188
+//line dcells.w:184
 func (f Frame) Need(item int) int { return f.v.itemNeed(item) }
 
-//line dcells.w:195
+//line dcells.w:190
 type frameView interface {
 	eachLive(yield func(item, opt int) bool)
 	optionCost(opt int) int
@@ -51,13 +51,13 @@ type frameView interface {
 	itemNeed(item int) int
 }
 
-//line dcells.w:208
+//line dcells.w:203
 type pricedOpt struct {
-	node int32 // the option's first node
-	net  int64 // its price less the tax it pays
+	node int32 // 옵션의 첫 노드
+	net  int64 // 값에서 그 옵션이 무는 세금을 뺀 것
 }
 
-//line dcells.w:218
+//line dcells.w:213
 func ensure[T any](s []T, n int) []T {
 	if n <= len(s) {
 		return s
@@ -70,7 +70,7 @@ func ensure[T any](s []T, n int) []T {
 	return t
 }
 
-//line dcells.w:258
+//line dcells.w:250
 type parseError struct{ msg string }
 
 func (e *parseError) Error() string { return e.msg }
@@ -79,7 +79,7 @@ func failf(format string, a ...any) {
 	panic(&parseError{fmt.Sprintf(format, a...)})
 }
 
-//line dcells.w:271
+//line dcells.w:263
 func isspace(c byte) bool {
 	return c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r'
 }
@@ -94,7 +94,7 @@ func nextLine(br *bufio.Reader) (buf []byte, ok bool) {
 	return buf, true
 }
 
-//line dcells.w:289
+//line dcells.w:280
 func skipSpace(buf []byte, p int) int {
 	for isspace(buf[p]) {
 		p++

@@ -23,6 +23,7 @@ GO      ?= go
 GTANGLE ?= gtangle
 GWEAVE  ?= gweave
 PDFTEX  ?= pdftex
+LUATEX  ?= luatex
 
 LIB  := dcells ssxcc ssmcc xccdc
 PKGS := . ./zdd
@@ -72,12 +73,34 @@ pdf: $(addsuffix .pdf,$(LIB)) zdd/zdd.pdf
 	$(PDFTEX) $*.tex
 	$(PDFTEX) $*.tex
 
+# The documents are written in Korean, and kotexgweb needs luatex.  A static
+# rule per document keeps the generic pdftex rule above from claiming them.
+dcells.pdf: dcells.w
+	$(GWEAVE) $<
+	$(LUATEX) dcells.tex
+	$(LUATEX) dcells.tex
+
+ssxcc.pdf: ssxcc.w
+	$(GWEAVE) $<
+	$(LUATEX) ssxcc.tex
+	$(LUATEX) ssxcc.tex
+
+ssmcc.pdf: ssmcc.w
+	$(GWEAVE) $<
+	$(LUATEX) ssmcc.tex
+	$(LUATEX) ssmcc.tex
+
+xccdc.pdf: xccdc.w
+	$(GWEAVE) $<
+	$(LUATEX) xccdc.tex
+	$(LUATEX) xccdc.tex
+
 # A static pattern rule, so that the generic one above does not claim it and
-# leave its output in the wrong directory.
+# leave its output in the wrong directory.  Korean, so luatex.
 zdd/zdd.pdf: zdd/zdd.w
 	cd zdd && $(GWEAVE) zdd.w
-	cd zdd && $(PDFTEX) zdd.tex
-	cd zdd && $(PDFTEX) zdd.tex
+	cd zdd && $(LUATEX) zdd.tex
+	cd zdd && $(LUATEX) zdd.tex
 
 # clean removes everything the .w files generate here; `make` puts the Go
 # sources back.  The five engine .go files are checked in, so that the package

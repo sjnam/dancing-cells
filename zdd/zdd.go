@@ -1,7 +1,7 @@
-// Package zdd represents all solutions of an exact cover problem as a ZDD.
+// zdd 패키지는 정확 덮개 문제의 모든 해를 ZDD 하나로 나타낸다.
 //
+//line zdd/zdd.w:68
 //line zdd/zdd.w:69
-//line zdd/zdd.w:70
 package zdd
 
 import (
@@ -18,12 +18,12 @@ import (
 	cells "github.com/sjnam/dancing-cells"
 )
 
-//line zdd/zdd.w:178
+//line zdd/zdd.w:174
 const (
-	zExtra      = 4       // set entries reserved below each item's base
-	zIprop      = 4       // input-phase slot spacing
-	infSize     = 1 << 30 // "no item to branch on" => a solution
-	secondUnset = 1 << 30 // sentinel for "no primary/secondary boundary yet"
+	zExtra      = 4       // 아이템 밑자리 아래에 맡아 두는 set 칸
+	zIprop      = 4       // 입력 단계의 자리 간격
+	infSize     = 1 << 30 // "분기할 아이템이 없다" => 해다
+	secondUnset = 1 << 30 // "주와 부의 경계가 아직 없다"는 파수 값
 )
 
 type node struct {
@@ -34,14 +34,14 @@ type twoints struct {
 	l, r int32
 }
 
-//line zdd/zdd.w:198
+//line zdd/zdd.w:194
 type Solver struct {
-	Debug bool // print an input summary and final tallies to stderr
-	MRV   bool // branch on the fewest-options item; |New| turns it on
+	Debug bool // 입력 요약과 마무리 통계를 stderr에 찍는다
+	MRV   bool // 옵션이 가장 적은 아이템에서 분기한다. |New|가 켜 둔다
 
-//line zdd/zdd.w:202
+//line zdd/zdd.w:198
 
-//line zdd/zdd.w:210
+//line zdd/zdd.w:206
 	nd       []node
 	lastNode int
 	item     []int32
@@ -54,81 +54,81 @@ type Solver struct {
 	oactive  int
 	baditem  int
 	osecond  int
-	itemBase []int32 // item number -> its base in set
+	itemBase []int32 // 아이템 번호 -> set 안의 밑자리
 
-//line zdd/zdd.w:203
+//line zdd/zdd.w:199
 
-//line zdd/zdd.w:225
+//line zdd/zdd.w:221
 	names      []string
 	nameIndex  map[string]int
 	colorNames []string
 	colorIndex map[string]int
 
-//line zdd/zdd.w:204
+//line zdd/zdd.w:200
 
-//line zdd/zdd.w:236
+//line zdd/zdd.w:231
 	options  int
 	optNo    []int32
 	optFirst []int32
 
-//line zdd/zdd.w:205
+//line zdd/zdd.w:201
 
-//line zdd/zdd.w:241
+//line zdd/zdd.w:236
 	saved     []int32
 	savestack []twoints
 	saveptr   int
-	clr       []int32 // item number -> the color it was purified to
-	sig       []byte  // scratch space for the signature
+	clr       []int32 // 아이템 번호 -> 그 아이템이 씻긴 색
+	sig       []byte  // 서명을 빚을 빈터
 
-//line zdd/zdd.w:206
+//line zdd/zdd.w:202
 
-//line zdd/zdd.w:248
+//line zdd/zdd.w:243
 	z     *bdd.ZDD
 	memo  map[string]bdd.Func
 	nodes uint64
 	hits  uint64
 
-//line zdd/zdd.w:207
+//line zdd/zdd.w:203
 }
 
-//line zdd/zdd.w:254
+//line zdd/zdd.w:249
 func New() *Solver {
 	return &Solver{
 		MRV:        true,
 		second:     secondUnset,
-		names:      []string{""}, // item numbers are 1-based
+		names:      []string{""}, // 아이템 번호는 1부터다
 		nameIndex:  make(map[string]int),
-		colorNames: []string{""}, // color 0 means "no color"
+		colorNames: []string{""}, // 0번 색은 "색 없음"이다
 		colorIndex: make(map[string]int),
 	}
 }
 
 func (s *Solver) Nodes() uint64 { return s.nodes }
 
-//line zdd/zdd.w:266
+//line zdd/zdd.w:261
 func (s *Solver) Hits() uint64 { return s.hits }
 
-//line zdd/zdd.w:267
+//line zdd/zdd.w:262
 func (s *Solver) Signatures() int { return len(s.memo) }
 
-//line zdd/zdd.w:270
+//line zdd/zdd.w:265
 func (s *Solver) size(x int) int { return int(s.set[x-1]) }
 
-//line zdd/zdd.w:271
+//line zdd/zdd.w:266
 func (s *Solver) pos(x int) int { return int(s.set[x-2]) }
 
-//line zdd/zdd.w:272
+//line zdd/zdd.w:267
 func (s *Solver) itemNo(x int) int { return int(s.set[x-3]) }
 
 func (s *Solver) setSize(x, v int) { s.set[x-1] = int32(v) }
 
-//line zdd/zdd.w:275
+//line zdd/zdd.w:270
 func (s *Solver) setPos(x, v int) { s.set[x-2] = int32(v) }
 
-//line zdd/zdd.w:276
+//line zdd/zdd.w:271
 func (s *Solver) setItemNo(x, v int) { s.set[x-3] = int32(v) }
 
-//line zdd/zdd.w:279
+//line zdd/zdd.w:274
 func (s *Solver) internName(name string) (num int, ok bool) {
 	if _, dup := s.nameIndex[name]; dup {
 		return 0, false
@@ -149,7 +149,7 @@ func (s *Solver) internColor(name string) int {
 	return id
 }
 
-//line zdd/zdd.w:125
+//line zdd/zdd.w:121
 func (s *Solver) signature() string {
 	s.sig = s.sig[:0]
 	for i := 1; i <= s.itemlen; i++ {
@@ -175,26 +175,26 @@ func varint(b []byte, v int) []byte {
 	return append(b, byte(v))
 }
 
-//line zdd/zdd.w:305
+//line zdd/zdd.w:299
 func (s *Solver) Dance(rd io.Reader) *Diagram {
 	s.inputMatrix(rd)
 	s.z = bdd.NewZDD(s.options)
 	s.memo = make(map[string]bdd.Func)
 
-//line zdd/zdd.w:319
+//line zdd/zdd.w:313
 	if s.Debug {
 		fmt.Fprintf(os.Stderr,
 			"(%d options, %d+%d items, %d entries successfully read)\n",
 			s.options, s.osecond, s.itemlen-s.osecond, s.lastNode)
 	}
 
-//line zdd/zdd.w:310
+//line zdd/zdd.w:304
 	root := s.z.Empty()
 	if s.baditem == 0 {
 		root = s.search()
 	}
 
-//line zdd/zdd.w:326
+//line zdd/zdd.w:320
 	if s.Debug {
 		fmt.Fprintf(os.Stderr,
 			"Altogether %s solutions, %d ZDD nodes,"+
@@ -202,11 +202,11 @@ func (s *Solver) Dance(rd io.Reader) *Diagram {
 			s.z.Count(root).String(), s.z.Size(root), s.nodes, len(s.memo), s.hits)
 	}
 
-//line zdd/zdd.w:315
+//line zdd/zdd.w:309
 	return &Diagram{s: s, z: s.z, root: root}
 }
 
-//line zdd/zdd.w:339
+//line zdd/zdd.w:332
 func (s *Solver) search() bdd.Func {
 	s.nodes++
 	best, score := s.chooseItem()
@@ -222,7 +222,7 @@ func (s *Solver) search() bdd.Func {
 		return f
 	}
 
-//line zdd/zdd.w:368
+//line zdd/zdd.w:360
 	res := s.z.Empty()
 	s.swapOut(best)
 	s.oactive = s.active
@@ -239,25 +239,25 @@ func (s *Solver) search() bdd.Func {
 		s.restoreSizes(lo, hi)
 	}
 
-//line zdd/zdd.w:354
+//line zdd/zdd.w:347
 	s.memo[key] = res
 	return res
 }
 
-//line zdd/zdd.w:398
+//line zdd/zdd.w:389
 func (s *Solver) chooseItem() (best, score int) {
 	score = infSize
 	for k := 0; k < s.active; k++ {
 		x := int(s.item[k])
 		if x >= s.second {
-			continue // secondary items are not branched on
+			continue // 부 아이템에서는 분기하지 않는다
 		}
 		sz := s.size(x)
 		if sz == 0 {
 			return x, 0
 		}
 
-//line zdd/zdd.w:422
+//line zdd/zdd.w:413
 		if !s.MRV {
 			if score == infSize || x < best {
 				best, score = x, sz
@@ -268,15 +268,15 @@ func (s *Solver) chooseItem() (best, score int) {
 			best, score = x, sz
 		}
 
-//line zdd/zdd.w:410
+//line zdd/zdd.w:401
 	}
 	return best, score
 }
 
-//line zdd/zdd.w:439
+//line zdd/zdd.w:429
 func (s *Solver) commitOption(opt int) bool {
 
-//line zdd/zdd.w:446
+//line zdd/zdd.w:436
 	p := s.active
 	s.oactive = s.active
 	for q := opt + 1; q != opt; {
@@ -299,9 +299,9 @@ func (s *Solver) commitOption(opt int) bool {
 	}
 	s.active = p
 
-//line zdd/zdd.w:441
+//line zdd/zdd.w:431
 
-//line zdd/zdd.w:469
+//line zdd/zdd.w:459
 	for q := opt + 1; q != opt; {
 		c := int(s.nd[q].itm)
 		if c < 0 {
@@ -321,11 +321,11 @@ func (s *Solver) commitOption(opt int) bool {
 		q++
 	}
 
-//line zdd/zdd.w:442
+//line zdd/zdd.w:432
 	return true
 }
 
-//line zdd/zdd.w:489
+//line zdd/zdd.w:479
 func (s *Solver) hide(c, color, check int) bool {
 	for rr, end := c, c+s.size(c); rr < end; rr++ {
 		tt := int(s.set[rr])
@@ -333,7 +333,7 @@ func (s *Solver) hide(c, color, check int) bool {
 			continue
 		}
 
-//line zdd/zdd.w:501
+//line zdd/zdd.w:491
 		for nn := tt + 1; nn != tt; {
 			u, v := int(s.nd[nn].itm), int(s.nd[nn].loc)
 			if u < 0 {
@@ -353,12 +353,12 @@ func (s *Solver) hide(c, color, check int) bool {
 			nn++
 		}
 
-//line zdd/zdd.w:496
+//line zdd/zdd.w:486
 	}
 	return true
 }
 
-//line zdd/zdd.w:521
+//line zdd/zdd.w:511
 func (s *Solver) swapOut(x int) {
 	p := s.active - 1
 	s.active = p
@@ -369,7 +369,7 @@ func (s *Solver) swapOut(x int) {
 	s.setPos(x, p)
 }
 
-//line zdd/zdd.w:537
+//line zdd/zdd.w:527
 func (s *Solver) saveSizes() {
 	s.savestack = ensure(s.savestack, s.saveptr+s.active)
 	for p := 0; p < s.active; p++ {
@@ -388,7 +388,7 @@ func (s *Solver) restoreSizes(lo, hi int) {
 	}
 }
 
-//line zdd/zdd.w:559
+//line zdd/zdd.w:549
 func (s *Solver) option(o int) cells.Option {
 	var opt cells.Option
 	for q := int(s.optFirst[o]); s.nd[q].itm > 0; q++ {
@@ -401,7 +401,7 @@ func (s *Solver) option(o int) cells.Option {
 	return opt
 }
 
-//line zdd/zdd.w:579
+//line zdd/zdd.w:569
 type Diagram struct {
 	s    *Solver
 	z    *bdd.ZDD
@@ -410,16 +410,16 @@ type Diagram struct {
 
 func (d *Diagram) ZDD() (*bdd.ZDD, bdd.Func) { return d.z, d.root }
 
-//line zdd/zdd.w:594
+//line zdd/zdd.w:583
 func (d *Diagram) Count() *big.Int { return d.z.Count(d.root) }
 
-//line zdd/zdd.w:595
+//line zdd/zdd.w:584
 func (d *Diagram) Nodes() int { return d.z.Size(d.root) }
 
-//line zdd/zdd.w:596
+//line zdd/zdd.w:585
 func (d *Diagram) Options() int { return d.s.options }
 
-//line zdd/zdd.w:603
+//line zdd/zdd.w:591
 func (d *Diagram) Option(o int) cells.Option { return d.s.option(o) }
 
 func (d *Diagram) solution(elts []int) []cells.Option {
@@ -430,7 +430,7 @@ func (d *Diagram) solution(elts []int) []cells.Option {
 	return sol
 }
 
-//line zdd/zdd.w:617
+//line zdd/zdd.w:605
 func (d *Diagram) Solutions() iter.Seq[[]cells.Option] {
 	return func(yield func([]cells.Option) bool) {
 		for elts := range d.z.Subsets(d.root) {
@@ -441,7 +441,7 @@ func (d *Diagram) Solutions() iter.Seq[[]cells.Option] {
 	}
 }
 
-//line zdd/zdd.w:634
+//line zdd/zdd.w:621
 func (d *Diagram) Random(r *rand.Rand) ([]cells.Option, bool) {
 	elts, ok := d.z.Random(d.root, r)
 	if !ok {
@@ -464,14 +464,14 @@ func (d *Diagram) MaxWeight(w []int) ([]cells.Option, int, bool) {
 	return d.solution(elts), wt, true
 }
 
-//line zdd/zdd.w:662
+//line zdd/zdd.w:648
 func (s *Solver) inputMatrix(rd io.Reader) {
 	br := bufio.NewReader(rd)
 	s.readItemNames(br)
 	s.readOptions(br)
 }
 
-//line zdd/zdd.w:679
+//line zdd/zdd.w:665
 type parseError struct{ msg string }
 
 func (e *parseError) Error() string { return e.msg }
@@ -494,7 +494,7 @@ func nextLine(br *bufio.Reader) (buf []byte, ok bool) {
 	return buf, true
 }
 
-//line zdd/zdd.w:702
+//line zdd/zdd.w:688
 func skipSpace(buf []byte, p int) int {
 	for isspace(buf[p]) {
 		p++
@@ -522,10 +522,10 @@ func ensure[T any](s []T, n int) []T {
 	return t
 }
 
-//line zdd/zdd.w:730
+//line zdd/zdd.w:716
 func (s *Solver) readItemNames(br *bufio.Reader) {
 
-//line zdd/zdd.w:753
+//line zdd/zdd.w:739
 	var buf []byte
 	var p int
 	found := false
@@ -543,7 +543,7 @@ func (s *Solver) readItemNames(br *bufio.Reader) {
 		failf("no items")
 	}
 
-//line zdd/zdd.w:732
+//line zdd/zdd.w:718
 	for buf[p] != 0 {
 		name, next := token(buf, p, false)
 		if name == "|" {
@@ -564,7 +564,7 @@ func (s *Solver) readItemNames(br *bufio.Reader) {
 	s.lastItm = len(s.names)
 }
 
-//line zdd/zdd.w:771
+//line zdd/zdd.w:757
 func (s *Solver) readOptions(br *bufio.Reader) {
 	for {
 		buf, ok := nextLine(br)
@@ -579,13 +579,13 @@ func (s *Solver) readOptions(br *bufio.Reader) {
 	s.finalize()
 }
 
-//line zdd/zdd.w:789
+//line zdd/zdd.w:774
 func (s *Solver) readOption(buf []byte) {
 	spacer := s.lastNode
 	hasPrimary := false
 	for p := skipSpace(buf, 0); buf[p] != 0; {
 
-//line zdd/zdd.w:808
+//line zdd/zdd.w:793
 		name, next := token(buf, p, true)
 		if name == "" {
 			failf("empty item name")
@@ -610,12 +610,12 @@ func (s *Solver) readOption(buf []byte) {
 		}
 		p = skipSpace(buf, next)
 
-//line zdd/zdd.w:794
+//line zdd/zdd.w:779
 	}
 
 	if !hasPrimary {
 
-//line zdd/zdd.w:833
+//line zdd/zdd.w:818
 		for s.lastNode > spacer {
 			slot := int(s.nd[s.lastNode].itm) * zIprop
 			s.setSize(slot, s.size(slot)-1)
@@ -623,7 +623,7 @@ func (s *Solver) readOption(buf []byte) {
 			s.lastNode--
 		}
 
-//line zdd/zdd.w:798
+//line zdd/zdd.w:783
 		return
 	}
 	s.nd[spacer].loc = int32(s.lastNode - spacer)
@@ -633,7 +633,7 @@ func (s *Solver) readOption(buf []byte) {
 	s.nd[s.lastNode].itm = int32(spacer + 1 - s.lastNode)
 }
 
-//line zdd/zdd.w:841
+//line zdd/zdd.w:826
 func (s *Solver) createNode(m, spacer int, hasPrimary *bool) {
 	slot := m * zIprop
 	s.set = ensure(s.set, slot)
@@ -652,10 +652,10 @@ func (s *Solver) createNode(m, spacer int, hasPrimary *bool) {
 	s.setPos(slot, s.lastNode)
 }
 
-//line zdd/zdd.w:863
+//line zdd/zdd.w:847
 func (s *Solver) finalize() {
 
-//line zdd/zdd.w:871
+//line zdd/zdd.w:855
 	s.active, s.itemlen = s.lastItm-1, s.lastItm-1
 	s.item = ensure(s.item, s.itemlen)
 	s.set = ensure(s.set, s.itemlen*zIprop+1)
@@ -674,9 +674,9 @@ func (s *Solver) finalize() {
 		s.osecond = s.second - 1
 	}
 
-//line zdd/zdd.w:865
+//line zdd/zdd.w:849
 
-//line zdd/zdd.w:890
+//line zdd/zdd.w:874
 	for ; k != 0; k-- {
 		base := int(s.item[k-1])
 		if k == s.second {
@@ -690,9 +690,9 @@ func (s *Solver) finalize() {
 		s.setItemNo(base, k)
 	}
 
-//line zdd/zdd.w:866
+//line zdd/zdd.w:850
 
-//line zdd/zdd.w:904
+//line zdd/zdd.w:888
 	for k = 1; k < s.lastNode; k++ {
 		if s.nd[k].itm <= 0 {
 			continue
@@ -704,9 +704,9 @@ func (s *Solver) finalize() {
 		s.set[loc] = int32(k)
 	}
 
-//line zdd/zdd.w:867
+//line zdd/zdd.w:851
 
-//line zdd/zdd.w:919
+//line zdd/zdd.w:903
 	s.optNo = make([]int32, s.lastNode+1)
 	s.optFirst = make([]int32, s.options+1)
 	o := int32(0)
@@ -727,5 +727,5 @@ func (s *Solver) finalize() {
 	}
 	s.clr = make([]int32, s.itemlen+1)
 
-//line zdd/zdd.w:868
+//line zdd/zdd.w:852
 }
