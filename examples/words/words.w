@@ -1,5 +1,5 @@
 \input kotexgweb
-\input pic
+\input luamplib.sty
 
 \def\title{다섯 단어로 스물네 글자}
 
@@ -210,9 +210,39 @@ $x$를 양보한 것이다. 그리고 아이템 $x$는 4번 옵션이 이미 덮
 
 @ 그림 하나로 정리하자.
 
-\medskip
-\centerline{\pic{words-1.pdf}}
-\smallskip
+$$\mplibcode
+defaultfont := "cmtt10";
+defaultscale := 1.2;
+beginfig(1);
+  numeric w, h, gap, xa, xb;
+  w := 14; h := 17; gap := 13;
+  string s[]; picture lb[]; numeric tint[], dsh[];
+  s1 := "squab"; lb1 := btex {\tt squab} etex; tint1 := 1;    dsh1 := 0;
+  s2 := "glitz"; lb2 := btex {\tt glitz} etex; tint2 := 1;    dsh2 := 0;
+  s3 := "nymph"; lb3 := btex {\tt nymph} etex; tint3 := 1;    dsh3 := 0;
+  s4 := "frck";  lb4 := btex {\tt frock} etex; tint4 := 0.87; dsh4 := 0;
+  s5 := "vwed";  lb5 := btex {\tt vowed} etex; tint5 := 0.87; dsh5 := 0;
+  s6 := "o";     lb6 := btex 겹침 etex;        tint6 := 0.68; dsh6 := 0;
+  s7 := "jx";    lb7 := btex 빠짐 etex;        tint7 := 1;    dsh7 := 1;
+  xa := 0;
+  for i = 1 upto 7:
+    xb := xa;
+    for j = 1 upto length(s[i]):
+      fill unitsquare xscaled w yscaled h shifted (xa, 0) withcolor tint[i]*white;
+      if dsh[i] = 1:
+        draw unitsquare xscaled w yscaled h shifted (xa, 0) dashed evenly;
+      else:
+        draw unitsquare xscaled w yscaled h shifted (xa, 0);
+      fi
+      label(substring (j-1, j) of s[i], (xa + w/2, h/2));
+      xa := xa + w;
+    endfor
+    draw (xb, -4) -- (xb, -7) -- (xa, -7) -- (xa, -4);
+    label.bot(lb[i], ((xb + xa)/2, -8));
+    xa := xa + gap;
+  endfor
+endfig;
+\endmplibcode$$
 \centerline{그림 1: 답 하나를 정확 덮개로 본 모습.}
 \medskip
 

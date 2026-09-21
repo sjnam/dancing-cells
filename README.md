@@ -763,7 +763,7 @@ import할 수 있게 하려는 것이다. 다른 하나는 연습문제 읽기�
 | 문서 | 무엇인가 |
 | --- | --- |
 | [`examples/domino/domino.w`](examples/domino/domino.w) | 엔진 `zdd`로 도미노 덮기 세기 — Kasteleyn의 공식을 정확한 셈과 맞춰 보고, 고르게 뽑은 아즈텍 다이아몬드 덮기에서 북극원을 보며, 최대 무게 짝짓기를 탐색이 아니라 다이어그램을 걸어 찾는다. |
-| [`examples/words/words.w`](examples/words/words.w) | *알파벳 스물넉 자를 덮는 다섯 글자 낱말 다섯이 있는가?*가 어떻게 DLX 입력이 되는가. 그 답은 다중도 없이 색만으로 낱말 수가 꼭 다섯으로 묶인다는 것이다. MetaPost 그림 [`words.mp`](examples/words/words.mp)를 데리고 있다. |
+| [`examples/words/words.w`](examples/words/words.w) | *알파벳 스물넉 자를 덮는 다섯 글자 낱말 다섯이 있는가?*가 어떻게 DLX 입력이 되는가. 그 답은 다중도 없이 색만으로 낱말 수가 꼭 다섯으로 묶인다는 것이다. |
 | [`examples/transversal/transversal.w`](examples/transversal/transversal.w) | *헝가리 무곡 제5번* — 라틴 방진의 가장 싼 횡단을 춤추는 칸으로 분기하고 헝가리안 알고리즘으로 한정한다. 하한을 어디서 찾을지, 이 하한이 왜 정확한지, 그리고 이 재주가 또 어디에 먹히는지. |
 | [`examples/hollow/hollow.w`](examples/hollow/hollow.w) | *A Partridge in a Pear Tree* — 파티지 퍼즐이 한가운데에 얼마나 큰 구멍을 지킬 수 있는가. 가망 없던 탐색을 2초짜리 증명으로 바꾸는 기하학적 하한, 그리고 정직하게 말해 값을 하지 못하는 `Need` 하한. |
 | [`examples/queen/queen.w`](examples/queen/queen.w) | *n*-퀸 — 주 아이템과 부 아이템의 차이를 가장 말끔하게 보여 준다. 행과 열은 꼭 한 번 덮여야 하고 대각선은 많아야 한 번이다. 아이템 줄의 *차례*가 왜 중요한지도 나오는데, 분기 규칙이 비길 때 왼쪽 아이템이 이기기 때문이다. |

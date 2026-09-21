@@ -119,8 +119,8 @@
 /examples/zebra/zebra.log
 /examples/zebra/zebra.toc
 
-# examples/words도 문학적 프로그램이다: words.w와 words.mp만 원본이고,
-# 나머지는 gtangle/gweave/mptopdf가 만들어 낸다.
+# examples/words도 문학적 프로그램이다: words.w만 원본이고,
+# 나머지는 gtangle/gweave가 만들어 낸다.
 /examples/words/words.go
 /examples/words/words.tex
 /examples/words/words.idx
@@ -128,9 +128,6 @@
 /examples/words/words.pdf
 /examples/words/words.log
 /examples/words/words.toc
-/examples/words/words.1
-/examples/words/words.mpx
-/examples/words/words-1.pdf
 
 # stray example binaries (built into cwd)
 /queen
