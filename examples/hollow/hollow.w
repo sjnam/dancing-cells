@@ -4,6 +4,8 @@
 
 @s Option int
 @s Frame int
+@s MCC int
+@s XCC int
 @s Builder int
 @s Duration int
 @s Time int

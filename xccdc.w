@@ -2,6 +2,9 @@
 
 \def\title{XCCDC}
 
+@s Option int
+@s Result int
+@s twoints int
 @s Context int
 @s Duration int
 @s Ticker int

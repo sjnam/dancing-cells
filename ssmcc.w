@@ -2,6 +2,10 @@
 
 \def\title{SSMCC}
 
+@s Frame int
+@s Option int
+@s Result int
+@s XCC int
 @s Context int
 @s Duration int
 @s Ticker int

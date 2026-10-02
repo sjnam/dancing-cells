@@ -2,6 +2,10 @@
 
 \def\title{SSXCC}
 
+@s Frame int
+@s Option int
+@s Result int
+@s pricedOpt int
 @s Context int
 @s Duration int
 @s Ticker int

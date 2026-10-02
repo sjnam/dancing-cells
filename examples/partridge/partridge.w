@@ -3,6 +3,8 @@
 \def\title{파티지 퍼즐}
 
 @s Option int
+@s MCC int
+@s XCC int
 @s Reader int
 @s Context int
 @s Duration int

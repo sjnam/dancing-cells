@@ -2,6 +2,9 @@
 
 \def\title{Dancing Cells}
 
+@s MCC int
+@s XCC int
+@s XCCDC int
 @s Context int
 @s Duration int
 @s Ticker int
