@@ -322,7 +322,7 @@ for _, p := range []int{p0, p1} {
 	rows = append(rows, r)
 }
 
-@ Membership in a short unsorted list is wanted in one place, but a Go |for| loop
+@ Membership in a short unsorted list is wanted in one place, but a \GO/ |for| loop
 cannot answer a question with a value, so it is a function.
 @<Functions@>=
 func contains(xs []int, x int) bool {

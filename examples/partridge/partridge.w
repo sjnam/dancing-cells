@@ -11,7 +11,7 @@
 @* 들어가며.
 캐럴 ``The Twelve Days of Christmas''는 배나무 위의 자고새 한 마리로 시작해
 날마다 선물을 하나씩 늘려 간다. 1978년에 Robert Wainwright가 어떤 퍼즐에
-{\it 파티지\/}(partridge, 자고새)라는 이름을 붙인 것은 그 셈이 꼭 같아서였다.
+{\it 파티지\/}({\it partridge\/}, 자고새)라는 이름을 붙인 것은 그 셈이 꼭 같아서였다.
 $1\times1$ 한 장, $2\times2$ 두 장, $3\times3$ 세 장, 그렇게 $n\times n$을
 $n$장 준비한다.
 @^Wainwright, Robert@>

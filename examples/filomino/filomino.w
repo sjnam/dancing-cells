@@ -6,7 +6,7 @@
 @s Reader int
 
 @* 들어가며.
-{\it 필로미노\/}(Fillomino)는 일본의 퍼즐 잡지 {\sl 니코리\/}가 1994년에 선보인
+{\it 필로미노\/}({\it Fillomino\/})는 일본의 퍼즐 잡지 {\sl 니코리\/}가 1994년에 선보인
 격자 퍼즐이다. 규칙은 셋뿐이다.
 \smallskip\item{$\bullet$} 판을 조각(폴리오미노)으로 남김없이 나눈다.
 \smallskip\item{$\bullet$} 칸이 $n$개인 조각에는 그 칸마다 $n$을 적는다.

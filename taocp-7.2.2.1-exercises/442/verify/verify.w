@@ -42,7 +42,7 @@ properties.
 The answer says how it was done: a frontier-based algorithm builds a ZDD for
 the family of all $B$ meeting the first two conditions, and then a subroutine
 that discards subsets leaves the maximal ones. We follow that plan exactly.
-The diagrams come from the |bdd| package (\.{github.com/sjnam/bdd}), a Go
+The diagrams come from the |bdd| package (\.{github.com/sjnam/bdd}), a \GO/
 rendering of Knuth's {\tt BDD15}; the frontier is ours.
 
 @ The maximality step is two lines, and worth a word. Removing a black cell
