@@ -227,12 +227,22 @@ z, root := d.ZDD()                     // bdd 손잡이, 나머지는 모두 거
 | 스물넉 자를 덮는 다섯 낱말 | `go run ./examples/words examples/words/sgb-words.txt 5` |
 | 가장 싼 라틴 방진 횡단 | `go run ./examples/transversal -plain 11` |
 | 가운데가 빈 파티지 | `go run ./examples/hollow -z 16` |
+| 정확 덮개 앞손질 (커누스의 DLX-PRE) | `go run ./examples/dlx-pre < examples/pentominoes/6x10.dlx` |
+| 대칭 단어 정육면체를 DLX로 | `cd examples/word-cube-dlx && go run . sgb-words.txt > wordcube.dlx` |
 
 예제는 저마다 문제를 DLX 텍스트로 지어내거나 파일에서 읽어 `Dance`에 넘기고 채널
 `Solutions`를 비운다. dlx 예제와 같은 본새다. 아이템 이름과 색은 길이에 제한이
 없는(여러 바이트여도 되는) 문자열이므로, 얼룩말(`N0:England`)도 한글 낱말
 찾기도 그대로 된다. 다중도가 필요한 파티지는 `NewMCC`로 푼다. 이로써 dlx의
 예제가 모두 춤추는 칸으로 옮겨졌다.
+
+끝의 두 줄은 결이 다르다. 라이브러리를 부르지 않고 DLX 텍스트를 다루기만 한다.
+[`dlx-pre`](examples/dlx-pre/dlx-pre.w)는 커누스의 DLX-PRE를 옮긴 것으로, 문제를
+읽어 쓸데없는 선택지와 항목을 덜어 낸 같은 값의 문제를 써 낸다. 그 출력은 그대로
+`Dance`에 넘길 수 있다. [`word-cube-dlx`](examples/word-cube-dlx/word-cube-dlx.w)는
+대칭 단어 정육면체를 항목 15+35개짜리 XCC 문제로 옮겨 적고, 손수 짠 백트래킹과
+겨루어 본 기록을 담았다. 둘 다 2026년 11월에
+[gweb-examples](https://github.com/sjnam/gweb-examples)에서 옮겨 왔다.
 
 ### 랭포드 짝짓기
 

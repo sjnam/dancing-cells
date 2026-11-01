@@ -119,6 +119,22 @@
 /examples/zebra/zebra.log
 /examples/zebra/zebra.toc
 
+# examples/dlx-pre와 examples/word-cube-dlx는 gweb-examples에서 옮겨 왔다.
+/examples/dlx-pre/dlx-pre.go
+/examples/dlx-pre/dlx-pre.tex
+/examples/dlx-pre/dlx-pre.pdf
+/examples/dlx-pre/dlx-pre.idx
+/examples/dlx-pre/dlx-pre.scn
+/examples/dlx-pre/dlx-pre.log
+/examples/dlx-pre/dlx-pre.toc
+/examples/word-cube-dlx/word-cube-dlx.go
+/examples/word-cube-dlx/word-cube-dlx.tex
+/examples/word-cube-dlx/word-cube-dlx.pdf
+/examples/word-cube-dlx/word-cube-dlx.idx
+/examples/word-cube-dlx/word-cube-dlx.scn
+/examples/word-cube-dlx/word-cube-dlx.log
+/examples/word-cube-dlx/word-cube-dlx.toc
+
 # examples/words도 문학적 프로그램이다: words.w만 원본이고,
 # 나머지는 gtangle/gweave가 만들어 낸다.
 /examples/words/words.go
@@ -137,6 +153,8 @@
 /filomino
 /zebra
 /wordsearch
+/dlx-pre
+/word-cube-dlx
 
 # examples/transversal도 문학적 프로그램이다: transversal.w만 원본이다.
 

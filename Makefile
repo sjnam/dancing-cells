@@ -13,7 +13,7 @@
 # The programs that use the library have Makefiles of their own, with the same
 # targets, and neither needs this one to have been run first:
 #
-#   examples/Makefile                  the twelve example programs
+#   examples/Makefile                  the fourteen example programs
 #   taocp-7.2.2.1-exercises/Makefile   the careful readings of TAOCP exercises
 #
 # GTANGLE/GWEAVE are named to avoid GNU Make's built-in TANGLE/WEAVE variables

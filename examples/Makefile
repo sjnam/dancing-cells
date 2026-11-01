@@ -15,8 +15,8 @@ GTANGLE ?= gtangle
 GWEAVE  ?= gweave
 LUATEX  ?= luatex
 
-EXAMPLES := domino filomino hollow langford partridge pentominoes queen \
-            sudoku transversal words wordsearch zebra
+EXAMPLES := dlx-pre domino filomino hollow langford partridge pentominoes \
+            queen sudoku transversal word-cube-dlx words wordsearch zebra
 GOFILES  := $(foreach e,$(EXAMPLES),$(e)/$(e).go)
 PDFFILES := $(foreach e,$(EXAMPLES),$(e)/$(e).pdf)
 
