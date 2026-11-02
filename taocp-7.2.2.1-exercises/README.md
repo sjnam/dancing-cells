@@ -24,6 +24,25 @@ Nothing is claimed that the program does not check.
 When a reading turns out to be wrong it is corrected in place, and the change
 is listed here, newest first, so that a returning reader can see what moved.
 
+- **2 November 2026, the rest.** Every other reading that reports a
+  discrepancy has now been rechecked the same way, and every discrepancy
+  stands; four readings changed in how they argue for it.
+  [387](387) had three faults, found by going back to the book's figure at
+  1200 dots per inch: it bounded the top faces of a drawing by the number of
+  columns, which is wrong when a column has a gap; it miscounted the faces of
+  two drawings (9 and 5, not 10 and 6); and it took the type (v) drawing for
+  a flat pinwheel of eight cubies, where it has more beneath and so at least
+  twelve. Both of its conclusions stand, the one for type (vi) now on a
+  different argument. [196](196)'s "the first branch is not always on $Y\_n$"
+  depends on the order of the items, and now says so; its other point about
+  the branching does not. [442](442)'s brute-force check shares the
+  convention that decides the 1 × 1 entry, so it is no evidence for it, and
+  now says so. [147](147) gained a count that anyone can run and that shares
+  no code with the rest, and it gives the same 22. [129](129) needed nothing:
+  its second opinion already shares only the option list, which can lose
+  solutions but never add them. [262](262) rests on a transcription of the
+  printed bound, which I have compared with the book again, and its
+  arithmetic is done by hand; [346](346)'s 5/8 is checked by hand as well.
 - **2 November 2026, [334](334).** The first version said that the counts for
   the W-wall and the X-wall do not reproduce, giving 162 / 22 and 494 / 208
   against the answer's 282 / 33 and 612 / 275. The error was mine. My program
@@ -39,8 +58,8 @@ is listed here, newest first, so that a returning reader can see what moved.
   and I withdraw it. 4011 and 570 remain unreproduced under the three readings
   tried, which are now listed.
 - **2 November 2026, [323](323) and [375](375).** After 334, every reading that
-  reports a discrepancy is being rechecked by a route that shares nothing with
-  the step that produced it. These two stand: 323 by counting without the hole
+  reports a discrepancy was rechecked by a route that shares nothing with the
+  step that produced it. These two stand: 323 by counting without the hole
   item, 375 by trying every labeling of every pattern, so that no slip in
   copying the diagram could matter.
 
@@ -101,17 +120,18 @@ index.
   so the corrected version has no defect at all.
 - **[196](196).** Answer (i) says its example branches on
   $Y\_9$, then $X\_2$, then $Y\_8$; it branches on
-  $Y\_9$, then $X\_1$, then $Y\_8$, then $X\_2$. And "the first branch is on
-  $Y\_n$" fails in 1324 of the 9055 cases, the smallest being 33355, which
-  branches on $Y\_4$.
+  $Y\_9$, then $X\_1$, then $Y\_8$, then $X\_2$; no convention for breaking
+  ties can put $X\_2$ second. And with the items in the order
+  $Y\_1, \ldots, Y\_n$, "the first branch is on $Y\_n$" fails in 1324 of the
+  9055 cases, the smallest being 33355, which branches on $Y\_4$.
 - **[262](262).** The items of part (b), written out as the answer prints them,
   give a problem with no tilings at all: one bound is missing. Everything the
   recipe is meant to produce is confirmed once it is restored.
 - **[387](387).** The exercise asks for examples "using the minimum number of
-  cubies," and two of the drawings use more: the type (v) example spends eight
-  cubies where six suffice, and the type (vi) example at least seven where six
-  suffice. The sentence about them also says "these twelve examples" where
-  there are **eleven**.
+  cubies," and two of the drawings use more: the type (v) example spends at
+  least twelve cubies where six suffice, and the type (vi) example at least
+  seven where six suffice. The sentence about them also says "these twelve
+  examples" where there are **eleven**.
 - **[432](432).** The puzzle the answer calls the hardest, 6 19 6 / 8 11 10,
   cannot exist: its across clues total 31 and its down clues total 29, and both
   are the sum of the same seven digits.

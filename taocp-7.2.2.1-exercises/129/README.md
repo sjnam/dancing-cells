@@ -1,7 +1,8 @@
 # TAOCP 7.2.2.1, Exercise 129: A Careful Reading
 
 Written 5 September 2026, against Volume 4B, Addison-Wesley, first printing,
-2022, and the errata file as of that date.
+2022, and the errata file as of that date. Rechecked 2 November 2026; see
+section 14.
 
 This is one reader's response to the request on Knuth's [news
 page](https://www-cs-faculty.stanford.edu/~knuth/news.html): read an exercise
@@ -461,6 +462,13 @@ the twelve top-down numbers are all correct.
   predicts — never off by one, never a near miss.
 * The number 261 comes out three separate ways (sections 8 and 9), and
   1,417,168 twice (sections 5 and 7).
+* Rechecked in November 2026, after a bug in my reading of exercise 334 had
+  hidden behind checks that all shared one step. Here the one step the second
+  opinion of section 13 shares with the model is the list of options, and a
+  wrong list of options can only lose solutions, never add them. Every one of
+  the placements behind the 12,839 extra classes was confirmed genuine by that
+  second opinion, so 294,457 is at worst an undercount, and it already exceeds
+  the printed 281,618.
 
 ## 15. Method
 

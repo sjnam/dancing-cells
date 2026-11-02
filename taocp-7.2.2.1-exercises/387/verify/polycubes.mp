@@ -1,6 +1,9 @@
-% Exercise 7.2.2.1-387.  On the left, the polycube answer 387 draws for
-% symmetry type (v), "90 degrees": a flat pinwheel of eight cubies, recovered
-% from the printed picture.  In the middle, a six-cubie polycube of the same
+% Exercise 7.2.2.1-387.  On the left, the likeliest reading of the polycube
+% answer 387 draws for symmetry type (v), "90 degrees": a pinwheel of eight
+% cubies with four more beneath its middle.  The drawing shows the pinwheel's
+% eight tops at one height and faces below them, and what lies below a
+% quarter-turn pinwheel comes in fours, so it has at least twelve cubies.
+% In the middle, a six-cubie polycube of the same
 % type -- the plus pentomino with one cubie on top of its centre.  On the
 % right, six cubies of type (vi), "bidiagonal".  Six is the minimum in both
 % cases, so the two printed examples are larger than they need to be.
@@ -50,8 +53,9 @@ beginfig(1);
   pair o;
 
   o := (0, 0);
-  solid("020" & "100" & "110" & "120" & "210" & "220" & "230" & "310", ca, o);
-  label.bot(btex answer 387's type (v): eight cubies etex, o + (0, -68bp));
+  solid("110" & "120" & "210" & "220" &
+        "021" & "101" & "111" & "121" & "211" & "221" & "231" & "311", ca, o);
+  label.bot(btex answer 387's type (v): at least twelve etex, o + (0, -68bp));
 
   o := (150bp, 8bp);
   solid("010" & "100" & "110" & "111" & "120" & "210", cb, o);

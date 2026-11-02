@@ -939,25 +939,41 @@ Counting cubies in a small isometric drawing is not something to do by eye, but
 one feature of such a drawing can be counted without any risk: the shaded top
 faces, one for each cubie that has nothing directly above it. I read those off
 the printed figure by looking for connected patches of the colour reserved for
-top faces, and got
+top faces, in the publisher's PDF of the book rendered at 1200 dots per inch,
+and got
 
 $$\vbox{\halign{\hfil#\quad&#\hfil\cr
-1&full\cr 10&even\cr 2&8-fold\cr 3&6-fold\cr 8&90$^\circ$\cr 6&bidiagonal\cr
+1&full\cr 9&even\cr 2&8-fold\cr 3&6-fold\cr 8&90$^\circ$\cr 5&bidiagonal\cr
 6&tricentral\cr 3&120$^\circ$\cr 3&diagonal\cr 4&axial\cr 4&none.\cr}}$$
 
-Now, a drawing shows one top face for each column of the polycube along the
-direction it is drawn as vertical. So the most top faces an $n$-cubie polycube
-can ever show is the largest of its three projections, and if a drawing shows
-more than that, the thing drawn is not of the minimum size.
+So the most top faces an $n$-cubie polycube can ever show is the largest number
+of its cubies that have nothing directly above them, over the six directions it
+might be drawn with upwards; if a drawing shows more than that, the thing drawn
+is not of the minimum size.
+
+My first version said instead that a drawing shows one top face for each
+column, and bounded the count by the largest of the three projections. That is
+not right in general: a column with a gap in it has two exposed tops, and an
+oblique drawing can show part of the lower one. I came back to this in November
+2026, after a bug in another of these readings (exercise 334) had hidden behind
+an assumption that all its checks shared. For every type at its minimum size
+the two bounds turn out to be equal.
+
+That recheck also sent me back to the figure itself, and two of the counts
+I had read off it in September were wrong: the even type shows 9 top faces, not
+10, and the bidiagonal type 5, not 6. The 9 changes nothing. The 5 changes the
+argument for type (vi), because six cubies can show five top faces; but the
+picture still cannot be of six cubies, for another reason, given below.
 
 @<Weigh the pictures in answer 387@>=
 fmt.Println("weighing the pictures against the minimum")
-printed := map[string]int{"full": 1, "even": 10, "8-fold": 2, "6-fold": 3,
-	"90 deg": 8, "bidiagonal": 6, "tricentral": 6, "120 deg": 3,
+printed := map[string]int{"full": 1, "even": 9, "8-fold": 2, "6-fold": 3,
+	"90 deg": 8, "bidiagonal": 5, "tricentral": 6, "120 deg": 3,
 	"diagonal": 3, "axial": 4, "none": 4}
 @<Find, for each size, the most top faces a polycube of each type can show@>
 @<Say which pictures are too big@>
 @<Look at the type (v) picture itself@>
+@<Look at the type (vi) picture itself@>
 
 @ @<Find, for each size, the most top faces a polycube of each type can show@>=
 mostTops := map[string]map[int]int{}
@@ -969,7 +985,7 @@ for n := 1; n <= 6; n++ {
 	for s := range cur {
 		p := unkey(s)
 		nm := typeName(rot, rotIdx, rotCls, p)
-		t := columns(p)
+		t := exposedTops(p)
 		if mostTops[nm] == nil {
 			mostTops[nm] = map[int]int{}
 		}
@@ -980,18 +996,22 @@ for n := 1; n <= 6; n++ {
 }
 
 @ @<Functions@>=
-func columns(p []vec) int {
+func exposedTops(p []vec) int {
+	in := map[vec]bool{}
+	for _, c := range p {
+		in[c] = true
+	}
 	best := 0
-	for _, f := range []func(vec) [2]int{
-		func(c vec) [2]int { return [2]int{c.x, c.y} },
-		func(c vec) [2]int { return [2]int{c.x, c.z} },
-		func(c vec) [2]int { return [2]int{c.y, c.z} }} {
-		seen := map[[2]int]bool{}
+	for _, u := range []vec{{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0},
+		{0, 0, 1}, {0, 0, -1}} {
+		k := 0
 		for _, c := range p {
-			seen[f(c)] = true
+			if !in[vec{c.x + u.x, c.y + u.y, c.z + u.z}] {
+				k++
+			}
 		}
-		if len(seen) > best {
-			best = len(seen)
+		if k > best {
+			best = k
 		}
 	}
 	return best
@@ -1022,17 +1042,116 @@ for i, c := range rotCls {
 		roman(i+1)+")", nm, least, mostTops[nm][least], printed[nm], verdict)
 }
 
-@ The type (v) drawing can be read exactly, because its eight top faces all sit
-at one height in the drawing's projection: it is a flat pinwheel of eight
-cubies. Here it is, next to a six-cubie polycube of the same type.
+@ The type (v) drawing's eight top faces all sit at one height in the drawing's
+projection, and they make a pinwheel. In September I took that to mean a flat
+pinwheel of eight cubies. It does not: looked at in the book at 1200 dots per
+inch, the drawing also shows front faces below that level, so there is more
+underneath. Every cubie of the top level shows its top, so that level is the
+pinwheel exactly; and the quarter turn of a pinwheel is about an axis through
+the corner shared by its middle four cells, which passes through no cubie, so
+whatever lies below comes in fours. The drawing therefore has at least twelve
+cubies. The likeliest reading is the pinwheel with the middle four cells
+repeated beneath it, which is again of type 90$^\circ$. Here are the
+pinwheel, that reading, and a six-cubie polycube of the same type.
 
 @<Look at the type (v) picture itself@>=
 pinwheel := []vec{{0, 2, 0}, {1, 0, 0}, {1, 1, 0}, {1, 2, 0},
 	{2, 1, 0}, {2, 2, 0}, {2, 3, 0}, {3, 1, 0}}
+twelve := append(append([]vec{}, pinwheel...), vec{1, 1, -1}, vec{1, 2, -1},
+	vec{2, 1, -1}, vec{2, 2, -1})
 mine := []vec{{0, 1, 0}, {1, 0, 0}, {1, 1, 0}, {1, 1, 1}, {1, 2, 0}, {2, 1, 0}}
-for _, p := range [][]vec{pinwheel, mine} {
+for _, p := range [][]vec{pinwheel, twelve, mine} {
 	fmt.Printf("  %d cubies, connected %v, type %s:  %s\n",
 		len(p), connected(p), typeName(rot, rotIdx, rotCls, p), show(shift(p)))
+}
+
+@ The type (vi) drawing shows five top faces, and a bidiagonal polycube of six
+cubies can show five; so counting faces does not settle it. Their arrangement
+does. Fitting the four full ones to the projection puts them all at one height,
+in the shape of a T tetromino; the fifth is a sliver lower down. No bidiagonal
+polycube of six cubies, turned any of the 24 ways, has four exposed top faces
+at one height that make a T. Among those of seven cubies some do, and the only
+one that is not flat---a flat one would show all seven of its tops---shows
+exactly five: a T on one level, whose stem runs on into a column three cubies
+tall. That is almost certainly the picture, and it has seven cubies where six
+suffice.
+
+The loop above leaves |cur| holding the polycubes of six cubies, so one more
+round of growth gives those of seven.
+@<Look at the type (vi) picture itself@>=
+for n := 6; n <= 7; n++ {
+	if n == 7 {
+		@<Add one cubie in every way@>
+	}
+	ways, notFlat := 0, map[string]int{}
+	for s := range cur {
+		p := unkey(s)
+		if typeName(rot, rotIdx, rotCls, p) != "bidiagonal" {
+			continue
+		}
+		for _, m := range rot {
+			@<Count |m| if it shows a T of exposed tops at one height@>
+		}
+	}
+	fmt.Printf("  bidiagonal, %d cubies: %d orientations show a T of top faces"+
+		" at one height", n, ways)
+	for k, e := range notFlat {
+		fmt.Printf("; not flat: %s, with %d exposed tops", k, e)
+	}
+	fmt.Println()
+}
+
+@ Four cells of a level make a T tetromino exactly when one of them has the
+other three as neighbours; so the level holds a T among its exposed tops
+exactly when one of them has at least three exposed neighbours.
+@<Count |m| if it shows a T of exposed tops at one height@>=
+q := make([]vec, len(p))
+in := map[vec]bool{}
+for j, c := range p {
+	q[j] = act(m, c)
+	in[q[j]] = true
+}
+level := map[int][]vec{}
+exposed := 0
+for _, c := range q {
+	if !in[vec{c.x, c.y, c.z + 1}] {
+		level[c.z] = append(level[c.z], c)
+		exposed++
+	}
+}
+isT := false
+for _, cs := range level {
+	for _, c := range cs {
+		nb := 0
+		for _, d := range cs {
+			if abs(c.x-d.x)+abs(c.y-d.y) == 1 {
+				nb++
+			}
+		}
+		if nb >= 3 {
+			isT = true
+		}
+	}
+}
+if isT {
+	ways++
+	flat := true
+	for _, c := range q {
+		if c.z != q[0].z {
+			flat = false
+		}
+	}
+	if !flat {
+		notFlat[show(shift(q))] = exposed
+	}
+}
+
+@ @<Functions@>=
+func abs(a int) int {
+	if a < 0 {
+		return -a
+	}
+	return a
 }
 
 @* Index.

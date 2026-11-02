@@ -1,7 +1,8 @@
 # TAOCP 7.2.2.1, Exercise 387: A Careful Reading
 
 Written 6 September 2026, against Volume 4B, Addison-Wesley, first printing,
-2022, and the errata file as of that date.
+2022, and the errata file as of that date. Rechecked 2 November 2026; see
+section 8.
 
 This is one reader's response to the request on Knuth's [news
 page](https://www-cs-faculty.stanford.edu/~knuth/news.html): read an exercise
@@ -20,7 +21,7 @@ and its answer very carefully, then report back.
 | Class (ii)'s minimum: 20 cubies, 12 round a core of 8 | Confirmed. |
 | Class (iv), one symmetry per permutation | Confirmed. |
 | Seven classes from the square's eight types | Confirmed, and "180°" = axial. |
-| The example for type (v), 90° | **8 cubies; 6 suffice.** |
+| The example for type (v), 90° | **At least 12 cubies; 6 suffice.** |
 | The example for type (vi), bidiagonal | **At least 7; 6 suffice.** |
 | "Many of these **twelve** examples" | Should be **eleven**. |
 
@@ -28,7 +29,7 @@ The mathematics of answer 387 is right down to the last count. What comes up
 short is the figure: the exercise asks for examples "using the minimum number
 of cubies," and two of the eleven drawings use more than the minimum.
 
-![Answer 387's type (v) example beside two six-cubie ones](polycubes.png)
+![The likeliest reading of answer 387's type (v) example, beside two six-cubie ones](polycubes.png)
 
 Along the way these notes work out something the answer gives for only one of
 the eleven types: the minimum number of cubies for each.
@@ -168,43 +169,53 @@ a 2×2×2 block and the other twelve surround it.
 
 Counting cubies in a small isometric drawing is not something to trust the eye
 with, but one feature of such a drawing can be counted safely: the shaded top
-faces. A drawing shows one top face for each column of the polycube along
-whichever direction is drawn as vertical, so **the number of top faces is the
-number of columns**, and the most an $n$-cubie polycube can ever show is the
-largest of its three projections.
+faces. A drawing can show a top face only for a cubie with nothing directly
+above it, so **the most top faces an $n$-cubie polycube can show is the largest
+number of such cubies**, over the six directions it might be drawn with
+upwards.
 
-I read the top faces off the printed figure by looking for connected patches of
-the colour reserved for them. Then:
+I read the top faces off the publisher's PDF of the book, rendered at 1200 dots
+per inch, by counting connected patches of the colour reserved for them. Then:
 
 | | type | minimum | most top faces a minimal one can show | the drawing shows |
 | --- | --- | --- | --- | --- |
 | (i) | full | 1 | 1 | 1 |
-| (ii) | even | 20 | — | 10 |
+| (ii) | even | 20 | — | 9 |
 | (iii) | 8-fold | 2 | 2 | 2 |
 | (iv) | 6-fold | 6 | 4 | 3 |
 | (v) | 90° | 6 | 5 | **8** |
-| (vi) | bidiagonal | 6 | 5 | **6** |
+| (vi) | bidiagonal | 6 | 5 | 5 |
 | (vii) | tricentral | 6 | 6 | 6 |
 | (viii) | 120° | 4 | 3 | 3 |
 | (ix) | diagonal | 3 | 3 | 3 |
 | (x) | axial | 4 | 4 | 4 |
 | (xi) | none | 4 | 4 | 4 |
 
-Nine of the eleven are consistent with the minimum. Two are not.
+By this count alone, ten of the eleven are consistent with the minimum. A
+closer look at the arrangement of the faces shows that two are not.
 
-**Type (v), 90°.** Its picture can be read off completely, not merely bounded.
-Its eight top faces are complete, unoccluded rhombi, and fitting them to the
-drawing's projection puts all eight at the same height, so the polycube is one
-layer deep and has exactly eight cubies. Recovering their positions gives a
-flat pinwheel, and that shape does have symmetry type 90°. But six cubies
-suffice: take the plus pentomino and stand one cubie on its centre. That is the
-middle polycube in the picture above, and its symmetry group is the cyclic
-group of order 4 and nothing more.
+**Type (v), 90°.** Its eight top faces are complete, unoccluded rhombi, and
+fitting them to the drawing's projection puts all eight at one height, in the
+shape of a pinwheel. Every cubie of that level shows its top, so the level is
+the pinwheel exactly. Below it the drawing shows more front faces, so there is
+more underneath; and the pinwheel's quarter turn is about the corner shared by
+its middle four cells, which passes through no cubie, so whatever lies below
+comes in fours. **The drawing has at least twelve cubies.** The likeliest
+reading, the pinwheel with its middle four repeated beneath it, is on the left
+above, and it is of type 90°. But six cubies suffice: take the plus pentomino
+and stand one cubie on its centre. That is the middle polycube in the picture
+above, and its symmetry group is the cyclic group of order 4 and nothing more.
 
-**Type (vi), bidiagonal.** Its picture shows six top faces — four full rhombi
-and two slivers, far enough apart that they cannot be two pieces of one face.
-No six-cubie polycube of that type can show more than five, so the drawing has
-at least seven cubies. Six suffice, and one that does is on the right above.
+**Type (vi), bidiagonal.** Its picture shows five top faces: four full rhombi
+and one sliver. Six cubies of this type can show five, so the count does not
+settle it, but the arrangement does. The four full rhombi sit at one height in
+the shape of a T tetromino, and no bidiagonal polycube of six cubies, turned
+any of the 24 ways, has four exposed tops at one height that make a T. **So the
+drawing has at least seven cubies.** Among those of seven, the only one that
+shows such a T and is not flat (a flat one would show all seven tops) shows
+exactly five: a T whose stem runs on into a column three cubies tall. That is
+almost certainly the picture. Six suffice, and one that does is on the right
+above.
 
 Nothing else in the answer depends on either drawing.
 
@@ -229,11 +240,25 @@ them" — and the figure is labelled (i) through (xi). So **twelve** should read
   and match the published sequence, which is a check on the canonical form.
 - Every claimed example was fed back through the symmetry-group routine, so
   each one is confirmed to have exactly the group claimed and no more.
+- **What the first version got wrong.** I rechecked this reading in November
+  2026, after a bug in my reading of exercise 334 had hidden behind an
+  assumption that all its checks shared, and three things in it were wrong,
+  though not its conclusions. It bounded the top faces by the number of
+  columns, which fails when a column has a gap; with the correct bound every
+  entry of the table is the same. It read 10 and 6 top faces for types (ii)
+  and (vi), where the book, rendered at 1200 dots per inch, shows 9 and 5; the
+  9 changes nothing, and the 5 needed the argument from the T above in place of
+  the count. And it called the type (v) drawing a flat pinwheel of exactly
+  eight cubies, where it has faces below the pinwheel and so at least twelve.
+  The T argument was checked twice, by the program and by a separate script
+  that shares no code with it, and the two disagreed at first, which found a
+  slip in the program's test for a T.
 - The top faces in the printed figure were counted mechanically, by connected
   components of the top-face colour, not by eye; the eleven groups separated
   cleanly and lined up one-to-one with the eleven labels.
-- The recovered type (v) polycube was checked to have type 90° and eight
-  cubies, so the discrepancy is not an artefact of the reading.
+- The likeliest reading of the type (v) drawing, and its top level alone, were
+  both checked to have type 90°, so the discrepancy is not an artefact of the
+  reading.
 - I also checked the errata file for Volume 4B; it has nothing on exercise 387
   or its answer.
 

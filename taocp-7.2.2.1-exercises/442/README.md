@@ -1,7 +1,8 @@
 # TAOCP 7.2.2.1, Exercise 442: A Careful Reading
 
 Written 7 September 2026, against Volume 4B, Addison-Wesley, first printing,
-2022, and the errata file as of that date.
+2022, and the errata file as of that date. Rechecked 2 November 2026; see
+section 4.
 
 This is one reader's response to the request on Knuth's [news
 page](https://www-cs-faculty.stanford.edu/~knuth/news.html): read an exercise
@@ -150,6 +151,12 @@ solution of a valid hitori puzzle is a hitori cover. The solution of the
 one-cell puzzle `a` leaves its cell white — there is no duplicate to remove —
 so *U* = {*v*} **is** a hitori cover of P1 □ P1, and
 the entry should be `[0..0]`.
+
+Both programs here take the null graph to be disconnected, so their agreement
+on this entry proves nothing about it; it is a choice they share, not a fact
+they found. The case for `[0..0]` rests on answers 441 and 439(b) alone. (I
+added this paragraph in November 2026, after a bug in my reading of exercise
+334 had hidden behind checks that all shared one step.)
 
 Put the other way round: answer 442's `[1..1]` and answer 441's valid one-cell
 puzzle cannot both be right. It is a one-cell corner of a 45-board table, but

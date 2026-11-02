@@ -1,7 +1,8 @@
 # TAOCP 7.2.2.1, Exercise 196: A Careful Reading
 
 Written 9 September 2026, against Volume 4B, Addison-Wesley, first printing,
-2022, and the errata file as of that date.
+2022, and the errata file as of that date. Rechecked 2 November 2026; see
+section 7.
 
 This is one reader's response to the request on Knuth's [news
 page](https://www-cs-faculty.stanford.edu/~knuth/news.html): read an exercise
@@ -23,7 +24,7 @@ and its answer very carefully, then report back.
 | (h) $\Pi\_n = \lfloor (n{+}1)/2 \rfloor \lfloor (n{+}2)/2 \rfloor$ | **Two factorial signs are missing.** |
 | (h) the series $6 + 4/1! + 5/2! + \cdots \approx 4e-1$ | **The leading term is 2, not 6.** |
 | (i) $1 + b\_1(n+1)$ updates at the root when $b\_1 < a\_1$ | Confirmed; every one of 9055 cases. |
-| (i) "the first branch is on $Y\_n$" | Not always: 1324 of those 9055 branch on an earlier $Y$. |
+| (i) "the first branch is on $Y\_n$" | Not always, with the items in the order $Y\_1, \ldots, Y\_n$: 1324 of those 9055 branch on an earlier $Y$. |
 | (i) "branches on $Y\_9$, then $X\_2$, then $Y\_8$" | **It branches on $Y\_9$, then $X\_1$, then $Y\_8$, then $X\_2$.** |
 
 Answer 196 is nine claims deep and the first seven of them come out exactly, on
@@ -78,8 +79,10 @@ solutions, which no algorithm can disagree about.
 The one implementation detail that matters is the tie-break in step X3.
 Knuth's programs scan the active items in order and keep a new candidate only
 when its length is *strictly* smaller, so the leftmost of the shortest items
-wins. Our items are declared $X\_1, \ldots, X\_n, Y\_1, \ldots, Y\_n$, which is
-the order the exercise uses.
+wins. Our items are declared $X\_1, \ldots, X\_n, Y\_1, \ldots, Y\_n$. Page 103
+writes the two sets in that order, as $\lbrace X\_1, \ldots, X\_n \rbrace$ and
+$\lbrace Y\_1, \ldots, Y\_n \rbrace$, but it does not say how the items are
+listed for Algorithm X, so wherever a tie decides something below, I say so.
 
 ## 3. The dual, and the inverses
 
@@ -244,6 +247,14 @@ sequences with $n \le 10$ and $b\_1 < a\_1$, 1324 branch on an earlier $Y$. The
 update count $1 + b\_1(n+1)$ is unaffected, because the tied items are exactly
 those whose options all run to $X$'s of full length $n$.
 
+This one is about tie-breaking, not about counting, and it depends on the
+order of the items. With the $Y$'s listed from $Y\_n$ down, the leftmost of
+the tied items would always be $Y\_n$, and the sentence would hold. So it is
+worth reading as "the first branch is on a shortest $Y$, which is $Y\_n$ unless
+some other $Y$ ties with it". (I added this paragraph in November 2026, after a
+bug in my reading of exercise 334 had hidden behind an assumption that all its
+checks shared.) The next point does not depend on any such convention.
+
 **The example's branching sequence is different.** The answer says
 
 > The example problem in (a) branches on $Y\_9$, then $X\_2$, then $Y\_8$, etc.
@@ -262,7 +273,9 @@ $b\_1 = 2$, so the tie goes to $X\_1$; the two sides then alternate while the
 bounds stay tight, and from depth 6 on the $X$'s win outright. No ordering of
 the items produces the printed sequence: declaring the $Y$'s first gives
 $Y\_9$, $Y\_8$, $X\_1$, $Y\_7$, $X\_2$, and $X\_2$ has four options at depth 1
-under either convention, when the minimum there is two.
+under either convention, when the minimum there is two. An item that is not of
+minimum length cannot be chosen however ties are broken, so no convention
+puts $X\_2$ second.
 
 Neither slip touches a number. Answer (i)'s point — that the assumption of (e)
 fails, and that $1 + b\_1(n+1)$ replaces $1 + a\_1(n+1)$ when it does — stands

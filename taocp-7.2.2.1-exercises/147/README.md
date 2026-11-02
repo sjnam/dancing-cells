@@ -1,7 +1,8 @@
 # TAOCP 7.2.2.1, Exercise 147: A Careful Reading
 
 Written 5 September 2026, against Volume 4B, Addison-Wesley, first printing,
-2022, and the errata file as of that date.
+2022, and the errata file as of that date. Rechecked 2 November 2026; see
+section 7.
 
 This is one reader's response to the request on Knuth's [news
 page](https://www-cs-faculty.stanford.edu/~knuth/news.html): read an exercise
@@ -207,6 +208,15 @@ tried to break it.
   rotated spellings instead of by the naming rule, and its own classification
   code. It shares no line with the first. It agrees on every number in this
   report, including the 22.
+- **A third, which anyone can run.** That second program is not in this
+  directory, so in November 2026 — after a bug in my reading of exercise 334
+  had hidden behind checks that all shared one step — I added one to
+  [`verify.w`](verify/verify.w) that shares nothing with the rest of it:
+  thirty cubes made by sorting the 720 paintings by rotation, and plain
+  backtracking with the first cell pinned. `-mode brute -b 2x2x4` gives 244
+  bricks, with 4, 46, 172 and 22 showing 3, 4, 5 and 6 colours, and the
+  neighbouring cases give 8, 38 and 28 bricks with six colours, as the
+  answer's own lines imply.
 - **A third model** for the disputed statistic, described above, which
   reproduces the answer's own numbers in three neighbouring cases.
 - **The factor of 720**, checked directly for 2 × 2 × 4: 175,680 = 244 × 720.
@@ -241,6 +251,7 @@ cd taocp-7.2.2.1-exercises/147/verify && go build -o verify .
 ./verify -mode catalog                 # the whole catalogue, about 13 seconds
 ./verify -mode near                    # the two near misses
 ./verify -mode six -b 2x2x4            # 22
+./verify -mode brute -b 2x2x4          # 22 again, sharing no code with the rest
 ./verify -mode solve -b 2x2x4 -nopin   # 175680
 ./verify -mode solve -b 2x2x4 -dump    # every class, with its six side colours
 ```

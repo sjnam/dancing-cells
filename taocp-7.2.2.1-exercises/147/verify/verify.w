@@ -46,7 +46,7 @@ shapes the answer mentions in its closing parenthesis, and the six mode counts
 the bricks whose outer sides show six different colours---a statistic that turns
 out to be worth having.
 @<Read the command line@>=
-mode := flag.String("mode", "catalog", "census, printed, catalog, near, six, or solve")
+mode := flag.String("mode", "catalog", "census, printed, catalog, near, six, solve, or brute")
 size := flag.String("b", "2x2x4", "brick size lxmxn")
 nopin := flag.Bool("nopin", false, "keep all 720 options for the first cell")
 dump := flag.Bool("dump", false, "list every essentially different brick")
@@ -67,6 +67,8 @@ case "six":
 	distinctSides(brick{l, m, n})
 case "solve":
 	report(brick{l, m, n})
+case "brute":
+	bruteSides(l, m, n)
 case "catalog":
 	@<Run every shape that could possibly work@>
 default:
@@ -1064,5 +1066,190 @@ if len(ts) > 0 {
 	fmt.Printf(", the first built from %d of the thirty cubes", len(used))
 }
 fmt.Println()
+
+@* A count that shares nothing.
+Section~6 of the notes says that a second program, written separately, agreed
+on the 22. That program never made it into this directory, so in November 2026
+I wrote another one here, after a bug in my reading of exercise 334 had hidden
+behind checks that all shared one step. It shares nothing with the rest of this
+file: not the naming rule, not the coordinates of exercise 145, not the exact
+cover engine, not the classification. It knows only that a cube is a way of
+painting six colours on six faces, counted up to rotation, and it builds bricks
+by plain backtracking, one cell at a time.
+
+The faces of a cell are numbered $+x$, $-x$, $+y$, $-y$, $+z$, $-z$. A
+rotation is a permutation of those six, and two quarter turns generate all
+twenty-four. Turning a painting by a rotation moves the colour of face~$f$ to
+face~|r[f]|.
+@<Functions@>=
+func bruteSides(l, m, n int) {
+	@<Make the twenty-four rotations, from two quarter turns@>
+	@<Sort the 720 paintings into thirty cubes@>
+	@<Index the paintings by their colours on the low faces@>
+	@<Build the bricks cell by cell, with the first cell pinned@>
+	fmt.Printf("%dx%dx%d by plain backtracking: %d bricks;"+
+		" by number of outside colours %v\n", l, m, n, total, byCount)
+}
+
+@ @<Make the twenty-four rotations, from two quarter turns@>=
+qx := [6]int{0, 1, 4, 5, 3, 2}
+qz := [6]int{2, 3, 1, 0, 4, 5}
+turnsOf := map[[6]int]bool{{0, 1, 2, 3, 4, 5}: true}
+for grown := true; grown; {
+	grown = false
+	for r := range turnsOf {
+		for _, q := range [][6]int{qx, qz} {
+			var t [6]int
+			for f := range 6 {
+				t[f] = q[r[f]]
+			}
+			if !turnsOf[t] {
+				turnsOf[t], grown = true, true
+			}
+		}
+	}
+}
+
+@ A painting is a string of six colours, one per face. Every painting of a cube
+is one of its twenty-four turnings, so going through all 720 and marking each
+turning of every new one sorts them into cubes; there should be thirty.
+@<Sort the 720 paintings into thirty cubes@>=
+var paints []string
+var perm func(pre string, rest string)
+perm = func(pre, rest string) {
+	if rest == "" {
+		paints = append(paints, pre)
+	}
+	for i := range len(rest) {
+		perm(pre+rest[i:i+1], rest[:i]+rest[i+1:])
+	}
+}
+perm("", "abcdef")
+cubeOf := map[string]int{}
+nc := 0
+for _, p := range paints {
+	if _, ok := cubeOf[p]; ok {
+		continue
+	}
+	for r := range turnsOf {
+		t := []byte(p)
+		for f := range 6 {
+			t[r[f]] = p[f]
+		}
+		cubeOf[string(t)] = nc
+	}
+	nc++
+}
+if nc != 30 || len(cubeOf) != 720 {
+	panic("the paintings do not make thirty cubes")
+}
+
+@ A cell's three low faces must match whatever lies below, behind and to the
+left of it, so the paintings are filed by those three colours, with a dot where
+there is no neighbour yet.
+@<Index the paintings by their colours on the low faces@>=
+lowKey := func(p string, has [3]bool) string {
+	k := []byte("...")
+	for i, f := range []int{1, 3, 5} {
+		if has[i] {
+			k[i] = p[f]
+		}
+	}
+	return string(k)
+}
+filed := map[[3]bool]map[string][]string{}
+for _, has := range [][3]bool{{false, false, false}, {false, false, true},
+	{false, true, false}, {false, true, true}, {true, false, false},
+	{true, false, true}, {true, true, false}, {true, true, true}} {
+	filed[has] = map[string][]string{}
+	for _, p := range paints {
+		filed[has][lowKey(p, has)] = append(filed[has][lowKey(p, has)], p)
+	}
+}
+
+@ The six outer sides must each be one colour, so the colour of a side is
+fixed by the first cell that touches it, and every later cell must agree.
+@<Build the bricks cell by cell, with the first cell pinned@>=
+var cs [][3]int
+for i := range l {
+	for j := range m {
+		for k := range n {
+			cs = append(cs, [3]int{i, j, k})
+		}
+	}
+}
+at := map[[3]int]string{}
+side := map[int]byte{}
+used := map[int]bool{}
+total, byCount := 0, map[int]int{}
+var place func(c int)
+place = func(c int) {
+	if c == len(cs) {
+		@<Tally one brick by its outside colours@>
+		return
+	}
+	@<Try every painting that fits cell |cs[c]|@>
+}
+place(0)
+
+@ @<Tally one brick by its outside colours@>=
+seen := map[byte]bool{}
+for _, x := range side {
+	seen[x] = true
+}
+total++
+byCount[len(seen)]++
+
+@ @<Try every painting that fits cell |cs[c]|@>=
+i, j, k := cs[c][0], cs[c][1], cs[c][2]
+var has [3]bool
+want := []byte("...")
+for x, nb := range [][3]int{{i - 1, j, k}, {i, j - 1, k}, {i, j, k - 1}} {
+	if p, ok := at[nb]; ok {
+		has[x], want[x] = true, p[[]int{0, 2, 4}[x]]
+	}
+}
+outer := []int{}
+for _, s := range [][2]int{{1, i}, {0, l - 1 - i}, {3, j}, {2, m - 1 - j},
+	{5, k}, {4, n - 1 - k}} {
+	if s[1] == 0 {
+		outer = append(outer, s[0])
+	}
+}
+cand := filed[has][string(want)]
+if c == 0 {
+	cand = []string{"abcdef"}
+}
+for _, p := range cand {
+	@<Place |p| in cell |cs[c]| if its cube is free and its outer sides agree@>
+}
+
+@ @<Place |p| in cell |cs[c]| if its cube is free and its outer sides agree@>=
+q := cubeOf[p]
+if used[q] {
+	continue
+}
+fits := true
+var fresh []int
+for _, f := range outer {
+	if x, ok := side[f]; !ok {
+		fresh = append(fresh, f)
+	} else if x != p[f] {
+		fits = false
+	}
+}
+if !fits {
+	continue
+}
+for _, f := range fresh {
+	side[f] = p[f]
+}
+used[q], at[cs[c]] = true, p
+place(c + 1)
+delete(at, cs[c])
+used[q] = false
+for _, f := range fresh {
+	delete(side, f)
+}
 
 @* Index.
