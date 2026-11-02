@@ -10,8 +10,11 @@ day. Section 7.2.2.1 is the dancing-links section, so most of these questions
 come down to an exact cover problem, and the engines of the
 [repository above](..) do the searching.
 
-The news page lists nineteen exercises for §7.2.2.1. **All nineteen have a
-reading here.**
+When these readings were written, in September 2026, the news page listed
+nineteen exercises for §7.2.2.1. **All nineteen have a reading here.** As of
+3 November 2026 it lists thirteen: 55, 147, 305–306, 320, 323 and 337 have
+come off the list. Their readings stay, marked *no longer listed* in the table
+below.
 
 Each exercise's directory holds the report itself as `README.md` — which is
 what GitHub shows when you open it — and the program behind it as a
@@ -68,19 +71,19 @@ is listed here, newest first, so that a returning reader can see what moved.
 | Exercise | What the news page asks | What came out |
 | --- | --- | --- |
 | [29, 30](029-030) | Characterize all search trees that can arise with Algorithm X | answer 30 is broken by the one-node tree |
-| [55](055) | Determine the fewest clues needed to force highly symmetric sudoku solutions | confirmed, and the hard half done more cheaply |
+| [55](055) | Determine the fewest clues needed to force highly symmetric sudoku solutions — *no longer listed* | confirmed, and the hard half done more cheaply |
 | [104](104) | Construct infinitely many "perfect" *n*-tone rows | confirmed |
 | [121](121) | Determine which of the 92 Wang tiles in exercise 2.3.4.3–5 can actually be used when tiling the whole plane | every claim confirmed against the errata |
 | [129](129) | Enumerate all the symmetrical solutions to MacMahon's triangle-tiling problem | **281,618 should be 294,457** |
-| [147](147) | Construct all of the "bricks" that can be made with MacMahon's 30 six-colored cubes | one catalogue line of twenty-four differs |
+| [147](147) | Construct all of the "bricks" that can be made with MacMahon's 30 six-colored cubes — *no longer listed* | one catalogue line of twenty-four differs |
 | [151, 152](151-152) | Arrange all of the path dominoes into a single loop | confirmed |
 | [196](196) | Analyze the running time of Algorithm X on bounded permutation problems | seven parts confirmed; answer (h) drops two factorial signs and opens a series with the wrong term, and answer (i) misstates the branching |
 | [262](262) | Study the ZDDs for domino and diamond tilings that tend to have large "frozen" regions | every number confirmed; one item bound is missing from part (b) |
-| [305, 306](305-306) | Find optimum arrangements of the windmill dominoes | confirmed |
-| [320](320) | Find all ways to make a convex shape from the fourteen tetraboloes | confirmed |
-| [323](323) | Find all ways to make a skewed rectangle from the ten tetraskews | the 3648 belongs to a 2 × 22 frame, not 2 × 21 |
+| [305, 306](305-306) | Find optimum arrangements of the windmill dominoes — *no longer listed* | confirmed |
+| [320](320) | Find all ways to make a convex shape from the fourteen tetraboloes — *no longer listed* | confirmed |
+| [323](323) | Find all ways to make a skewed rectangle from the ten tetraskews — *no longer listed* | the 3648 belongs to a 2 × 22 frame, not 2 × 21 |
 | [334](334) | Build fake solutions for Soma-cube shapes | every count reproduced; 13,842 is a typo for 15,842 (corrected 2 Nov 2026) |
-| [337](337) | Design a puzzle that makes several kinds of "dice" from the same bent tricubes | confirmed |
+| [337](337) | Design a puzzle that makes several kinds of "dice" from the same bent tricubes — *no longer listed* | confirmed |
 | [346](346) | Pack space optimally with small tripods | confirmed, and 65/108 improves to 5/8 |
 | [375](375) | Determine the smallest incomparable dissections of rectangles into rectangles | every number confirmed but one: the fourth diagram of (b) reaches 47, not 56 |
 | [387](387) | Classify the types of symmetry that a polycube might have | two of the eleven pictures are not minimal |
