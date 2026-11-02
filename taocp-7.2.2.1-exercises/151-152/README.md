@@ -80,9 +80,9 @@ falling into four classes under the half-turn.
 
 The statement makes a claim about its own illustration — "only two of the
 dominoes in the arrangement above are in horizontal position" — so the
-illustration was measured rather than trusted. Page 143 was rendered at
-1200 dpi, the grid rules located, and every interior edge tested for a drawn
-line and every edge midpoint for a path crossing.
+illustration on page 143 was measured rather than trusted: its grid rules were
+located, and every interior edge tested for a drawn line and every edge
+midpoint for a path crossing.
 
 | Measurement | Found | Consistent with |
 | --- | --- | --- |
@@ -357,11 +357,11 @@ overlap.
 1. **Enumeration.** The piece counts were derived twice, once in Python and
    once inside the Go model builder, from the definition of a matching modulo
    the half-turn — never copied from the book.
-2. **Image measurement.** The 8×9 figure was recovered from the PDF by locating
-   grid rules and testing every interior edge for a drawn line and every edge
-   midpoint for a path crossing. The recovered tiling covers exactly 72 cells
-   and its pattern census matches the model's multiplicities, which is a strong
-   check on both.
+2. **Measuring the figure.** The 8×9 figure was recovered from the page by
+   locating grid rules and testing every interior edge for a drawn line and
+   every edge midpoint for a path crossing. The recovered tiling covers exactly
+   72 cells and its pattern census matches the model's multiplicities, which is
+   a strong check on both.
 3. **Search.** The factored models were solved with the MCC engine, and the
    loop assignment with a purpose-built backtracker. Two separately written
    model generators produced identical option counts (2698) for the 8×9

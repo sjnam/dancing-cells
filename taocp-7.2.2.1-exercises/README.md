@@ -27,14 +27,14 @@ is listed here, newest first, so that a returning reader can see what moved.
 - **2 November 2026, the rest.** Every other reading that reports a
   discrepancy has now been rechecked the same way, and every discrepancy
   stands; four readings changed in how they argue for it.
-  [387](387) had three faults, found by going back to the book's figure at
-  1200 dots per inch: it bounded the top faces of a drawing by the number of
-  columns, which is wrong when a column has a gap; it miscounted the faces of
-  two drawings (9 and 5, not 10 and 6); and it took the type (v) drawing for
-  a flat pinwheel of eight cubies, where it has more beneath and so at least
-  twelve. Both of its conclusions stand, the one for type (vi) now on a
-  different argument. [196](196)'s "the first branch is not always on $Y\_n$"
-  depends on the order of the items, and now says so; its other point about
+  [387](387) had three faults, found by going back to the book's figure: it
+  bounded the top faces of a drawing by the number of columns, which is wrong
+  when a column has a gap; it miscounted the faces of two drawings (9 and 5,
+  not 10 and 6); and it took the type (v) drawing for a flat pinwheel of eight
+  cubies, where it has more beneath and so at least twelve. Both of its
+  conclusions stand, the one for type (vi) now on a different argument.
+  [196](196)'s "the first branch is not always on $Y\_n$" depends on the
+  order of the items, and now says so; its other point about
   the branching does not. [442](442)'s brute-force check shares the
   convention that decides the 1 × 1 entry, so it is no evidence for it, and
   now says so. [147](147) gained a count that anyone can run and that shares

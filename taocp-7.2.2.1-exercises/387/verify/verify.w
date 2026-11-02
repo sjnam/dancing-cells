@@ -939,8 +939,7 @@ Counting cubies in a small isometric drawing is not something to do by eye, but
 one feature of such a drawing can be counted without any risk: the shaded top
 faces, one for each cubie that has nothing directly above it. I read those off
 the printed figure by looking for connected patches of the colour reserved for
-top faces, in the publisher's PDF of the book rendered at 1200 dots per inch,
-and got
+top faces, and got
 
 $$\vbox{\halign{\hfil#\quad&#\hfil\cr
 1&full\cr 9&even\cr 2&8-fold\cr 3&6-fold\cr 8&90$^\circ$\cr 5&bidiagonal\cr
@@ -1044,10 +1043,9 @@ for i, c := range rotCls {
 
 @ The type (v) drawing's eight top faces all sit at one height in the drawing's
 projection, and they make a pinwheel. In September I took that to mean a flat
-pinwheel of eight cubies. It does not: looked at in the book at 1200 dots per
-inch, the drawing also shows front faces below that level, so there is more
-underneath. Every cubie of the top level shows its top, so that level is the
-pinwheel exactly; and the quarter turn of a pinwheel is about an axis through
+pinwheel of eight cubies. It does not: looked at again, the drawing also shows
+front faces below that level, so there is more underneath. Every cubie of the
+top level shows its top, so that level is the pinwheel exactly; and the quarter turn of a pinwheel is about an axis through
 the corner shared by its middle four cells, which passes through no cubie, so
 whatever lies below comes in fours. The drawing therefore has at least twelve
 cubies. The likeliest reading is the pinwheel with the middle four cells

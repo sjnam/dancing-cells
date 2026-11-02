@@ -174,8 +174,8 @@ above it, so **the most top faces an $n$-cubie polycube can show is the largest
 number of such cubies**, over the six directions it might be drawn with
 upwards.
 
-I read the top faces off the publisher's PDF of the book, rendered at 1200 dots
-per inch, by counting connected patches of the colour reserved for them. Then:
+I read the top faces off the printed figure, counting the patches of the colour
+reserved for them. Then:
 
 | | type | minimum | most top faces a minimal one can show | the drawing shows |
 | --- | --- | --- | --- | --- |
@@ -246,10 +246,10 @@ them" — and the figure is labelled (i) through (xi). So **twelve** should read
   though not its conclusions. It bounded the top faces by the number of
   columns, which fails when a column has a gap; with the correct bound every
   entry of the table is the same. It read 10 and 6 top faces for types (ii)
-  and (vi), where the book, rendered at 1200 dots per inch, shows 9 and 5; the
-  9 changes nothing, and the 5 needed the argument from the T above in place of
-  the count. And it called the type (v) drawing a flat pinwheel of exactly
-  eight cubies, where it has faces below the pinwheel and so at least twelve.
+  and (vi), where the book shows 9 and 5; the 9 changes nothing, and the 5
+  needed the argument from the T above in place of the count. And it called
+  the type (v) drawing a flat pinwheel of exactly eight cubies, where it has
+  faces below the pinwheel and so at least twelve.
   The T argument was checked twice, by the program and by a separate script
   that shares no code with it, and the two disagreed at first, which found a
   slip in the program's test for a T.
