@@ -13,7 +13,16 @@ the plain $3\times3\times3$ cube.
 
 His answer says the count is 282 for the W-wall, 612 for the X-wall, and
 1,130,634 for the cube, and that those solutions use 33, 275, and 13,842
-different sets of cubies. This program works those numbers out from scratch.
+different sets of cubies. This program works those numbers out from scratch,
+and it now agrees with every one of them except 13,842, which Knuth tells me
+is a typo for 15,842.
+
+It did not always agree. The first version, which I sent to Knuth in
+September 2026, found only 162 fa\c cades of the W-wall and 494 of the X-wall,
+and I reported those as discrepancies in his answer. They were not; they were
+a bug in my section on placements, explained there. Knuth replied in November
+with his own input file and his 282 W-wall solutions, and comparing them with
+mine took the bug straight out into the daylight.
 
 The whole thing turns on one sentence of the exercise: the pictures use the
 skew projection $(x,y,z)\mapsto(30x-42y,\,14x+10y+45z)u$. That fixes which
@@ -383,6 +392,13 @@ which says that \.{1\ 000\ 001\ 010} is one of the placements of the bent piece
 and that the ell's six canonical placements are shifts of
 $(000,010,020,100)$. The other five I wrote down from the picture. The check
 that they are right comes at the end of this section.
+
+That check cannot tell the two twists apart, since each is the mirror image of
+the other and the set needs one of each. I had their names the wrong way
+round, and found out only when I compared my W-wall solutions with Knuth's,
+piece by piece: my L-twist was always his~\.R. The coordinates of both twists
+are now the ones in his input file, \.{L\ 000\ 100\ 101\ 111} and
+\.{R\ 000\ 100\ 110\ 111}.
 @<Declarations@>=
 var soma = [7]struct {
 	name  string
@@ -392,8 +408,8 @@ var soma = [7]struct {
 	{"ell", []pt{{0, 0, 0}, {0, 1, 0}, {0, 2, 0}, {1, 0, 0}}},
 	{"tee", []pt{{0, 0, 0}, {0, 1, 0}, {0, 2, 0}, {1, 1, 0}}},
 	{"skew", []pt{{0, 0, 0}, {0, 1, 0}, {1, 1, 0}, {1, 2, 0}}},
-	{"L-twist", []pt{{0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {1, 1, 1}}},
-	{"R-twist", []pt{{0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 0, 1}}},
+	{"L-twist", []pt{{0, 0, 0}, {1, 0, 0}, {1, 0, 1}, {1, 1, 1}}},
+	{"R-twist", []pt{{0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {1, 1, 1}}},
 	{"claw", []pt{{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {0, 0, 1}}},
 }
 
@@ -483,7 +499,34 @@ func shapesOf(k int) [][]pt {
 	return out
 }
 
-@ Every way of dropping a piece into a set of allowed cells.
+@ Every way of dropping a piece into a set of allowed cells. A placement is
+fixed once I say which cubie~|a| of the oriented shape goes into which
+cell~|b| of the region, so I try every such pair and keep each placement the
+first time it turns up.
+
+This section is where my first version went wrong, and the way it went wrong
+is worth recording. That version tried only one cubie of each shape: the
+least corner of its bounding box, which |slide| puts at the origin. It moved
+that corner into each cell of the region in turn. But the corner need not be a
+cubie of the shape at all---think of a tee lying flat with its crossbar
+behind its stem, or the claw turned upside down---and then a placement whose corner
+falls {\it outside\/} the region was never generated, even though all of its
+cubies lie inside.
+
+In a box that cannot happen, since the corner of anything inside a box is
+inside it too. So the census of the $3\times3\times3$ cube came out right, and
+so did the cube fa\c cade, whose region is a box with cubies stacked behind
+it; there the old and the new versions both generate exactly 1138 options.
+The walls are another matter. They bend, and a piece that wraps around a bend
+from behind has the corner of its bounding box out in the empty space in front
+of the wall. The old version lost 37 options of the W-wall that way: 31 of
+them have their corner in column~22, just in front of the middle bend at~33,
+and the other six in columns 12 and~21 beside it. The X-wall lost 35 in the
+same way. With those options went 120 of the 282 W-wall fa\c cades and 118
+of the 612 X-wall ones. The difficulty of a problem
+had nothing to do with it; its shape had everything to do with it. That is
+why the hardest of the three counts agreed with Knuth to the last digit while
+the two easy ones did not.
 @<Functions@>=
 func places(k int, region map[pt]bool) [][]pt {
 	var base []pt
@@ -495,27 +538,35 @@ func places(k int, region map[pt]bool) [][]pt {
 	var out [][]pt
 	for _, sh := range shapesOf(k) {
 		for _, b := range base {
-			put := make([]pt, len(sh))
-			ok := true
-			for i, c := range sh {
-				put[i] = pt{b.x + c.x, b.y + c.y, b.z + c.z}
-				if !region[put[i]] {
-					ok = false
-					break
-				}
-			}
-			if !ok {
-				continue
-			}
-			sort.Slice(put, func(i, j int) bool { return less(put[i], put[j]) })
-			key := normal(put) + fmt.Sprint(put[0])
-			if !seen[key] {
-				seen[key] = true
-				out = append(out, put)
+			for _, a := range sh {
+				@<Put cubie |a| of |sh| into cell |b|, if the rest fits@>
 			}
 		}
 	}
 	return out
+}
+
+@ The same placement turns up once for every cubie of it that lands in the
+region, which is to say once for each of its cubies; the key throws away the
+repeats.
+@<Put cubie |a| of |sh| into cell |b|, if the rest fits@>=
+put := make([]pt, len(sh))
+ok := true
+for i, c := range sh {
+	put[i] = pt{b.x + c.x - a.x, b.y + c.y - a.y, b.z + c.z - a.z}
+	if !region[put[i]] {
+		ok = false
+		break
+	}
+}
+if !ok {
+	continue
+}
+sort.Slice(put, func(i, j int) bool { return less(put[i], put[j]) })
+key := normal(put) + fmt.Sprint(put[0])
+if !seen[key] {
+	seen[key] = true
+	out = append(out, put)
 }
 
 @ Here is the check that the seven shapes are the right seven. Section 7.2.2.1

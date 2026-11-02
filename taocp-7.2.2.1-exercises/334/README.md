@@ -1,7 +1,9 @@
 # TAOCP 7.2.2.1, Exercise 334: A Careful Reading
 
 Written 4 September 2026, against Volume 4B, Addison-Wesley, first printing,
-2022, and the errata file as of that date.
+2022, and the errata file as of that date. Revised 2 November 2026, after
+Knuth's reply showed that two of the discrepancies I reported were a bug in my
+own program; see [What went wrong in the first version](#7-what-went-wrong-in-the-first-version).
 
 This is one reader's response to the request on Knuth's [news
 page](https://www-cs-faculty.stanford.edu/~knuth/news.html): read an exercise
@@ -14,21 +16,23 @@ and its answer very carefully, then report back.
 | Exercise 334 (statement) | No error. Amended for wording, 4 June 2025. |
 | Answer 334, the method | Correct, and it works exactly as described. |
 | Answer 334, cube count 1,130,634 | Reproduced exactly. |
-| Answer 334, cube cubie sets 13,842 | I get 15,842. |
-| Answer 334, X-wall counts 612 / 275 | I get 494 / 208. |
-| Answer 334, W-wall counts 282 / 33 | I get 162 / 22. |
+| Answer 334, cube cubie sets 13,842 | A typo for 15,842; Knuth has confirmed. |
+| Answer 334, X-wall counts 612 / 275 | Reproduced exactly. |
+| Answer 334, W-wall counts 282 / 33 | Reproduced exactly. |
 
-The method the answer describes is right, and following it reproduces the
-largest of its numbers to all seven digits. Three of the remaining numbers do
-not come out, and I could not find a reading of the exercise under which they
-do. The cube's set count differs from mine in one digit, which may be a
-typo; the two wall counts are larger than what I can reach by any route.
+The method the answer describes is right, and following it reproduces every
+number in the answer. The one exception is the cube's 13,842 sets of cubies,
+which differs from my 15,842 in a single digit; Knuth confirms it is a typo.
+
+The first version of these notes said otherwise. It reported 162 / 22 for the
+W-wall and 494 / 208 for the X-wall, and called those discrepancies in the
+answer. They were not: my program missed some placements of the pieces, in a
+way that could not show up in the cube but did show up in the two walls.
+Section 7 explains how.
 
 Everything the exercise itself says is correct, and so is every piece of
 geometric data printed in the answer — the visible counts, the list of cubies
 that may hide, the distances, and the aside about cubie 450 being below ground.
-Those all came out on the nose, which is why I think the model below is the one
-the answer means.
 
 ## 1. The exercise
 
@@ -153,49 +157,110 @@ an option, the visible cubies are primary items, the hidden ones secondary.
 | cubies of the target | 27 | 27 | 27 |
 | visible, v | 25 | 19 | 19 |
 | cubies that may hide | 20 | 31 | 27 |
-| options | 974 | 944 | 1138 |
-| solutions of the cover problem | 162 | 977 | 2,540,780 |
-| of those, connected | 162 | 814 | 1,384,332 |
-| of those, also standing | **162** | **494** | **1,130,634** |
-| different sets of cubies | **22** | **208** | **15,842** |
+| options | 1011 | 979 | 1138 |
+| solutions of the cover problem | 282 | 1197 | 2,540,780 |
+| of those, connected | 282 | 1034 | 1,384,332 |
+| of those, also standing | **282** | **612** | **1,130,634** |
+| different sets of cubies | **33** | **275** | **15,842** |
 | the answer says | 282 / 33 | 612 / 275 | 1,130,634 / 13,842 |
 
-## 7. What I checked before reporting this
+Knuth's own run of the cube agrees at every stage: 2,540,780 solutions, of
+which 1,384,332 are connected and 1,130,634 are also stable. For the W-wall he
+sent me his input file and his 282 solutions; all of them are connected and
+stable, as they are here.
 
-The cube's exact agreement made me distrust my own wall numbers, so I tried to
-break them.
+## 7. What went wrong in the first version
 
-- **Two independent programs.** A Python prototype and the Go program in
-  [`verify/`](verify/) share no code. They agree on every number above.
-- **Three independent solvers** for the W-wall: Knuth's XCC engine, a
-  hand-written exact cover, and solving each of the 190 possible pairs of extra
-  cubies separately. All give 162 solutions filling 22 sets.
-- **A larger pool.** Widening the hidden-cubie pool from the answer's 20 cells
-  to 42, then 70, then 128 leaves the W-wall at 162. The answer's bound is
-  sound and is not what limits the count.
-- **Underground cubies.** Allowing them makes no difference; with the floor
-  lowered, the gravity test rejects everything.
+A placement of a piece is fixed once you say which cubie of the turned shape
+goes into which cell. My first program tried only one cubie per shape: the
+least corner of the shape's bounding box. It slid that corner into each cell of
+the region in turn and kept the placement if the other cubies fitted too.
+
+But the corner of the bounding box need not be a cubie of the shape. A tee
+lying flat with its crossbar behind its stem leaves it empty, and so does the
+claw turned upside down. For such a shape, a placement whose corner falls
+*outside* the region was never generated, even though every one of its cubies
+lies inside.
+
+Whether that loses anything depends on the shape of the region, not on the size
+of the search:
+
+| | W-wall | X-wall | Cube |
+| --- | --- | --- | --- |
+| options, first version | 974 | 944 | 1138 |
+| options, corrected | 1011 | 979 | 1138 |
+| options lost | 37 | 35 | 0 |
+| standing façades lost | 120 of 282 | 118 of 612 | 0 |
+
+The cube's region is a box with hidden cubies stacked behind it, and nothing
+was lost there. The census of 688 options and 11,520 solutions is inside a box
+too. The walls bend, and a piece wrapping around a bend from behind has its
+bounding-box corner out in the empty space in front of the wall. Of the 37
+W-wall options lost, 31 have their corner in column 22, just in front of the
+middle bend at 33, and the other six in columns 12 and 21 beside it. The X-wall
+lost 35 the same way. So the hardest of the three counts agreed with Knuth to
+the last digit while the two easy ones did not.
+
+Knuth's reply in November 2026 included his input file for the W-wall. Its
+cell names are the answer's with 1 subtracted from x and y (his 511 is the
+answer's 621), and its 25 primary and 20 secondary items are exactly the
+visible cubies and the pool used here. So only the options could differ, and
+listing the options this program generates showed the missing ones at once.
+For example, the bent piece on the answer's 231, 321, 331 (his `W 121 211 221`)
+has its bounding-box corner at 221, which is not in the region.
+
+The corrected program tries every cubie of the shape against every cell and
+keeps each placement once. It reproduces 282 / 33 and 612 / 275, and the cube is
+unchanged. Its 282 W-wall solutions are exactly Knuth's 282, compared one by
+one as sets of pieces. The 162 of the first version are among them; the other
+120 each use at least one of the 37 lost options.
+
+The comparison turned up one more slip, which changed no count: I had the
+names of the two twists the wrong way round, so that my L-twist was always his
+R. The program now uses the coordinates from his file for both.
+
+## 8. What I checked, and why it did not catch this
+
+The cube's exact agreement had made me distrust my own wall numbers, so I tried
+to break them. Those checks are listed here with what each was really worth,
+since most of them shared the faulty step.
+
+- **Two programs.** A Python prototype and the Go program in
+  [`verify/`](verify/) shared no code and agreed on every number, so the
+  prototype must have missed the same placements, most likely in the same way.
+  Two programs built on one idea check the coding, not the idea.
+- **Three solvers** for the W-wall: Knuth's XCC engine, a hand-written exact
+  cover, and solving each of the 190 possible pairs of extra cubies separately.
+  All three were given the same options, so they tested the solving and not
+  the options.
+- **A larger pool.** Widening the hidden-cubie pool beyond the answer's 20 cells
+  leaves the W-wall at 282 with the corrected program; within the box I sweep
+  it grows to 42 cells and stops. The answer's bound is sound.
+- **Underground cubies.** Allowing them makes no difference to the cover
+  problem; with the floor lowered, the gravity test rejects everything.
 - **A weaker requirement.** Since the projection is one-to-one on cubies,
   "the picture matches" cannot be weaker than "every visible cubie is present".
-  This is a proof, not an experiment.
+  This is a proof, not an experiment, and it still stands.
 - **The X-wall's shape.** I enumerated every 27-cubie shape made of two
   crossing walls. Exactly five have v = 19, and only the symmetric 5 × 5 cross
-  matches both the figure and the answer's distance profile. None of the five
-  yields 612.
-- **Mirror pieces.** Allowing reflections gives the W-wall 600 solutions in 22
-  sets, and breaks the cube check.
+  matches both the figure and the answer's distance profile. With the corrected
+  program it gives 612, as the answer says.
+- **Mirror pieces.** Allowing reflections gives the W-wall 1132 solutions in
+  34 sets (the first version said 600 in 22), and it breaks the cube check by
+  turning 11,520 into 54,048.
 - **The answer's own example.** The first of the three structures the answer
   draws "as seen from behind and below" shows 11 exposed bottom faces where the
   bare W-wall shows 9, so it uses exactly two extra cubies, as this model
-  requires. Counting its faces by colour narrows it to three of my 22 sets. The
-  answer's own illustration is inside the solution set I computed.
+  requires. Counting its faces by colour narrowed it to three of the 22 sets of
+  the first version. Those 22 sets are all among the 33, so the illustration is
+  still inside the solution set; I have not repeated the colour count against
+  the 11 new sets.
 - **The answer's own parity argument.** Answer 326 shows the W-wall has ten
   cubies with x, y and z all odd while the pieces can cover at most nine. So
   both extra cubies must sit at even positions. Of the 20 cells available, 331,
-  351 and 531 are odd — and none of them appears in any of my 22 sets. The
-  search rediscovered Knuth's own obstruction without being told about it.
+  351 and 531 are odd, and none of them appears in any of the 33 sets.
 
-## 8. Method
+## 9. Method
 
 The program is a GWEB literate program. [`verify.w`](verify/verify.w) is the
 source and `gtangle` produces the Go from it; the typeset document,
@@ -209,8 +274,8 @@ To reproduce:
 make tangle
 cd taocp-7.2.2.1-exercises/334/verify && go build -o verify .
 ./verify -mode census              # 688 options, 11520 solutions
-./verify -shape wwall -v           # v = 25, the two distance shells, 162
-./verify -shape xwall -v           # v = 19, the profile (9,7,6,3,3,2,1), 494
+./verify -shape wwall -v           # v = 25, the two distance shells, 282
+./verify -shape xwall -v           # v = 19, the profile (9,7,6,3,3,2,1), 612
 ./verify -shape cube               # 1130634
 ```
 
