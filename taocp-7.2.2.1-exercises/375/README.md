@@ -1,7 +1,8 @@
 # TAOCP 7.2.2.1, Exercise 375: A Careful Reading
 
 Written 9 September 2026, against Volume 4B, Addison-Wesley, first printing,
-2022, and the errata file as of that date.
+2022, and the errata file as of that date. Rechecked 2 November 2026; see
+section 5.
 
 This is one reader's response to the request on Knuth's [news
 page](https://www-cs-faculty.stanford.edu/~knuth/news.html): read an exercise
@@ -188,6 +189,15 @@ $6 \to 12$, $7 \to 11$, $8 \to 10$, $9 \to 9$ — so no piece fits inside
 another. The areas are $64+65+81+80+77+72+51+20 = 510 = 30 \cdot 17$. It is the
 fourth panel of the figure, and it is the fourth diagram exactly: column widths
 $(4,5,11,1,9)$ and row heights $(3,6,7,1)$.
+
+Could the 56 come from a slip in my copy of the diagram, rather than from the
+answer? I checked that in November 2026, after a bug in my reading of exercise
+334 had hidden behind checks that all shared one step. The program now also
+takes every pattern of order 8 and every labeling of it, with no transcription
+involved. Each of the six patterns that admit an incomparable dissection has
+exactly one labeling that works, and their best semiperimeters are 44, 44, 44,
+47, 44 and 44. None of them is 56, so no misreading of the diagram's lines or
+labels could give the printed figure.
 
 Nothing else changes. Three diagrams still reach 44, so the smallest
 semiperimeter with eight subrectangles is still 44, and the answer's headline

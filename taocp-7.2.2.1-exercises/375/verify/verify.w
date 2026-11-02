@@ -1212,6 +1212,7 @@ for d, g := range diagrams8 {
 @<Look at the case whose optimum is not an integer@>
 @<Count the smallest squares of each diagram@>
 @<Look for patterns the four diagrams miss@>
+@<Try every labeling of every pattern@>
 
 @ @<Solve the 256 cases of this diagram@>=
 feasible, semi, side := 0, 0, 0
@@ -1341,6 +1342,44 @@ for _, perm := range p.labelings() {
 if semi > 0 {
 	fmt.Printf("undrawn pattern %s: semiperimeter %d, square side %d\n",
 		p, semi, side)
+}
+
+@ The fourth diagram gives 47 where the answer says 56, and the diagrams were
+transcribed by hand; so the first thing to suspect is my copy of it. I added
+this check in November 2026, after a bug in another of these readings
+(exercise 334) had hidden behind checks that all shared one step. It shares
+nothing with the transcription: it takes every pattern of order eight and every
+labeling of it, and finds the best semiperimeter and square of each. If some
+labeling of some pattern had its best semiperimeter at 56, a slip in copying
+would be the likely story. None does: each of the six patterns that work at all
+has exactly one labeling that works, and the six give 44 or 47, never 56.
+@<Try every labeling of every pattern@>=
+for _, p := range patterns(8, false) {
+	works := 0
+	for _, perm := range p.labelings() {
+		if ok, _ := p.looseLP(perm, false); !ok {
+			continue
+		}
+		semi, side := 0, 0
+		for sgn := 0; sgn < 256; sgn++ {
+			for _, sq := range []bool{false, true} {
+				pr := p.chain(perm, sgn, sq)
+				ok, lo := pr.lpOpt()
+				if !ok {
+					continue
+				}
+				@<Improve the record for this pattern, if this case can@>
+			}
+		}
+		if semi > 0 {
+			works++
+			fmt.Printf("pattern %s, labeling %v: semiperimeter %d, square side %d\n",
+				p, perm, semi, side)
+		}
+	}
+	if works > 1 {
+		fmt.Printf("pattern %s has %d labelings that work\n", p, works)
+	}
 }
 
 @ @<Improve the record for this pattern, if this case can@>=

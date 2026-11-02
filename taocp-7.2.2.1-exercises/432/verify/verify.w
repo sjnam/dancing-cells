@@ -612,12 +612,12 @@ hidden(s.cols, len(s.rows), rb, rm)
 @ With that reading, the three puzzles answer 432 names come out right; but the
 counts that follow do not. The answer says 4011 of the asymmetric puzzles of
 diagram (a) have no forced move, and that 570 of those have no magic block.
-Here the numbers are 3172 and 576---and 4011 is not merely different, it is too
-large to be right whatever a forced move is taken to be, so long as a naked
-single is one. Only 3360 of the 9741 asymmetric puzzles have no naked single at
-all, and the answer's own example shows that a naked single counts: 5 19 6/6 10
-14 has no magic block, so the forced move in its lower right corner can only be
-a naked single.
+Here the numbers are 3172 and 576. And 4011 is too large to be right whatever a
+forced move is taken to be, so long as a naked single is one: only 3360 of the
+9741 asymmetric puzzles have no naked single at all. The answer's own example
+suggests that a naked single does count, since 5 19 6/6 10 14 has no magic
+block and so the forced move in its lower right corner can only be a naked
+single. But one example suggests a definition; it does not settle one.
 
 @<Count forced moves and magic blocks@>=
 a, b, _ := shapes()
@@ -629,6 +629,7 @@ for _, v := range [][]int{{5, 19, 6, 6, 10, 14}, {4, 15, 12, 12, 15, 4},
 for _, s := range []shape{a, b} {
 	reps, stab := s.classify()
 	none, noneNoMagic, noNaked := 0, 0, 0
+	rootFree, rootFreeNoMagic := 0, 0
 	for i, v := range reps {
 		if stab[i] != 1 {
 			continue
@@ -641,10 +642,14 @@ for _, s := range []shape{a, b} {
 			}
 		}
 		@<Count the asymmetric puzzles with no naked single@>
+		@<Count the asymmetric puzzles with no one-option item at the root@>
 	}
 	fmt.Printf("%d cells: of the asymmetric puzzles, %d have no forced move,"+
 		" %d of those no magic block; %d have no naked single\n",
 		s.n, none, noneNoMagic, noNaked)
+	fmt.Printf("    %d have no item with a single option at the root of"+
+		" answer 430(d)'s problem, %d of those no magic block\n",
+		rootFree, rootFreeNoMagic)
 }
 
 @ @<Count the asymmetric puzzles with no naked single@>=
@@ -659,6 +664,46 @@ for j := range s.n {
 }
 if naked == 0 {
 	noNaked++
+}
+
+@ The argument above leans on a single example for the claim that a naked
+single is a forced move, and that is thinner than it looked when I first wrote
+it. I came back to it in November 2026, after a bug in another of these
+readings (exercise 334) had hidden behind an assumption that all its checks
+shared. Knuth measures difficulty with Algorithm C, so a natural alternative is
+that a forced move is a primary item with only one option at the root of answer
+430(d)'s problem. That is not the same thing: in that construction a cell has
+one option for every pair of combinations its two blocks might use, so a naked
+single can still leave a cell with several options. Under this reading the
+counts are 2750 and 470---no closer to 4011 and 570 than the others.
+@<Count the asymmetric puzzles with no one-option item at the root@>=
+{
+	X, Y := s.combsFor(v)
+	lines := strings.Split(strings.TrimSpace(s.cover(X, Y)), "\n")
+	head, _, _ := strings.Cut(lines[0], "|")
+	opts := map[string]int{}
+	for _, it := range strings.Fields(head) {
+		opts[it] = 0
+	}
+	for _, l := range lines[1:] {
+		for _, it := range strings.Fields(l) {
+			if _, ok := opts[it]; ok {
+				opts[it]++
+			}
+		}
+	}
+	single := false
+	for _, k := range opts {
+		if k == 1 {
+			single = true
+		}
+	}
+	if !single {
+		rootFree++
+		if g == 0 {
+			rootFreeNoMagic++
+		}
+	}
 }
 
 @* Answer 430(d)'s exact cover problem.

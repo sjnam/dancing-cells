@@ -1,7 +1,8 @@
 # TAOCP 7.2.2.1, Exercise 432: A Careful Reading
 
 Written 6 September 2026, against Volume 4B, Addison-Wesley, first printing,
-2022, and the errata file as of that date.
+2022, and the errata file as of that date. Revised 2 November 2026; see
+section 7.
 
 This is one reader's response to the request on Knuth's [news
 page](https://www-cs-faculty.stanford.edu/~knuth/news.html): read an exercise
@@ -23,8 +24,8 @@ and its answer very carefully, then report back.
 | (b) forced by 7 opposite 20, or its dual | True of **all 49**. |
 | (a) four forced moves in each easy puzzle | Confirmed, given a reading. |
 | (a) list of possible second rows | **One short**: 231 is missing. |
-| (a) 4011 asymmetric with no forced move | **Cannot exceed 3360**; here 3172. |
-| (a) 570 of those with no magic block | **576**. |
+| (a) 4011 asymmetric with no forced move | **Not reproduced**; 3172 under the reading of section 6. |
+| (a) 570 of those with no magic block | **Not reproduced**; 576 under that reading. |
 | (a) hardest puzzle 6 19 6/8 11 10 | **No such puzzle exists.** |
 
 Almost every number in answer 432 comes out exactly, and so do the names of the
@@ -145,22 +146,39 @@ The first of those also settles that a naked single counts as a forced move,
 because that puzzle has no magic block at all, so its corner cannot be a hidden
 single.
 
-## 7. Two counts that cannot both be right
+## 7. Two counts I cannot reproduce
 
 The answer continues: "Altogether 4011 of the asymmetric puzzles have no forced
 moves. And of those, 570 have no 'magic blocks.'"
 
 Neither reproduces. With the reading of section 6 the numbers are **3172** and
-**576**. But 4011 is not merely different — it is too large for any reading
-under which a naked single is a forced move, and section 6 shows that it is:
+**576**.
 
-- only **3360** of the 9741 asymmetric puzzles of diagram (a) have no naked
-  single anywhere;
-- a puzzle with a naked single has a forced move;
-- so at most 3360 asymmetric puzzles can have no forced move.
+The first version of these notes went further and said that 4011 was out of
+reach "whatever the intended definition". The argument was this: only **3360**
+of the 9741 asymmetric puzzles have no naked single, so if a naked single is a
+forced move, at most 3360 can have no forced move. That argument is sound, but
+its premise rests on one example — 5 19 6/6 10 14, whose only forced move must
+be a naked single because it has no magic block — and one example does not
+settle a definition. I withdraw the stronger claim. What can be said is that
+4011 is out of reach under any reading in which a naked single counts.
 
-Adding hidden singles takes that 3360 down to 3172, never up. Whatever the
-intended definition, 4011 is out of reach.
+I also tried the reading that Algorithm C itself suggests: a forced move is a
+primary item with only one option at the root of answer 430(d)'s problem. That
+is a different thing, because in that construction a cell has one option for
+each pair of combinations its two blocks might use, so a naked single can leave
+a cell with several options. It gives **2750** and **470**.
+
+| reading of "forced move" | no forced move | of those, no magic block |
+| --- | --- | --- |
+| naked or hidden single (section 6) | 3172 | 576 |
+| naked single only | 3360 | 576 |
+| an item with one option at the root of 430(d) | 2750 | 470 |
+| the answer | 4011 | 570 |
+
+So I still cannot say what reading gives the answer's numbers. (This section
+was revised on 2 November 2026, after a bug in my reading of exercise 334 had
+hidden behind an assumption that all its checks shared.)
 
 ## 8. The hardest puzzle cannot exist
 

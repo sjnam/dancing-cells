@@ -19,6 +19,31 @@ what GitHub shows when you open it — and the program behind it as a
 with `verify/verify.pdf` beside it so it can be read without installing GWEB.
 Nothing is claimed that the program does not check.
 
+## Corrections
+
+When a reading turns out to be wrong it is corrected in place, and the change
+is listed here, newest first, so that a returning reader can see what moved.
+
+- **2 November 2026, [334](334).** The first version said that the counts for
+  the W-wall and the X-wall do not reproduce, giving 162 / 22 and 494 / 208
+  against the answer's 282 / 33 and 612 / 275. The error was mine. My program
+  placed each piece by its bounding-box corner and so missed every placement
+  whose corner falls outside the region: that never happens in the cube, which
+  is why the cube agreed to all seven digits, but it does at the bends of the
+  walls. Knuth's reply, with his input file and his 282 W-wall solutions,
+  brought it to light. The corrected program reproduces every count in the
+  answer, and its 282 W-wall solutions are his, one by one. The reading now
+  says what went wrong.
+- **2 November 2026, [432](432).** Section 7 said that the answer's 4011 was out
+  of reach under any reading of "forced move". That rests on a single example,
+  and I withdraw it. 4011 and 570 remain unreproduced under the three readings
+  tried, which are now listed.
+- **2 November 2026, [323](323) and [375](375).** After 334, every reading that
+  reports a discrepancy is being rechecked by a route that shares nothing with
+  the step that produced it. These two stand: 323 by counting without the hole
+  item, 375 by trying every labeling of every pattern, so that no slip in
+  copying the diagram could matter.
+
 ## The nineteen readings
 
 | Exercise | What the news page asks | What came out |
@@ -35,12 +60,12 @@ Nothing is claimed that the program does not check.
 | [305, 306](305-306) | Find optimum arrangements of the windmill dominoes | confirmed |
 | [320](320) | Find all ways to make a convex shape from the fourteen tetraboloes | confirmed |
 | [323](323) | Find all ways to make a skewed rectangle from the ten tetraskews | the 3648 belongs to a 2 × 22 frame, not 2 × 21 |
-| [334](334) | Build fake solutions for Soma-cube shapes | three counts do not reproduce |
+| [334](334) | Build fake solutions for Soma-cube shapes | every count reproduced; 13,842 is a typo for 15,842 (corrected 2 Nov 2026) |
 | [337](337) | Design a puzzle that makes several kinds of "dice" from the same bent tricubes | confirmed |
 | [346](346) | Pack space optimally with small tripods | confirmed, and 65/108 improves to 5/8 |
 | [375](375) | Determine the smallest incomparable dissections of rectangles into rectangles | every number confirmed but one: the fourth diagram of (b) reaches 47, not 56 |
 | [387](387) | Classify the types of symmetry that a polycube might have | two of the eleven pictures are not minimal |
-| [432](432) | Find the most interesting 3×3 kakuro puzzles | the puzzle called hardest cannot exist |
+| [432](432) | Find the most interesting 3×3 kakuro puzzles | the puzzle called hardest cannot exist (revised 2 Nov 2026) |
 | [442](442) | Enumerate all hitori covers of small grids | every count confirmed; one range entry is wrong |
 
 ## What came out
@@ -60,13 +85,11 @@ index.
 | [196](196) | answer (h), the product | $\Pi\_n = \lfloor (n{+}1)/2 \rfloor \lfloor (n{+}2)/2 \rfloor$ | **both factorial signs are missing** |
 | [196](196) | answer (h), the series for $4e-1$ | 6 + 4/1! + 5/2! + ⋯ | **the leading term is 2, not 6** |
 | [323](323) | the 2×21 frame | 3648 | **72**; 3648 is the 2×22 count |
-| [334](334) | the cube's cubie sets | 13,842 | **15,842** |
-| [334](334) | the X-wall | 612 / 275 | **494 / 208** |
-| [334](334) | the W-wall | 282 / 33 | **162 / 22** |
+| [334](334) | the cube's cubie sets | 13,842 | **15,842**, a typo Knuth has confirmed |
 | [375](375) | best semiperimeter, fourth diagram of (b) | 56 | **47**, in a 30 × 17 rectangle |
 | [432](432) | second rows of the easy puzzles | a list | **231 is missing from it** |
-| [432](432) | asymmetric puzzles with no forced move | 4011 | **at most 3360**; 3172 here |
-| [432](432) | of those, with no magic block | 570 | **576** |
+| [432](432) | asymmetric puzzles with no forced move | 4011 | **not reproduced**; 3172 under one reading |
+| [432](432) | of those, with no magic block | 570 | **not reproduced**; 576 under that reading |
 | [442](442) | the black-cell range matrix | entry (1, 1) | **wrong**, and the book contradicts it elsewhere |
 
 ### Claims that fail
@@ -163,6 +186,11 @@ routine of its own where that is what the exercise is about), and prints the
 quantities the answer prints. Where a number can be reached two ways, it is —
 a brute-force mode that uses no theory sits beside the fast one in most of
 these programs, and the two have to agree.
+
+Agreement is only worth as much as the independence behind it. Reading 334 had
+several checks that agreed with each other, and all of them shared the one
+step that was wrong. So a discrepancy is now reported only after it has been
+reached by a route that does not share the step that produced it.
 
 Reports are in English, and so are the literate programs; both are typeset with
 `luatex`, because several of them draw their figures with `luamplib`.

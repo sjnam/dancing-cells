@@ -1,7 +1,8 @@
 # TAOCP 7.2.2.1, Exercise 323: A Careful Reading
 
 Written 5 September 2026, against Volume 4B, Addison-Wesley, first printing,
-2022, and the errata file as of that date.
+2022, and the errata file as of that date. Rechecked 2 November 2026; see
+section 6.
 
 This is one reader's response to the request on Knuth's [news
 page](https://www-cs-faculty.stanford.edu/~knuth/news.html): read an exercise
@@ -151,6 +152,12 @@ Things I checked before saying so:
   the 2×21 frame as well as for the 4×10 one.
 - The pixel model of section 7, which knows nothing about the cell coordinates
   or the symmetry bookkeeping, also gives 72 for the 2×21 frame.
+- With every cell secondary and no hole item at all, so that nothing depends on
+  how the empty cells are counted, a plain XCC gives 72 for the 2×21 frame and
+  3648 for the 2×22 one. (Added November 2026, after a bug in my reading of
+  exercise 334 turned out to have hidden behind checks that all shared one
+  step. The two routes above already share nothing with each other but the
+  hole item; this one does without it.)
 
 The reading is also self-consistent in the other direction: "2 × 20 is too
 tight" is right in my numbering (40 cells, 0 solutions), and would be wrong if

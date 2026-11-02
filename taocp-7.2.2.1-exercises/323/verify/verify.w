@@ -516,6 +516,32 @@ n, el := solve(in, 0)
 fmt.Printf("two 4 x 5 frames: %d options, %d solutions (%d dual pairs), %s\n",
 	nopt, n, n/2, el)
 
+@ The hole item is the one piece of machinery that the frames with empty cells
+need and the others do not, so their counts deserve a check that does without
+it. I added this in November 2026, after a bug in another of these readings
+(exercise 334) had hidden behind checks that all shared one step. Make every
+cell secondary---covered at most once---and only the pieces primary. Then a
+plain XCC counts the ways to put all ten pieces into the frame, and the empty
+cells take care of themselves.
+
+@<Fill the frames@>=
+for _, d := range [][2]int{{21, 2}, {22, 2}} {
+	f := rect(0, 0, d[0], d[1])
+	in, _ := problem(f, ps, 0)
+	@<Make every cell of |in| a secondary item@>
+	n, el := solve(in, 0)
+	fmt.Printf("%d x %2d with the cells secondary and no hole item: %d solutions, %s\n",
+		d[1], d[0], n, el)
+}
+
+@ The item line lists the ten pieces first and then the cells, so a bar after
+the pieces is all it takes.
+@<Make every cell of |in| a secondary item@>=
+head, rest, _ := strings.Cut(in, "\n")
+fs := strings.Fields(head)
+in = strings.Join(fs[:len(ps)], " ") + " | " +
+	strings.Join(fs[len(ps):], " ") + "\n" + rest
+
 @ One more reading of the placement counts, from a direction that knows nothing
 about symmetries or shifts: every four cells of the frame whose canonical form
 is one of the ten pieces is a placement of that piece, and nothing else is.
