@@ -1,8 +1,8 @@
 # TAOCP 7.2.2.1, Exercise 432: A Careful Reading
 
 Written 6 September 2026, against Volume 4B, Addison-Wesley, first printing,
-2022, and the errata file as of that date. Revised 2 November 2026; see
-section 7.
+2022, and the errata file as of that date. Revised 2 November 2026, and again
+on 5 November after Knuth's reply; see section 7.
 
 This is one reader's response to the request on Knuth's [news
 page](https://www-cs-faculty.stanford.edu/~knuth/news.html): read an exercise
@@ -22,15 +22,15 @@ and its answer very carefully, then report back.
 | (b) 49 classes, all but 3 asymmetric | **49**, and **3**. |
 | (b) the three symmetric ones | All three named correctly. |
 | (b) forced by 7 opposite 20, or its dual | True of **all 49**. |
-| (a) four forced moves in each easy puzzle | Confirmed, given a reading. |
-| (a) list of possible second rows | **One short**: 231 is missing. |
-| (a) 4011 asymmetric with no forced move | **Not reproduced**; 3172 under the reading of section 6. |
-| (a) 570 of those with no magic block | **Not reproduced**; 576 under that reading. |
+| (a) four forced moves in each easy puzzle | Four if hidden singles count; **two** under Knuth's definition. |
+| (a) list of possible second rows | **One short**: 231 is missing, and Knuth agrees. |
+| (a) 4011 asymmetric with no forced move | **Wrong**, and Knuth agrees; his tables give 3832, and **3360** with two pairs they lack. |
+| (a) 570 of those with no magic block | **576**, and Knuth agrees. |
 | (a) hardest puzzle 6 19 6/8 11 10 | **No such puzzle exists.** |
 
 Almost every number in answer 432 comes out exactly, and so do the names of the
 symmetric puzzles, which is a good check that the diagrams are being read the
-same way. The last four rows are the exceptions, and the last of them is the
+same way. The last five rows are the exceptions, and the last of them is the
 plainest: the puzzle the answer calls the hardest cannot exist, because its
 across clues total 31 and its down clues total 29, and both of those totals are
 the sum of the same seven digits.
@@ -125,6 +125,9 @@ my reading of the diagrams matches Knuth's.
 
 ## 6. What a forced move must mean
 
+*Knuth has since said what he means; see the end of section 7. This section is
+left as I first wrote it.*
+
 Answer 432 uses the term without defining it, but three of its remarks pin the
 meaning down between them. A solver looking at a fresh diagram can fill a cell
 in at once in two ways:
@@ -146,7 +149,7 @@ The first of those also settles that a naked single counts as a forced move,
 because that puzzle has no magic block at all, so its corner cannot be a hidden
 single.
 
-## 7. Two counts I cannot reproduce
+## 7. The counts with no forced move
 
 The answer continues: "Altogether 4011 of the asymmetric puzzles have no forced
 moves. And of those, 570 have no 'magic blocks.'"
@@ -179,6 +182,55 @@ a cell with several options. It gives **2750** and **470**.
 So I still cannot say what reading gives the answer's numbers. (This section
 was revised on 2 November 2026, after a bug in my reading of exercise 334 had
 hidden behind an assumption that all its checks shared.)
+
+### Knuth's definition
+
+Knuth replied in November 2026. He agrees that 4011 and 570 are wrong, and found
+the cause in his programs of 2018: a bug in how forced moves were computed
+where a 2-block crosses a 3-block. He also gave his definition. Whether a cell
+is forced depends only on the clues $s$ and $t$ of its two blocks — so a hidden
+single does not count — and three tables say when:
+
+| blocks | the cell is forced when $(s, t)$ or its dual is one of | dual of $(s, t)$ |
+| --- | --- | --- |
+| two 2-blocks, $s \le t$ | (3, 11), (3, 4), (4, 6), (4, 11), (4, 12), (5, 13), (6, 14) | $(20 - t, 20 - s)$ |
+| two 3-blocks, $s \le t$ | (6, 20), (7, 20), (7, 21), (8, 22) | $(30 - t, 30 - s)$ |
+| a 2-block of $s$, a 3-block of $t$ | (3, 19), (4, 20), (5, 21), (6, 22), (7, 23), (8, 23), (8, 24) | $(20 - s, 30 - t)$ |
+
+With these tables he counts **3832** asymmetric puzzles with no forced move, and
+**576** of them with no magic block. He sent the 3832 and asked which of them are
+not among my 3172.
+
+The tables, copied as they stand, give exactly his list, puzzle for puzzle, and
+the 576. All 3172 of mine are among his 3832, and the other **660** fall into
+two groups:
+
+- **188** have no forced move but a hidden single. His definition leaves those
+  out on purpose, so here the readings simply differ.
+- **472** have a naked single that the tables do not list. Checking the tables
+  pair by pair against naked singles, the two tables for blocks of equal length
+  agree everywhere, but the third misses two pairs and their duals:
+
+| 2-block | 3-block | the cell | dual |
+| --- | --- | --- | --- |
+| 4 = 1 + 3 | 7 = 1 + 2 + 4 | 1 | 16 with 23 |
+| 4 = 1 + 3 | 19, whose five combinations hold a 3 once and a 1 never | 3 | 16 with 11 |
+
+In 4 6 10/4 7 9, for example, the top right cell lies in the across 4 and the
+down 7, and so must be 1; the puzzle's one solution has it.
+
+With those pairs added the tables say exactly what naked singles say, and the
+counts become **3360** and **576** — the "naked single only" row of the table
+above. Either way the 576 stands. What else the tables say depends on the two
+pairs as well:
+
+| | no forced move | one | two | three | four |
+| --- | --- | --- | --- | --- | --- |
+| classes, Knuth's tables | 3940 | 4760 | 1186 | 46 | 0 |
+| classes, with the two pairs | 3458 | 4965 | 1375 | 129 | 5 |
+
+Under either version, the two easy puzzles of section 6 have two forced moves
+each, not four.
 
 ## 8. The hardest puzzle cannot exist
 
@@ -231,6 +283,10 @@ trees. The 4 × 4 puzzle does have the single solution the note implies.
 - The bound of section 7 was computed from naked singles alone, so it does not
   depend on the hidden-single rule; and the hidden-single rule was adopted only
   because it reproduces all three of the answer's own forced-move counts.
+- Knuth's tables were copied into the program and run as they stand; the 3832
+  it prints in his notation are his list, byte for byte. The 660 and their two
+  groups were counted again by a separate short program that shares no code
+  with this one, before I wrote back to him.
 - The exact cover construction was validated against two puzzles from exercise
   430 whose answers are stated in the book, before being used for anything
   here.
@@ -255,6 +311,8 @@ cd taocp-7.2.2.1-exercises/432/verify && go run verify.go -mode all
 | `-mode rgs` | section 3 | instant |
 | `-mode classes` | section 5 | 7 s |
 | `-mode forced` | sections 6 and 7 | 8 s |
+| `-mode knuth` | section 7, with Knuth's tables | 1 s |
+| `-mode list` | the puzzles with no forced move under Knuth's tables, in his notation | 1 s |
 | `-mode cover` | section 9 | instant |
 | `-mode hard` | section 8 | instant |
 

@@ -2,7 +2,8 @@
 
 Written 9 September 2026, against Volume 4B, Addison-Wesley, first printing,
 2022, and the errata file as of that date. Rechecked 2 November 2026; see
-section 7.
+section 7. In November 2026 Knuth checked this reading and agreed with the
+corrections to answer (h) and to the order of the branches in answer (i).
 
 This is one reader's response to the request on Knuth's [news
 page](https://www-cs-faculty.stanford.edu/~knuth/news.html): read an exercise

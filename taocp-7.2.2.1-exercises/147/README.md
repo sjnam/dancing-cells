@@ -2,7 +2,8 @@
 
 Written 5 September 2026, against Volume 4B, Addison-Wesley, first printing,
 2022, and the errata file as of that date. Rechecked 2 November 2026; see
-section 7.
+section 7. In November 2026 Knuth checked this reading and agreed with the
+correction to the 2 × 2 × 4 line of the catalogue.
 
 This is one reader's response to the request on Knuth's [news
 page](https://www-cs-faculty.stanford.edu/~knuth/news.html): read an exercise

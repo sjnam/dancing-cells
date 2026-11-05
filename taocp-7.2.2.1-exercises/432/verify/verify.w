@@ -15,10 +15,12 @@ which classes are symmetric, which puzzles are easiest and which hardest.
 
 This program checks them. Every count comes out, and so do the names of the
 symmetric puzzles. Three things do not: the answer's list of possible second
-rows is one entry short; the count of asymmetric puzzles with no forced move
-cannot be as large as the answer says; and the puzzle the answer calls the
-hardest cannot exist, because its across clues and its down clues add up to
-different totals. The third panel above shows the puzzle I believe was meant.
+rows is one entry short; the counts of asymmetric puzzles with no forced move
+are not the answer's; and the puzzle the answer calls the hardest cannot exist,
+because its across clues and its down clues add up to different totals. The
+third panel above shows the puzzle I believe was meant. Knuth has since agreed
+with all three, and has said what he means by a forced move; a chapter near the
+end takes his definition at its word.
 
 @c
 package main
@@ -34,6 +36,7 @@ import (
 )
 
 @<Types@>
+@<Knuth's tables@>
 @<Functions@>
 
 func main() {
@@ -42,7 +45,8 @@ func main() {
 }
 
 @ @<Read the command line@>=
-mode := flag.String("mode", "all", "fill, rgs, classes, forced, cover, hard, or all")
+mode := flag.String("mode", "all",
+	"fill, rgs, classes, forced, knuth, list, cover, hard, or all")
 flag.Parse()
 
 @ @<Do what the mode asks@>=
@@ -57,6 +61,12 @@ if *mode == "classes" || *mode == "all" {
 }
 if *mode == "forced" || *mode == "all" {
 	@<Count forced moves and magic blocks@>
+}
+if *mode == "knuth" || *mode == "all" {
+	@<Count forced moves with Knuth's tables@>
+}
+if *mode == "list" {
+	@<Print the puzzles with no forced move, in Knuth's notation@>
 }
 if *mode == "cover" || *mode == "all" {
 	@<Solve some kakuro with answer 430(d)'s construction@>
@@ -641,7 +651,9 @@ for _, s := range []shape{a, b} {
 				noneNoMagic++
 			}
 		}
-		@<Count the asymmetric puzzles with no naked single@>
+		if s.naked(v) == 0 {
+			noNaked++
+		}
 		@<Count the asymmetric puzzles with no one-option item at the root@>
 	}
 	fmt.Printf("%d cells: of the asymmetric puzzles, %d have no forced move,"+
@@ -652,18 +664,22 @@ for _, s := range []shape{a, b} {
 		rootFree, rootFreeNoMagic)
 }
 
-@ @<Count the asymmetric puzzles with no naked single@>=
-rb, cb := s.blockOf()
-naked := 0
-for j := range s.n {
-	rm, _ := reach(v[rb[j]], len(s.rows[rb[j]]))
-	cm, _ := reach(v[len(s.rows)+cb[j]], len(s.cols[cb[j]]))
-	if bitsOf(rm&cm) == 1 {
-		naked++
+@ A naked single needs nothing but the two clues through a cell, which will
+matter when Knuth's own definition turns up.
+
+@<Functions@>=
+// naked counts the cells whose two blocks can agree on only one digit.
+func (s shape) naked(v []int) int {
+	rb, cb := s.blockOf()
+	n := 0
+	for j := range s.n {
+		rm, _ := reach(v[rb[j]], len(s.rows[rb[j]]))
+		cm, _ := reach(v[len(s.rows)+cb[j]], len(s.cols[cb[j]]))
+		if bitsOf(rm&cm) == 1 {
+			n++
+		}
 	}
-}
-if naked == 0 {
-	noNaked++
+	return n
 }
 
 @ The argument above leans on a single example for the claim that a naked
@@ -705,6 +721,212 @@ counts are 2750 and 470---no closer to 4011 and 570 than the others.
 		}
 	}
 }
+
+@* Knuth's definition.
+Knuth wrote back in November 2026. He agrees that 4011 and 570 are wrong, and he
+traced them to a bug in his programs of 2018, in the way forced moves were
+computed where a 2-block crosses a 3-block. He also said exactly what he means
+by a forced move. Whether a cell is forced depends on nothing but the clues of
+the two blocks through it---so a hidden single is not a forced move---and three
+tables of pairs of clues say when it is, one table for each way two blocks can
+cross. With his bug fixed he counts 3832 asymmetric puzzles with no forced move,
+576 of them with no magic block, and he sent me the 3832.
+
+This chapter copies his tables and gets his numbers. Mode |list| prints the
+3832 in the notation of his letter, and I have compared them with his list:
+they are the same puzzles, one by one.
+
+@ A |pairTable| holds one list of pairs for each kind of crossing: two 2-blocks,
+a 2-block and a 3-block, two 3-blocks, in that order.
+
+@<Types@>=
+type pairTable [3][][2]int
+
+@ These are the tables of Knuth's letter, as he wrote them.
+
+@<Knuth's tables@>=
+var knuth = pairTable{
+	{{3, 11}, {3, 4}, {4, 6}, {4, 11}, {4, 12}, {5, 13}, {6, 14}},
+	{{3, 19}, {4, 20}, {5, 21}, {6, 22}, {7, 23}, {8, 23}, {8, 24}},
+	{{6, 20}, {7, 20}, {7, 21}, {8, 22}},
+}
+
+@ A pair $(s,t)$ puts the smaller clue first when the two blocks have the same
+length, and the 2-block's clue first when they do not. Each table lists only
+half of what it means, because the dual of a forced pair is forced too: the
+dual of $(s,t)$ is $(10k-t,10k-s)$ for two blocks of length $k$, which keeps
+the smaller clue first, and $(20-s,30-t)$ for a 2-block and a 3-block.
+
+@<Functions@>=
+// forces says whether table t forces the cell where a block of length k and
+// clue h crosses a block of length l and clue c.
+func (t pairTable) forces(h, k, c, l int) bool {
+	if k > l {
+		h, k, c, l = c, l, h, k
+	}
+	if k == l && h > c {
+		h, c = c, h
+	}
+	d := [2]int{10*k - h, 10*l - c}
+	if k == l {
+		d = [2]int{10*k - c, 10*l - h}
+	}
+	for _, p := range t[k+l-4] {
+		if p == [2]int{h, c} || p == d {
+			return true
+		}
+	}
+	return false
+}
+
+// tableForced counts the cells of a puzzle that table t says are forced.
+func (s shape) tableForced(v []int, t pairTable) int {
+	rb, cb := s.blockOf()
+	n := 0
+	for i := range s.n {
+		if t.forces(v[rb[i]], len(s.rows[rb[i]]),
+			v[len(s.rows)+cb[i]], len(s.cols[cb[i]])) {
+			n++
+		}
+	}
+	return n
+}
+
+@ Knuth's tables, used just as they stand, give his numbers: 3832 and 576. Of
+the 3832, 3172 are exactly the puzzles with no forced move when naked and
+hidden singles both count, as in the earlier chapter; the other 660 are the
+difference he asked me about. In 188 of them every forced move of that reading
+is a hidden single, which his definition leaves out on purpose. The other 472
+have a naked single that his tables do not list, which takes the next section
+to explain.
+
+The same tables give 3940 classes with no forced move, 4760 with one, 1186 with
+two, 46 with three and none with four, as his letter says, and they give two
+forced moves, not four, to each of the easy puzzles the answer names.
+
+@<Count forced moves with Knuth's tables@>=
+a, _, _ := shapes()
+reps, stab := a.classify()
+@<Find the pairs that Knuth's tables leave out@>
+for _, t := range []struct {
+	name string
+	tab  pairTable
+}{{"Knuth's tables", knuth}, {"the completed tables", full}} {
+	none, noneNoMagic, hid, nak := 0, 0, 0, 0
+	byCount := map[int]int{}
+	for i, v := range reps {
+		m := a.tableForced(v, t.tab)
+		byCount[m]++
+		if stab[i] != 1 || m > 0 {
+			continue
+		}
+		@<Tally a puzzle with no forced move under table |t|@>
+	}
+	@<Report what table |t| gives@>
+}
+
+@ @<Tally a puzzle with no forced move under table |t|@>=
+none++
+f, g := a.forced(v)
+if g == 0 {
+	noneNoMagic++
+}
+switch {
+case a.naked(v) > 0:
+	nak++
+case f > 0:
+	hid++
+}
+
+@ @<Report what table |t| gives@>=
+fmt.Printf("%s: %d asymmetric puzzles with no forced move,"+
+	" %d of them with no magic block\n", t.name, none, noneNoMagic)
+fmt.Printf("    of those, %d also have no naked or hidden single;"+
+	" %d have a naked single, %d only hidden singles\n",
+	none-nak-hid, nak, hid)
+fmt.Printf("    classes by forced moves:")
+for m := 0; m <= 4; m++ {
+	fmt.Printf("  %d:%d", m, byCount[m])
+}
+fmt.Println()
+for _, v := range [][]int{{4, 15, 12, 12, 15, 4}, {4, 15, 16, 12, 15, 8}} {
+	fmt.Printf("    %s: %d forced\n", show(v), a.tableForced(v, t.tab))
+}
+
+@ A table can be checked against what it stands for. Two blocks force the cell
+they share exactly when the digits they can hold meet in a single digit---when
+the cell is a naked single. So I walk every pair of clues for every kind of
+crossing, and compare.
+
+The tables for two 2-blocks and for two 3-blocks agree with that everywhere.
+The table for a 2-block and a 3-block misses two pairs, and their duals. A
+2-block of sum 4 must hold 1 and 3, and a 3-block of sum 7 must hold 1, 2 and 4,
+so the cell they share is 1; a 3-block of sum 19 has five combinations, of
+which one holds a 3 and none a 1, so where it crosses a 2-block of sum 4 the
+cell is 3. The duals are a 2-block of 16 with a 3-block of 23 or of 11.
+Puzzle 4 6 10/4 7 9, for one, has its top right cell forced to 1 by the first
+of these.
+
+With the four pairs added, the tables say exactly what naked singles say, and
+the counts become 3360 and 576. That is the naked-single row of the
+earlier chapter, as it must be. Five classes then have four forced moves, and
+129 have three.
+
+@<Find the pairs that Knuth's tables leave out@>=
+full := knuth
+for kind, kl := range [][2]int{{2, 2}, {2, 3}, {3, 3}} {
+	k, l := kl[0], kl[1]
+	full[kind] = append([][2]int{}, knuth[kind]...)
+	for h := k * (k + 1) / 2; h <= 10*k-k*(k+1)/2; h++ {
+		for c := l * (l + 1) / 2; c <= 10*l-l*(l+1)/2; c++ {
+			if k == l && h > c {
+				continue
+			}
+			@<Compare the table with the naked single at clues |h| and |c|@>
+		}
+	}
+}
+
+@ @<Compare the table with the naked single at clues |h| and |c|@>=
+rm, _ := reach(h, k)
+cm, _ := reach(c, l)
+nk := bitsOf(rm&cm) == 1
+if nk != knuth.forces(h, k, c, l) {
+	if nk {
+		full[kind] = append(full[kind], [2]int{h, c})
+		fmt.Printf("a %d-block of %d and a %d-block of %d force %d,"+
+			" but the table does not say so\n", k, h, l, c, digitsOf(rm&cm)[0])
+	} else {
+		fmt.Printf("the table says a %d-block of %d and a %d-block of %d"+
+			" force a digit, but %d fit\n", k, h, l, c, bitsOf(rm&cm))
+	}
+}
+
+@ The list itself comes out in Knuth's notation: the six clues, each one digit
+in ``extended hex,'' where \.a, \.b, \dots, \.o stand for 10, 11, \dots, 24.
+The name of each class is its least member, which is the one his list uses, so
+the output sorted is his list. A puzzle that does have a naked or a hidden
+single is marked with which.
+
+@<Print the puzzles with no forced move, in Knuth's notation@>=
+a, _, _ := shapes()
+reps, stab := a.classify()
+var lines []string
+for i, v := range reps {
+	if stab[i] != 1 || a.tableForced(v, knuth) > 0 {
+		continue
+	}
+	l := ""
+	for _, x := range v {
+		l += string("0123456789abcdefghijklmno"[x])
+	}
+	if f, _ := a.forced(v); f > 0 {
+		l += map[bool]string{true: " naked", false: " hidden"}[a.naked(v) > 0]
+	}
+	lines = append(lines, l)
+}
+sort.Strings(lines)
+fmt.Println(strings.Join(lines, "\n"))
 
 @* Answer 430(d)'s exact cover problem.
 Answer 432 measures difficulty by the size of Algorithm C's search tree,

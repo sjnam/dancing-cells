@@ -1,7 +1,8 @@
 # TAOCP 7.2.2.1, Exercise 262: A Careful Reading
 
 Written 8 September 2026, against Volume 4B, Addison-Wesley, first printing,
-2022, and the errata file as of that date.
+2022, and the errata file as of that date. In November 2026 Knuth checked this
+reading and agreed that part (b) needs the missing bound.
 
 This is one reader's response to the request on Knuth's [news
 page](https://www-cs-faculty.stanford.edu/~knuth/news.html): read an exercise
