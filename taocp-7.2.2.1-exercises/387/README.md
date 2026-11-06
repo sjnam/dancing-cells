@@ -168,8 +168,8 @@ a 2×2×2 block and the other twelve surround it.
 
 ## 6. Two of the pictures are bigger than they need to be
 
-Counting cubies in a small isometric drawing is not something to trust the eye
-with, but one feature of such a drawing can be counted safely: the shaded top
+Counting cubies in a small isometric drawing is easy to get wrong, but one
+feature of such a drawing can be counted safely: the shaded top
 faces. A drawing can show a top face only for a cubie with nothing directly
 above it, so **the most top faces an $n$-cubie polycube can show is the largest
 number of such cubies**, over the six directions it might be drawn with
@@ -195,8 +195,8 @@ reserved for them. Then:
 By this count alone, ten of the eleven are consistent with the minimum. A
 closer look at the arrangement of the faces shows that two are not.
 
-**Type (v), 90°.** Its eight top faces are complete, unoccluded rhombi, and
-fitting them to the drawing's projection puts all eight at one height, in the
+**Type (v), 90°.** Its eight top faces are complete, unhidden rhombi, and
+where they sit in the drawing puts all eight at one height, in the
 shape of a pinwheel. Every cubie of that level shows its top, so the level is
 the pinwheel exactly. Below it the drawing shows more front faces, so there is
 more underneath; and the pinwheel's quarter turn is about the corner shared by
@@ -254,9 +254,8 @@ them" — and the figure is labelled (i) through (xi). So **twelve** should read
   The T argument was checked twice, by the program and by a separate script
   that shares no code with it, and the two disagreed at first, which found a
   slip in the program's test for a T.
-- The top faces in the printed figure were counted mechanically, by connected
-  components of the top-face colour, not by eye; the eleven groups separated
-  cleanly and lined up one-to-one with the eleven labels.
+- The top faces in the printed figure were counted twice, and the eleven
+  groups lined up one-to-one with the eleven labels.
 - The likeliest reading of the type (v) drawing, and its top level alone, were
   both checked to have type 90°, so the discrepancy is not an artefact of the
   reading.

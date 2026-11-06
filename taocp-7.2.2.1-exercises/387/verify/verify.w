@@ -935,11 +935,11 @@ func connected(p []vec) bool {
 @* Weighing the pictures in answer 387.
 The exercise asks for an example of each type ``using the minimum number of
 cubies,'' so the eleven drawings ought to be as small as the numbers above.
-Counting cubies in a small isometric drawing is not something to do by eye, but
-one feature of such a drawing can be counted without any risk: the shaded top
+Counting cubies in a small isometric drawing is easy to get wrong, but one
+feature of such a drawing can be counted without any risk: the shaded top
 faces, one for each cubie that has nothing directly above it. I read those off
-the printed figure by looking for connected patches of the colour reserved for
-top faces, and got
+the printed figure by counting the patches of the colour reserved for top
+faces, and got
 
 $$\vbox{\halign{\hfil#\quad&#\hfil\cr
 1&full\cr 9&even\cr 2&8-fold\cr 3&6-fold\cr 8&90$^\circ$\cr 5&bidiagonal\cr
@@ -1041,8 +1041,8 @@ for i, c := range rotCls {
 		roman(i+1)+")", nm, least, mostTops[nm][least], printed[nm], verdict)
 }
 
-@ The type (v) drawing's eight top faces all sit at one height in the drawing's
-projection, and they make a pinwheel. In September I took that to mean a flat
+@ The type (v) drawing's eight top faces all sit at one height in the drawing,
+and they make a pinwheel. In September I took that to mean a flat
 pinwheel of eight cubies. It does not: looked at again, the drawing also shows
 front faces below that level, so there is more underneath. Every cubie of the
 top level shows its top, so that level is the pinwheel exactly; and the quarter turn of a pinwheel is about an axis through
@@ -1065,7 +1065,7 @@ for _, p := range [][]vec{pinwheel, twelve, mine} {
 
 @ The type (vi) drawing shows five top faces, and a bidiagonal polycube of six
 cubies can show five; so counting faces does not settle it. Their arrangement
-does. Fitting the four full ones to the projection puts them all at one height,
+does. Where the four full ones sit puts them all at one height,
 in the shape of a T tetromino; the fifth is a sliver lower down. No bidiagonal
 polycube of six cubies, turned any of the 24 ways, has four exposed top faces
 at one height that make a T. Among those of seven cubies some do, and the only

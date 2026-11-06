@@ -53,8 +53,11 @@ node](backtrack.png)
 > Let $T$ be any tree. Construct the 0–1 matrix of an **unsolvable** exact cover
 > problem for which $T$ is the backtrack tree traversed by Algorithm X with the
 > MRV heuristic. (A *unique* item should have the minimum `LEN` value whenever
-> step X3 is encountered.) Illustrate your construction when $T$ is a root with
-> two subtrees, each having three leaves — nine nodes in all.
+> step X3 is encountered.) Illustrate your construction when $T$ = [a small
+> picture].
+
+The picture is a root with two subtrees, each having three leaves — nine nodes
+in all.
 
 ### Exercise 30 [25]
 
@@ -305,9 +308,9 @@ Altogether 0 solutions, 191 updates, 3 nodes.
 ```
 
 This is no contradiction. The exercise is about Algorithm X, and dancing cells
-detects failure one level sooner. At `ssxcc.go:380`, `hide` returns false the
-moment an active primary item's size would drop to zero, and `commitOption` at
-`ssxcc.go:344` refuses to descend into that branch at all. So the six leaves
+detects failure one level sooner. In `ssxcc.go`, `hide` returns false the
+moment an active primary item's size would drop to zero, and `commitOption`
+then refuses to descend into that branch at all. So the six leaves
 that Algorithm X would visit are never reached, leaving $1 + 2 = 3$ nodes.
 
 Solution counts are engine-independent and agreed everywhere. Below, using the
@@ -349,7 +352,7 @@ To reproduce:
 
 ```sh
 make tangle                        # gtangle verify.w -> verify.go
-cd taocp-7.2.2.1-exercises/29-30/verify && go build -o ex29 .
+cd taocp-7.2.2.1-exercises/029-030/verify && go build -o ex29 .
 ./ex29 -mode book                  # reproduce the printed 15x14 matrix
 ./ex29 -mode all -upto 10          # exhaustive, as printed -> 1 failure
 ./ex29 -mode all -upto 10 -errata  # exhaustive, erratum    -> 0 failures

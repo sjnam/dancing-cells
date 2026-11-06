@@ -222,10 +222,12 @@ gives something sharp to test against.
 
 Every row with $x\_0 = 0$ — one representative per equivalence class — was
 visited for each $n \le 12$ with $n+1$ prime, and each was asked whether it is
-perfect, whether it has the all-interval property, whether it is equivalent to
-its reversal, and whether it is one of the tables of logarithms.
+perfect. Each perfect row was then asked whether it has the all-interval
+property, whether it is equivalent to its reversal, and whether it is one of
+the tables of logarithms; so the fifth and sixth columns count perfect rows,
+not all rows.
 
-| $n$ | $p$ | rows | perf. | all-int. | $x \equiv x^R$ | $\varphi(n)$ | tables |
+| $n$ | $p$ | rows | perfect | of those, all-int. | of those, $x \equiv x^R$ | $\varphi(n)$ | tables |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 1 | 2 | 1 | 1 | 1 | 1 | 1 | yes |
 | 2 | 3 | 1 | 1 | 1 | 1 | 1 | yes |
@@ -234,10 +236,11 @@ its reversal, and whether it is one of the tables of logarithms.
 | 10 | 11 | 362,880 | 4 | 4 | 4 | 4 | yes |
 | 12 | 13 | 39,916,800 | 4 | 4 | 4 | 4 | yes |
 
-The perfect column equals the all-interval column in every line, which is
-part (a); it equals the $x \equiv x^R$ column, which is part (b); and it equals
-$\varphi(n)$, with the rows themselves matching the tables of logarithms
-one for one.
+Every perfect row has the all-interval property, which is part (a); every one
+is equivalent to its reversal, which is part (b); and there are $\varphi(n)$ of
+them, matching the tables of logarithms one for one. The all-interval rows
+themselves are far more numerous — 3856 of them with $x\_0 = 0$ when $n = 12$,
+as section 5 shows.
 
 ---
 

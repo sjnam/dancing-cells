@@ -76,15 +76,15 @@ falling into four classes under the half-turn.
 
 ## 3. Exercise 151
 
-### 3.1 The printed figure, measured
+### 3.1 The printed figure, read cell by cell
 
 The statement makes a claim about its own illustration — "only two of the
 dominoes in the arrangement above are in horizontal position" — so the
-illustration on page 143 was measured rather than trusted: its grid rules were
-located, and every interior edge tested for a drawn line and every edge
-midpoint for a path crossing.
+illustration on page 143 was not taken on trust. I went over it domino by
+domino, noting for every edge between two cells whether a domino boundary is
+drawn there, and for every edge midpoint whether the path crosses it.
 
-| Measurement | Found | Consistent with |
+| Count | Found | Consistent with |
 | --- | --- | --- |
 | horizontal dominoes | 2 | the claim, exactly — rows 4–5, columns 1–2 |
 | vertical dominoes | 34 | 36 pieces covering 72 cells |
@@ -173,7 +173,7 @@ answer's claim that such assignments are found "in a flash".
 > — statement of exercise 151, p. 143
 
 A single loop it certainly is. Hamiltonian it is not, on any natural reading.
-Measuring which cells the path enters shows that three of the 72 cells —
+Going through the figure cell by cell shows that three of the 72 cells —
 (2,0), (6,7) and (7,0) — are never entered at all; and if the dominoes rather
 than the cells are taken as the vertices, 27 of the 36 are entered twice, since
 they carry two subpaths apiece. The only reading under which the phrase is true
@@ -357,11 +357,10 @@ overlap.
 1. **Enumeration.** The piece counts were derived twice, once in Python and
    once inside the Go model builder, from the definition of a matching modulo
    the half-turn — never copied from the book.
-2. **Measuring the figure.** The 8×9 figure was recovered from the page by
-   locating grid rules and testing every interior edge for a drawn line and
-   every edge midpoint for a path crossing. The recovered tiling covers exactly
-   72 cells and its pattern census matches the model's multiplicities, which is
-   a strong check on both.
+2. **Reading the figure.** I went over the 8×9 figure domino by domino,
+   noting every domino boundary and every point where the path crosses one.
+   The tiling read off this way covers exactly 72 cells and its pattern census
+   matches the model's multiplicities, which is a strong check on both.
 3. **Search.** The factored models were solved with the MCC engine, and the
    loop assignment with a purpose-built backtracker. Two separately written
    model generators produced identical option counts (2698) for the 8×9
@@ -398,7 +397,10 @@ matching the answer's own convention.
 - D. E. Knuth, *The Art of Computer Programming*, Volume 4B (Addison-Wesley,
   2022), §7.2.2.1, exercises 151–152 (pp. 143–144), answers (pp. 459–460).
 - D. E. Knuth, *Changes to Volume 4B*,
-  <https://cs.stanford.edu/~knuth/err4b.textxt> — no entry touches either
-  exercise.
+  <https://cs.stanford.edu/~knuth/err4b.textxt>. One entry touches answer 151:
+  `\amendpage 4b.459 line 13 of answer 151 (22.11.05)` makes the program of
+  section 3.5 have "a lot in common with Algorithm X and exercise 413". It
+  changes nothing checked here. (The first version of these notes said that
+  no entry touched either exercise; I had missed this one.)
 - The 36 path dominoes were first studied by Ed Pegg Jr. in 1999, and first
   placed into a single-loop 8 × 9 array by Roger Phillips later that year.

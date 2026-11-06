@@ -127,7 +127,7 @@ Eight is the count of classes whose large squares are symmetric about the
 horizontal or the vertical axis **of the 5 × 5 frame** — that is, whose picture
 as drawn in the box is left-right or top-bottom symmetric.
 
-To be sure, I recovered all six printed pictures cell by cell:
+To be sure, I copied out all six printed pictures cell by cell:
 
 ```text
 #####      ##.##      .#.#.      ###        #.#        .#.

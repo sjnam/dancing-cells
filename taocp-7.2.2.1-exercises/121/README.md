@@ -279,6 +279,9 @@ is that the copy of Volume 1 I read is a printing from before the fix — and
 that the check works: a single wrong letter in a 49-name array was caught, and
 located, by the tiles alone.
 
+A later printing, which I looked at in November 2026, has $\gamma SJ$ in that
+cell, as the errata say; with it the block holds together as printed.
+
 ## What is in this directory
 
 | File | |
