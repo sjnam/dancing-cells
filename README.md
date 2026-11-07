@@ -794,7 +794,8 @@ reading per directory, written against Volume 4B, first printing, 2022, and
 against the errata file of the day. Section 7.2.2.1 is the dancing-links
 section, so most of them come down to an exact cover problem and the engines
 above do the searching. The nineteen exercises that page listed for §7.2.2.1 in
-September 2026 all have a reading here; one of them, 151–152, is still on it.
+September 2026 all have a reading here; by 8 November all of them had come off
+it.
 
 Each exercise's directory holds the report itself as `README.md` and the
 program behind it as a GWEB literate program in `verify/verify.w`, with
