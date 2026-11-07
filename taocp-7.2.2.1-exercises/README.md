@@ -28,6 +28,11 @@ Nothing is claimed that the program does not check.
 When a reading turns out to be wrong it is corrected in place, and the change
 is listed here, newest first, so that a returning reader can see what moved.
 
+- **8 November 2026, [151, 152](151-152).** The reading said that answer 152
+  prints no 8×12 arrangement, and this page listed finding one as going past
+  the book. The answer does print one, on page 459 between answers 151 and 152;
+  Knuth kindly pointed it out. The one found here is a different solution, and
+  the reading now says both.
 - **5 November 2026, Knuth's reply.** Knuth has checked the nine readings
   whose discrepancies I listed for him on 2 November — 129, 147, 196, 262, 323,
   375, 387, 432 and 442 — and agrees with every correction in them. In 432 he
@@ -204,9 +209,9 @@ A reading that finds nothing wrong can still add something.
   an identity of the form *raw count = multiplier × what the answer prints*,
   which has to come out on the nose and would fail if any type-count were off
   by one.
-- **[151, 152](151-152).** The 8×12 array of exercise 152, for which the answer
-  prints no arrangement, was found and is drawn. No 64-cell rectangle at all
-  admits the 32 non-crossing pieces, not just the chessboard. And the
+- **[151, 152](151-152).** A second 8×12 array for exercise 152, different
+  from the one the answer prints, was found and is drawn. No 64-cell rectangle
+  at all admits the 32 non-crossing pieces, not just the chessboard. And the
   chessboard mission misses by exactly one piece, which turns the failed puzzle
   into a sharp one.
 - **[196](196).** The general rule behind answer (i)'s update count, which the

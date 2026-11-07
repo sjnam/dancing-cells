@@ -26,11 +26,15 @@ The one defect is a word. Exercise 151 calls the path in its figure a
 "Hamiltonian cycle"; it is a single closed loop, as the same sentence goes on
 to say, but it is not Hamiltonian on any natural reading.
 
-Three things here go past the book. The 8×12 array of exercise 152, for which
-the answer prints no arrangement, was found and is drawn in the companion
-program. No 64-cell rectangle admits the 32 non-crossing pieces, not just the
-chessboard. And the chessboard mission misses by exactly one piece, which
-turns the failed puzzle into a sharp one.
+Two things here go past the book. No 64-cell rectangle admits the 32
+non-crossing pieces, not just the chessboard. And the chessboard mission misses
+by exactly one piece, which turns the failed puzzle into a sharp one. A second
+8×12 array for exercise 152, different from the one the answer prints, was
+also found and is drawn.
+
+The first version of these notes said that the answer prints no 8×12
+arrangement. It does, on page 459 between answers 151 and 152, and Knuth
+kindly pointed it out in November 2026; section 5.3 now says so.
 
 ---
 
@@ -220,14 +224,19 @@ without losing a solution.
 
 ### 5.3 The 8×12 array
 
-This is the one the answer leaves without a picture:
+Answer 152 says how its author found one:
 
 > One needs to be lucky to find a solution; the author struck it rich with
 > Algorithm M after 35.1 Tμ.
 >
 > — answer 152, p. 459
 
-One was found here too:
+and the arrangement found is drawn on the same page, between answers 151 and
+152, after the two 8×9 arrangements for exercise 151. (The first version of
+these notes said that the answer leaves the 8×12 without a picture. I had
+missed it.)
+
+A different one was found here:
 
 ![The 8 by 12 array: all forty-eight path dominoes, their arcs forming one
 closed loop](loop8x12.png)
@@ -252,7 +261,11 @@ the author's 35.1 Tμ — only a record of what it cost here.
 
 This is one solution, not the solution. Its tiling is carried to itself by
 none of the three non-trivial symmetries of the rectangle, so its images under
-them are three further solutions and there are at least four in all. How many
+them are three further solutions. Nor is it one of the book's: the book's
+blank lies in a corner, at row 0, columns 0–1, while this one's lies at row 0,
+columns 4–5, and no symmetry of the rectangle moves a blank from the middle of
+an edge to a corner. So with the book's arrangement and its images there are
+at least eight in all. How many
 there are altogether was not determined: the search stopped at the first hit,
 and the other 47 chunks were never run to exhaustion.
 

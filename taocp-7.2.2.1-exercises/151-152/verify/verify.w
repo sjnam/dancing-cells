@@ -40,9 +40,9 @@ models, and the counts came out right; the notes are the companion document
 Two things here go past the book. The first is a repair for the chessboard: the
 thirty-two non-crossing tiles miss by exactly one piece, and a single closed
 curve that crosses itself just once does exist---so one is not only attainable
-but minimal. The second is the $8\times12$ array of exercise 152 itself, which
-the answer reports finding with luck and 35.1 teramems. This program found one
-too, and it is drawn at the end.
+but minimal. The second is an $8\times12$ array for exercise 152 that differs
+from the one the answer prints, found with the help of symmetry and drawn at
+the end.
 
 @ The whole method rests on one idea from the answer to 151. Solving for the
 tiles directly is hopeless, because a tile is a matching and matchings do not
@@ -953,8 +953,13 @@ for k, d := range ds {
 @* The eight by twelve array.
 Exercise 152 asks for all forty-eight pieces in an $8\times12$ array. Its answer
 says only this about finding one: ``One needs to be lucky to find a solution;
-the author struck it rich with Algorithm~M after 35.1~T$\mu$.'' No arrangement
-is printed.
+the author struck it rich with Algorithm~M after 35.1~T$\mu$.'' The arrangement
+he found is drawn on page 459, between answers 151 and 152. In September I wrote
+here that no arrangement is printed; I had missed that picture, and Knuth
+kindly pointed it out in November 2026. The one below is a different solution:
+the book's blank lies in a corner, at row~0, columns 0--1, and this one's at
+row~0, columns 4--5, and no symmetry of the rectangle takes one place to the
+other.
 
 I looked for one by splitting the search. The blank piece is unique, so a
 solution places exactly one of it, and the $172$ placements of a domino on an
