@@ -1,7 +1,7 @@
 # Dancing Cells
 
 색깔 있는 정확 덮개(XCC)를 춤추는 링크가 아니라 커누스(Donald E. Knuth)의 희소
-집합 기법 **"춤추는 칸"**으로 푼다. 이 저장소는
+집합 기법 **춤추는 칸**으로 푼다. 이 저장소는
 [`sjnam/dlx`](https://github.com/sjnam/dlx)의 춤추는 칸 짝이고 같은 라이브러리
 API를 내주므로, dlx의 예제 프로그램이 거의 그대로 옮겨 온다.
 
