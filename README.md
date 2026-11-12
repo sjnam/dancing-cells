@@ -641,7 +641,7 @@ n = 25에 1분이 넘게 걸리고, 있으면 n = 27에 1분 20초, n = 29에 4�
 다른 길은 아예 시도하지 않는 것이다. 답은 그럴듯한 채로 남고 다만 가장 싼 것이기를
 그친다. 무작위 문제 수천 개를 모조리 세어 본 답과 맞춰 보고서야 그것을 잡았다.
 
-### A Partridge in a Pear Tree
+### 배나무 위의 자고새
 
 메서드 `Minimize`를 쓰는 다른 예제이고, `Need`를 부리는 예제다.
 [파티지 퍼즐](examples/partridge)은 *k*×*k* 정사각형 *k*장씩을, *k* = 1…*n*에
@@ -770,7 +770,7 @@ import할 수 있게 하려는 것이다. 다른 하나는 연습문제 읽기�
 | [`examples/domino/domino.w`](examples/domino/domino.w) | 엔진 `zdd`로 도미노 덮기 세기 — Kasteleyn의 공식을 정확한 셈과 맞춰 보고, 고르게 뽑은 아즈텍 다이아몬드 덮기에서 북극원을 보며, 최대 무게 짝짓기를 탐색이 아니라 다이어그램을 걸어 찾는다. |
 | [`examples/words/words.w`](examples/words/words.w) | *알파벳 스물넉 자를 덮는 다섯 글자 낱말 다섯이 있는가?*가 어떻게 DLX 입력이 되는가. 그 답은 다중도 없이 색만으로 낱말 수가 꼭 다섯으로 묶인다는 것이다. |
 | [`examples/transversal/transversal.w`](examples/transversal/transversal.w) | *헝가리 무곡 제5번* — 라틴 방진의 가장 싼 횡단을 춤추는 칸으로 분기하고 헝가리안 알고리즘으로 한정한다. 하한을 어디서 찾을지, 이 하한이 왜 정확한지, 그리고 이 재주가 또 어디에 먹히는지. |
-| [`examples/hollow/hollow.w`](examples/hollow/hollow.w) | *A Partridge in a Pear Tree* — 파티지 퍼즐이 한가운데에 얼마나 큰 구멍을 지킬 수 있는가. 가망 없던 탐색을 2초짜리 증명으로 바꾸는 기하학적 하한, 그리고 정직하게 말해 값을 하지 못하는 `Need` 하한. |
+| [`examples/hollow/hollow.w`](examples/hollow/hollow.w) | *배나무 위의 자고새* — 파티지 퍼즐이 한가운데에 얼마나 큰 구멍을 지킬 수 있는가. 가망 없던 탐색을 2초짜리 증명으로 바꾸는 기하학적 하한, 그리고 정직하게 말해 값을 하지 못하는 `Need` 하한. |
 | [`examples/queen/queen.w`](examples/queen/queen.w) | *n*-퀸 — 주 아이템과 부 아이템의 차이를 가장 말끔하게 보여 준다. 행과 열은 꼭 한 번 덮여야 하고 대각선은 많아야 한 번이다. 아이템 줄의 *차례*가 왜 중요한지도 나오는데, 분기 규칙이 비길 때 왼쪽 아이템이 이기기 때문이다. |
 | [`examples/langford/langford.w`](examples/langford/langford.w) | 랭포드 짝 — 다른 것이라고는 아무것도 없는 정확 덮개다. 부 아이템도 색도 없다. 하나뿐인 미묘함은 거울 대칭을 깨는 일인데, *홀수* 값이 있어야 하고 그렇다고 말해 주는 셈이 나온다. |
 | [`examples/pentominoes/pentominoes.w`](examples/pentominoes/pentominoes.w) | 펜토미노 열둘 — 옵션이 다른 데서 만들어진 문제라, 이 글은 옵션을 쓰는 이야기가 아니라 `.dlx` 파일과 그 약속을 읽는 이야기다. |
