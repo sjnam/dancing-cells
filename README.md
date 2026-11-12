@@ -11,7 +11,6 @@ API를 내주므로, dlx의 예제 프로그램이 거의 그대로 옮겨 온�
 [`zdd/zdd.w`](zdd/zdd.w). 아래
 [소스는 문학적 프로그램이다](#소스는-문학적-프로그램이다)를 보라.
 
-
 ## 라이브러리
 
 ```go
@@ -780,4 +779,3 @@ import할 수 있게 하려는 것이다. 다른 하나는 연습문제 읽기�
 | [`examples/wordsearch/wordsearch.w`](examples/wordsearch/wordsearch.w) | 낱말 찾기 판 짓기 — 색을 *글자*로 쓴다. 그러면 교차하는 두 낱말이 만나는 자리의 글자에 뜻을 모으는데, 교차를 따지는 코드는 어디에도 없다. |
 | [`examples/sudoku/sudoku.w`](examples/sudoku/sudoku.w) | 스도쿠, 무더기로 — 탐색을 시작하기 전에 단서로 문제를 깎아 내는 일, 그리고 퍼즐 파일 하나를 모든 CPU에 흩어 풀면서도 입력 차례로 찍어 내는 순서 있는 팬인. |
 | [`examples/partridge/partridge.w`](examples/partridge/partridge.w) | 파티지 퍼즐 — `NewMCC()`가 있어야 하는 하나뿐인 예제인데, 크기 *k*짜리 조각 *k*장이 곧 다중도이기 때문이다. 36 × 36 덮기를 37줄에 담아 내는 상자 그림 출력기도 있다. |
-
