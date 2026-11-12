@@ -11,10 +11,6 @@ API를 내주므로, dlx의 예제 프로그램이 거의 그대로 옮겨 온�
 [`zdd/zdd.w`](zdd/zdd.w). 아래
 [소스는 문학적 프로그램이다](#소스는-문학적-프로그램이다)를 보라.
 
-엔진은 커누스 자신의 책에도 써 먹는다. 디렉터리
-[`taocp-7.2.2.1-exercises/`](taocp-7.2.2.1-exercises)에는 TAOCP §7.2.2.1의
-연습문제와 그 답을 하나씩 꼼꼼히 읽은 글이 디렉터리마다 하나씩 들어 있다. 아래
-[Careful readings of TAOCP 7.2.2.1](#careful-readings-of-taocp-7221)을 보라.
 
 ## 라이브러리
 
@@ -785,27 +781,3 @@ import할 수 있게 하려는 것이다. 다른 하나는 연습문제 읽기�
 | [`examples/sudoku/sudoku.w`](examples/sudoku/sudoku.w) | 스도쿠, 무더기로 — 탐색을 시작하기 전에 단서로 문제를 깎아 내는 일, 그리고 퍼즐 파일 하나를 모든 CPU에 흩어 풀면서도 입력 차례로 찍어 내는 순서 있는 팬인. |
 | [`examples/partridge/partridge.w`](examples/partridge/partridge.w) | 파티지 퍼즐 — `NewMCC()`가 있어야 하는 하나뿐인 예제인데, 크기 *k*짜리 조각 *k*장이 곧 다중도이기 때문이다. 36 × 36 덮기를 37줄에 담아 내는 상자 그림 출력기도 있다. |
 
-## Careful readings of TAOCP 7.2.2.1
-
-Knuth's [news page](https://www-cs-faculty.stanford.edu/~knuth/news.html) asks
-readers to take one exercise, read it and its answer very carefully, and report
-back. [`taocp-7.2.2.1-exercises/`](taocp-7.2.2.1-exercises) holds one such
-reading per directory, written against Volume 4B, first printing, 2022, and
-against the errata file of the day. Section 7.2.2.1 is the dancing-links
-section, so most of them come down to an exact cover problem and the engines
-above do the searching. The nineteen exercises that page listed for §7.2.2.1 in
-September 2026 all have a reading here; by 8 November all of them had come off
-it.
-
-Each exercise's directory holds the report itself as `README.md` and the
-program behind it as a GWEB literate program in `verify/verify.w`, with
-`verify/verify.pdf` beside it so it can be read without installing GWEB.
-Nothing is claimed that the program does not check.
-
-Nine of the nineteen answers came out with nothing left to report. The other
-ten each turned up something: 281,618 of answer 129 should be 294,457, the
-3648 of answer 323 belongs to a 2 × 22 frame rather than a 2 × 21 one, answer
-30 is broken by the one-node tree, and the puzzle answer 432 calls the hardest
-cannot exist.
-[`taocp-7.2.2.1-exercises/README.md`](taocp-7.2.2.1-exercises) indexes all
-nineteen readings and gathers every correction in one place.
