@@ -258,7 +258,7 @@ needing two clues apiece, and the 20-clue puzzle becomes a 20-clue puzzle for
 
 ## 11. Method
 
-The program is a GWEB literate program. [`verify.w`](verify/verify.w) is the
+The program is a GWEB literate program. [`verify.gw`](verify/verify.gw) is the
 source and `gtangle` produces the Go from it; the typeset document,
 [`verify.pdf`](verify/verify.pdf), is committed beside it so it can be read
 without installing GWEB.

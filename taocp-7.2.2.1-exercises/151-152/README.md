@@ -380,7 +380,7 @@ overlap.
    problem, and the second reproduced 151's solved arrangement independently.
 
 The program is kept in [`verify/`](verify/). It is a GWEB literate program —
-[`verify.w`](verify/verify.w) is the source, and `gtangle` produces the Go from
+[`verify.gw`](verify/verify.gw) is the source, and `gtangle` produces the Go from
 it. The typeset document, [`verify.pdf`](verify/verify.pdf), is committed
 beside the source, so it can be read without installing GWEB; the 8×12 loop is
 drawn there in MetaPost.
@@ -388,7 +388,7 @@ drawn there in MetaPost.
 To reproduce:
 
 ```sh
-make tangle                     # gtangle verify.w -> verify.go
+make tangle                     # gtangle verify.gw -> verify.go
 cd taocp-7.2.2.1-exercises/151-152/verify && go build -o verify .
 ./verify -mode census -set 48                       # 1, 9, 27, 11
 ./verify -mode census -set nc32                     # 1, 9, 18, 4

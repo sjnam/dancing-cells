@@ -1,5 +1,5 @@
 # One careful reading of an exercise of TAOCP 7.2.2.1 per directory: README.md
-# is the report and verify/verify.w is the program behind it.  The readings are
+# is the report and verify/verify.gw is the program behind it.  The readings are
 # in English, but they go through luatex, because some of them draw their
 # figures with luamplib.  To add one, put its directory name in EXERCISES
 # below, plus one $(eval $(call figure,...)) line if it draws a picture.
@@ -32,10 +32,10 @@ FIGS   := 029-030/backtrack.png 104/allinterval.png 121/tetrads.png \
 
 all: build
 
-# A static pattern rule, not an implicit one: a generic `%.go: %.w` would
+# A static pattern rule, not an implicit one: a generic `%.go: %.gw` would
 # otherwise leave its output in the wrong directory.
-$(addsuffix /verify.go,$(VERIFY)): %/verify.go: %/verify.w
-	cd $* && $(GTANGLE) verify.w
+$(addsuffix /verify.go,$(VERIFY)): %/verify.go: %/verify.gw
+	cd $* && $(GTANGLE) verify.gw
 	gofmt -w $@
 
 tangle: $(addsuffix /verify.go,$(VERIFY))
@@ -53,12 +53,12 @@ vet: tangle
 # pictures their README.md files display.
 pdf: $(addsuffix /verify.pdf,$(VERIFY)) $(FIGS)
 
-$(addsuffix /verify.pdf,$(VERIFY)): %/verify.pdf: %/verify.w
-	cd $* && $(GWEAVE) verify.w
+$(addsuffix /verify.pdf,$(VERIFY)): %/verify.pdf: %/verify.gw
+	cd $* && $(GWEAVE) verify.gw
 	cd $* && $(LUATEX) verify.tex
 	cd $* && $(LUATEX) verify.tex
 
-# A figure that both verify.w and README.md show is drawn once, in MetaPost:
+# A figure that both verify.gw and README.md show is drawn once, in MetaPost:
 # luamplib runs the .mp while the document is typeset, and mpost runs it again
 # on its own to make the picture the README displays.  Arguments: the exercise
 # directory, the figure name, and how wide the raster should be.
@@ -87,7 +87,7 @@ $(eval $(call figure,387,polycubes,1400))
 $(eval $(call figure,432,kakuro,1500))
 $(eval $(call figure,442,hitori,1200))
 
-# clean removes everything the .w files generate, tangled Go included; `make`
+# clean removes everything the .gw files generate, tangled Go included; `make`
 # puts the Go sources back.  The one exception is the verify.pdf files, which
 # are committed so that a reading can be read without GWEB installed.
 clean:

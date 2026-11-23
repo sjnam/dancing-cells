@@ -328,7 +328,7 @@ erratum's construction:
 ## 5. Method
 
 One program did the work, kept in [`verify/`](verify/). It is a GWEB literate
-program — [`verify.w`](verify/verify.w) is the source, and `gtangle` produces
+program — [`verify.gw`](verify/verify.gw) is the source, and `gtangle` produces
 the Go from it — so the reasoning above can be read alongside the code that
 justifies it. The typeset document, [`verify.pdf`](verify/verify.pdf), is
 committed beside the source, so it can be read without installing GWEB. The
@@ -351,7 +351,7 @@ program does four things.
 To reproduce:
 
 ```sh
-make tangle                        # gtangle verify.w -> verify.go
+make tangle                        # gtangle verify.gw -> verify.go
 cd taocp-7.2.2.1-exercises/029-030/verify && go build -o ex29 .
 ./ex29 -mode book                  # reproduce the printed 15x14 matrix
 ./ex29 -mode all -upto 10          # exhaustive, as printed -> 1 failure
@@ -359,7 +359,7 @@ cd taocp-7.2.2.1-exercises/029-030/verify && go build -o ex29 .
 ./ex29 -mode ssxcc -errata -spec '((.*.)(*.*))'   # cross-check
 ```
 
-`make pdf` regenerates `verify.pdf` from `verify.w`. In a tree spec, `.` is an
+`make pdf` regenerates `verify.pdf` from `verify.gw`. In a tree spec, `.` is an
 ordinary leaf, `*` a leaf designated a solution, and parentheses an internal
 node; the example tree of exercise 29 is `((...)(...))`.
 

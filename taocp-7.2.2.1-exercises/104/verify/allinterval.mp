@@ -3,7 +3,7 @@
 % modulo 13.  The eleven steps of the path are eleven different intervals,
 % which is the all-interval property that part (a) proves.
 %
-% This file is read twice: luamplib runs it while verify.w is typeset, and
+% This file is read twice: luamplib runs it while verify.gw is typeset, and
 % mpost runs it on its own to make the picture that README.md shows.
 
 beginfig(1);

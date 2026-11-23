@@ -59,8 +59,8 @@ must be numbered, whether the MRV heuristic earns its keep, the Aztec diamond
 formula, an arctic circle, a picture of blue and red paths, MacMahon's box
 formula, and the plane partition hiding inside a diamond tiling.
 
-The program here is [`verify/verify.w`](verify/verify.w), which drives this
-repository's [ZDD engine](../../zdd/zdd.w). Its shape is Knuth's general one:
+The program here is [`verify/verify.gw`](verify/verify.gw), which drives this
+repository's [ZDD engine](../../zdd/zdd.gw). Its shape is Knuth's general one:
 $S\_{mn}$ is $2m$ rows with triangles of side $m-1$ cut off, so $S\_n$ is
 $S\_{8n}$ and the Aztec diamond of order $m$ is $S\_{m(2m)}$, and one builder
 serves all three.
@@ -302,6 +302,6 @@ the right direction.
 
 | File | |
 | --- | --- |
-| [`verify/verify.w`](verify/verify.w) | the program, as a literate document |
+| [`verify/verify.gw`](verify/verify.gw) | the program, as a literate document |
 | [`verify/verify.pdf`](verify/verify.pdf) | the same, typeset |
 | [`verify/tilings.mp`](verify/tilings.mp) | the picture, in MetaPost |

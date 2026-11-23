@@ -19,7 +19,7 @@ nineteen exercises for §7.2.2.1. **All nineteen have a reading here.** By
 
 Each exercise's directory holds the report itself as `README.md` — which is
 what GitHub shows when you open it — and the program behind it as a
-[GWEB](https://github.com/sjnam/gweb) literate program in `verify/verify.w`,
+[GWEB](https://github.com/sjnam/gweb) literate program in `verify/verify.gw`,
 with `verify/verify.pdf` beside it so it can be read without installing GWEB.
 Nothing is claimed that the program does not check.
 
@@ -240,11 +240,11 @@ Reports are in English, and so are the literate programs; both are typeset with
 ## Building
 
 ```sh
-make          # tangle every verify.w and build
+make          # tangle every verify.gw and build
 make test     # go test ./...
 make vet      # go vet ./...
 make pdf      # weave and typeset every reading, and draw its figures
-make clean    # remove everything the .w files generate, verify.pdf excepted
+make clean    # remove everything the .gw files generate, verify.pdf excepted
 ```
 
 Adding a reading means putting its directory name in `EXERCISES` in the
@@ -254,7 +254,7 @@ plus one `$(eval $(call figure,...))` line if the reading draws a picture.
 Each program also runs on its own:
 
 ```sh
-cd 375/verify && gtangle verify.w && go run . -mode all
+cd 375/verify && gtangle verify.gw && go run . -mode all
 ```
 
 The modes differ from reading to reading; the last section of each `README.md`

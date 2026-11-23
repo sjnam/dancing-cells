@@ -164,7 +164,7 @@ rendering the page, cutting it into the fourteen coloured blobs, and matching
 each blob to one of my fourteen shapes by moment invariants, which ignore
 position, size, turning and mirroring. The matching is a perfect pairing with
 no clashes, and the five odd pieces under it are **E, G, J, K, L** — exactly
-what the answer says. The piece table in `verify/verify.w` records the result,
+what the answer says. The piece table in `verify/verify.gw` records the result,
 so the program can check that its own fourteen and the book's fourteen are the
 same set.
 

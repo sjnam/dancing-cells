@@ -6,9 +6,9 @@
 API를 내주므로, dlx의 예제 프로그램이 거의 그대로 옮겨 온다.
 
 라이브러리는 **문학적 프로그램**이다. 소스 전체가 한글로 쓰인 다섯 개의
-[GWEB](https://github.com/sjnam/gweb) 문서에 들어 있다 — [`dcells.w`](dcells.w),
-[`ssxcc.w`](ssxcc.w), [`ssmcc.w`](ssmcc.w), [`xccdc.w`](xccdc.w),
-[`zdd/zdd.w`](zdd/zdd.w). 아래
+[GWEB](https://github.com/sjnam/gweb) 문서에 들어 있다 — [`dcells.gw`](dcells.gw),
+[`ssxcc.gw`](ssxcc.gw), [`ssmcc.gw`](ssmcc.gw), [`xccdc.gw`](xccdc.gw),
+[`zdd/zdd.gw`](zdd/zdd.gw). 아래
 [소스는 문학적 프로그램이다](#소스는-문학적-프로그램이다)를 보라.
 
 ## 라이브러리
@@ -232,9 +232,9 @@ z, root := d.ZDD()                     // bdd 손잡이, 나머지는 모두 거
 예제가 모두 춤추는 칸으로 옮겨졌다.
 
 끝의 두 줄은 결이 다르다. 라이브러리를 부르지 않고 DLX 텍스트를 다루기만 한다.
-[`dlx-pre`](examples/dlx-pre/dlx-pre.w)는 커누스의 DLX-PRE를 옮긴 것으로, 문제를
+[`dlx-pre`](examples/dlx-pre/dlx-pre.gw)는 커누스의 DLX-PRE를 옮긴 것으로, 문제를
 읽어 쓸데없는 선택지와 항목을 덜어 낸 같은 값의 문제를 써 낸다. 그 출력은 그대로
-`Dance`에 넘길 수 있다. [`word-cube-dlx`](examples/word-cube-dlx/word-cube-dlx.w)는
+`Dance`에 넘길 수 있다. [`word-cube-dlx`](examples/word-cube-dlx/word-cube-dlx.gw)는
 대칭 단어 정육면체를 항목 15+35개짜리 XCC 문제로 옮겨 적고, 손수 짠 백트래킹과
 겨루어 본 기록을 담았다. 둘 다 2026년 11월에
 [gweb-examples](https://github.com/sjnam/gweb-examples)에서 옮겨 왔다.
@@ -549,7 +549,7 @@ $ go run ./examples/domino -aztec 10
 목록이다. 그 가운데 다섯이면 글자 자리 스물다섯을 채우는데, 그 자리들이 알파벳
 스물넉 자를 서로 다르게 덮을 수 있을까? (스물다섯은 안 된다. 이 목록에는 글자가
 서로 하나도 겹치지 않는 다섯 낱말이 없다.) 글은
-[`examples/words/words.w`](examples/words/words.w)에 있다.
+[`examples/words/words.gw`](examples/words/words.gw)에 있다.
 
 ````console
 $ go run ./examples/words examples/words/sgb-words.txt 8
@@ -704,7 +704,7 @@ n = 25에 1분이 넘게 걸리고, 있으면 n = 27에 1분 20초, n = 29에 4�
 남는 것은 *자유로운 자리들만으로 판을 덮을 수 있는가*라는 맨 정확 덮개 물음이다.
 그런데 그것조차 2분 안에 끝나지 않는다.
 
-글은 [`examples/hollow/hollow.w`](examples/hollow/hollow.w)에 있다.
+글은 [`examples/hollow/hollow.gw`](examples/hollow/hollow.gw)에 있다.
 
 ````console
 $ go run ./examples/hollow -z 16
@@ -724,11 +724,11 @@ $ go run ./examples/hollow -z 16
 
 | 문서 | 무엇인가 |
 | --- | --- |
-| [`dcells.w`](dcells.w) | 공용 바탕 — 공개 API(`Option`, `Result`, `Frame`), XCC와 MCC 두 엔진이 함께 춤추는 노드 배열, 그리고 `DLX` 훑개. 첫 쪽들이 희소 집합 이야기를 들려준다. |
-| [`ssxcc.w`](ssxcc.w) | **XCC** 엔진 — 색깔이 붙은 정확 덮개, *d*갈래 분기, 그리고 가장 싼 덮개를 다루는 마지막 장. 처음부터 끝까지 홀로 읽힌다. |
-| [`ssmcc.w`](ssmcc.w) | **MCC** 엔진 — 다중도, 이진 분기, 그리고 가장 싼 덮개를 다루는 제 몫의 장. 마찬가지로 홀로 선다. |
-| [`xccdc.w`](xccdc.w) | **XCC** 엔진을 다시, 이번에는 도메인 일관성을 지키며 — 증인, 방아쇠 목록, 나이와 귀띔, 그리고 한 단계가 여러 층에 걸치는 탐색. 제 노드 타입까지 따로 둘 만큼 이 역시 홀로 선다. |
-| [`zdd/zdd.w`](zdd/zdd.w) | **ZDD** 엔진 — 같은 탐색이되 남은 아이템의 서명으로 메모해 두고, 모든 해의 집합족을 결정 다이어그램으로 돌려준다. 제 패키지로 따로 서고, 다른 라이브러리에 기대는 유일한 문서다. |
+| [`dcells.gw`](dcells.gw) | 공용 바탕 — 공개 API(`Option`, `Result`, `Frame`), XCC와 MCC 두 엔진이 함께 춤추는 노드 배열, 그리고 `DLX` 훑개. 첫 쪽들이 희소 집합 이야기를 들려준다. |
+| [`ssxcc.gw`](ssxcc.gw) | **XCC** 엔진 — 색깔이 붙은 정확 덮개, *d*갈래 분기, 그리고 가장 싼 덮개를 다루는 마지막 장. 처음부터 끝까지 홀로 읽힌다. |
+| [`ssmcc.gw`](ssmcc.gw) | **MCC** 엔진 — 다중도, 이진 분기, 그리고 가장 싼 덮개를 다루는 제 몫의 장. 마찬가지로 홀로 선다. |
+| [`xccdc.gw`](xccdc.gw) | **XCC** 엔진을 다시, 이번에는 도메인 일관성을 지키며 — 증인, 방아쇠 목록, 나이와 귀띔, 그리고 한 단계가 여러 층에 걸치는 탐색. 제 노드 타입까지 따로 둘 만큼 이 역시 홀로 선다. |
+| [`zdd/zdd.gw`](zdd/zdd.gw) | **ZDD** 엔진 — 같은 탐색이되 남은 아이템의 서명으로 메모해 두고, 모든 해의 집합족을 결정 다이어그램으로 돌려준다. 제 패키지로 따로 서고, 다른 라이브러리에 기대는 유일한 문서다. |
 
 앞의 넷은 Go 패키지 `dcells` 하나로 tangle되므로 `NewXCC()`, `NewMCC()`,
 `NewXCCDC()`가 한 번의 import로 딸려 온다. 다섯째는 그 옆의 패키지 `dcells/zdd`다.
@@ -739,7 +739,7 @@ Makefile 셋이 GWEB 도구를 몬다. 저장소의 부분마다 하나씩으로
 타깃을 지닌다.
 
 ```sh
-make            # .w 파일을 gtangle해 .go로 만든 다음 빌드
+make            # .gw 파일을 gtangle해 .go로 만든 다음 빌드
 make pdf        # gweave로 모든 문서를 조판
 make clean      # 생성된 파일을 지우되 커밋된 것은 남긴다
 ```
@@ -750,32 +750,32 @@ make clean      # 생성된 파일을 지우되 커밋된 것은 남긴다
 make && make -C examples && make -C taocp-7.2.2.1-exercises
 ```
 
-진짜 원본은 `.w` 파일이다. 옆에 `.w`가 있는 `.go`는 모두, 조판된 문서도 모두
+진짜 원본은 `.gw` 파일이다. 옆에 `.gw`가 있는 `.go`는 모두, 조판된 문서도 모두
 생성물이므로, 갓 클론했다면 그것부터 돌려야 한다. 그래도 커밋해 두는 생성물이 두
 갈래 있다. 하나는 생성된 `.go` 파일 다섯으로, GWEB을 돌리지 않고도 패키지를
 import할 수 있게 하려는 것이다. 다른 하나는 연습문제 읽기마다 딸린 `verify.pdf`로,
 마찬가지로 그냥 읽을 수 있게 하려는 것이다. 둘 다 손으로 고쳐서는 안 된다. 도구
-`gtangle`이 `//line` 지시문을 내주므로, Go 컴파일러의 오류는 그것이 비롯한 `.w`
+`gtangle`이 `//line` 지시문을 내주므로, Go 컴파일러의 오류는 그것이 비롯한 `.gw`
 파일의 줄을 곧장 가리킨다.
 
 위의 다섯 문서와 아래의 예제 문서는 모두 한글로 쓰였고
 `luatex`(kotexgweb)으로 조판한다(연습문제 읽기만 영문이다). 예제도 문학적
 프로그램인데, 거기서 설명되는 것은 엔진이 아니라 *모형 세우기*다. 퍼즐이 어떻게
 아이템과 옵션이 되는지, 어느 아이템이 주이고 어느 것이 부인지, 색이 무엇을 뜻하도록
-만들었는지다. 열둘 모두 `examples/<name>/<name>.w`에 산다. 그 가운데 셋은 새로 한
+만들었는지다. 열넷 모두 `examples/<name>/<name>.gw`에 산다. 그 가운데 셋은 새로 한
 일을 담아 에세이로 읽히고, 나머지는 저마다 모형 세우기의 착상 하나씩을 풀어 놓는다.
 
 | 문서 | 무엇인가 |
 | --- | --- |
-| [`examples/domino/domino.w`](examples/domino/domino.w) | 엔진 `zdd`로 도미노 덮기 세기 — Kasteleyn의 공식을 정확한 셈과 맞춰 보고, 고르게 뽑은 아즈텍 다이아몬드 덮기에서 북극원을 보며, 최대 무게 짝짓기를 탐색이 아니라 다이어그램을 걸어 찾는다. |
-| [`examples/words/words.w`](examples/words/words.w) | *알파벳 스물넉 자를 덮는 다섯 글자 낱말 다섯이 있는가?*가 어떻게 DLX 입력이 되는가. 그 답은 다중도 없이 색만으로 낱말 수가 꼭 다섯으로 묶인다는 것이다. |
-| [`examples/transversal/transversal.w`](examples/transversal/transversal.w) | *헝가리 무곡 제5번* — 라틴 방진의 가장 싼 횡단을 춤추는 칸으로 분기하고 헝가리안 알고리즘으로 한정한다. 하한을 어디서 찾을지, 이 하한이 왜 정확한지, 그리고 이 재주가 또 어디에 먹히는지. |
-| [`examples/hollow/hollow.w`](examples/hollow/hollow.w) | *배나무 위의 자고새* — 파티지 퍼즐이 한가운데에 얼마나 큰 구멍을 지킬 수 있는가. 가망 없던 탐색을 2초짜리 증명으로 바꾸는 기하학적 하한, 그리고 정직하게 말해 값을 하지 못하는 `Need` 하한. |
-| [`examples/queen/queen.w`](examples/queen/queen.w) | *n*-퀸 — 주 아이템과 부 아이템의 차이를 가장 말끔하게 보여 준다. 행과 열은 꼭 한 번 덮여야 하고 대각선은 많아야 한 번이다. 아이템 줄의 *차례*가 왜 중요한지도 나오는데, 분기 규칙이 비길 때 왼쪽 아이템이 이기기 때문이다. |
-| [`examples/langford/langford.w`](examples/langford/langford.w) | 랭포드 짝 — 다른 것이라고는 아무것도 없는 정확 덮개다. 부 아이템도 색도 없다. 하나뿐인 미묘함은 거울 대칭을 깨는 일인데, *홀수* 값이 있어야 하고 그렇다고 말해 주는 셈이 나온다. |
-| [`examples/pentominoes/pentominoes.w`](examples/pentominoes/pentominoes.w) | 펜토미노 열둘 — 옵션이 다른 데서 만들어진 문제라, 이 글은 옵션을 쓰는 이야기가 아니라 `.dlx` 파일과 그 약속을 읽는 이야기다. |
-| [`examples/filomino/filomino.w`](examples/filomino/filomino.w) | 필로미노 — 부 아이템을 영역의 *가장자리*로 쓴다. "같은 크기의 두 영역은 맞닿을 수 없다"가 거저 떨어지는 것이 그 덕이다. |
-| [`examples/zebra/zebra.w`](examples/zebra/zebra.w) | 얼룩말 퍼즐 — 색을 *값*으로 쓴다. 부 아이템은 채울 빈칸이고 그 색이 거기 들어가는 것이며, 같은 빈칸을 건드리는 두 단서는 뜻을 모아야 한다. 이 표현이 결코 말하지 않는 것(다섯 나라가 서로 다르다는 것)과 그런데도 답이 나오는 까닭까지. |
-| [`examples/wordsearch/wordsearch.w`](examples/wordsearch/wordsearch.w) | 낱말 찾기 판 짓기 — 색을 *글자*로 쓴다. 그러면 교차하는 두 낱말이 만나는 자리의 글자에 뜻을 모으는데, 교차를 따지는 코드는 어디에도 없다. |
-| [`examples/sudoku/sudoku.w`](examples/sudoku/sudoku.w) | 스도쿠, 무더기로 — 탐색을 시작하기 전에 단서로 문제를 깎아 내는 일, 그리고 퍼즐 파일 하나를 모든 CPU에 흩어 풀면서도 입력 차례로 찍어 내는 순서 있는 팬인. |
-| [`examples/partridge/partridge.w`](examples/partridge/partridge.w) | 파티지 퍼즐 — `NewMCC()`가 있어야 하는 하나뿐인 예제인데, 크기 *k*짜리 조각 *k*장이 곧 다중도이기 때문이다. 36 × 36 덮기를 37줄에 담아 내는 상자 그림 출력기도 있다. |
+| [`examples/domino/domino.gw`](examples/domino/domino.gw) | 엔진 `zdd`로 도미노 덮기 세기 — Kasteleyn의 공식을 정확한 셈과 맞춰 보고, 고르게 뽑은 아즈텍 다이아몬드 덮기에서 북극원을 보며, 최대 무게 짝짓기를 탐색이 아니라 다이어그램을 걸어 찾는다. |
+| [`examples/words/words.gw`](examples/words/words.gw) | *알파벳 스물넉 자를 덮는 다섯 글자 낱말 다섯이 있는가?*가 어떻게 DLX 입력이 되는가. 그 답은 다중도 없이 색만으로 낱말 수가 꼭 다섯으로 묶인다는 것이다. |
+| [`examples/transversal/transversal.gw`](examples/transversal/transversal.gw) | *헝가리 무곡 제5번* — 라틴 방진의 가장 싼 횡단을 춤추는 칸으로 분기하고 헝가리안 알고리즘으로 한정한다. 하한을 어디서 찾을지, 이 하한이 왜 정확한지, 그리고 이 재주가 또 어디에 먹히는지. |
+| [`examples/hollow/hollow.gw`](examples/hollow/hollow.gw) | *배나무 위의 자고새* — 파티지 퍼즐이 한가운데에 얼마나 큰 구멍을 지킬 수 있는가. 가망 없던 탐색을 2초짜리 증명으로 바꾸는 기하학적 하한, 그리고 정직하게 말해 값을 하지 못하는 `Need` 하한. |
+| [`examples/queen/queen.gw`](examples/queen/queen.gw) | *n*-퀸 — 주 아이템과 부 아이템의 차이를 가장 말끔하게 보여 준다. 행과 열은 꼭 한 번 덮여야 하고 대각선은 많아야 한 번이다. 아이템 줄의 *차례*가 왜 중요한지도 나오는데, 분기 규칙이 비길 때 왼쪽 아이템이 이기기 때문이다. |
+| [`examples/langford/langford.gw`](examples/langford/langford.gw) | 랭포드 짝 — 다른 것이라고는 아무것도 없는 정확 덮개다. 부 아이템도 색도 없다. 하나뿐인 미묘함은 거울 대칭을 깨는 일인데, *홀수* 값이 있어야 하고 그렇다고 말해 주는 셈이 나온다. |
+| [`examples/pentominoes/pentominoes.gw`](examples/pentominoes/pentominoes.gw) | 펜토미노 열둘 — 옵션이 다른 데서 만들어진 문제라, 이 글은 옵션을 쓰는 이야기가 아니라 `.dlx` 파일과 그 약속을 읽는 이야기다. |
+| [`examples/filomino/filomino.gw`](examples/filomino/filomino.gw) | 필로미노 — 부 아이템을 영역의 *가장자리*로 쓴다. "같은 크기의 두 영역은 맞닿을 수 없다"가 거저 떨어지는 것이 그 덕이다. |
+| [`examples/zebra/zebra.gw`](examples/zebra/zebra.gw) | 얼룩말 퍼즐 — 색을 *값*으로 쓴다. 부 아이템은 채울 빈칸이고 그 색이 거기 들어가는 것이며, 같은 빈칸을 건드리는 두 단서는 뜻을 모아야 한다. 이 표현이 결코 말하지 않는 것(다섯 나라가 서로 다르다는 것)과 그런데도 답이 나오는 까닭까지. |
+| [`examples/wordsearch/wordsearch.gw`](examples/wordsearch/wordsearch.gw) | 낱말 찾기 판 짓기 — 색을 *글자*로 쓴다. 그러면 교차하는 두 낱말이 만나는 자리의 글자에 뜻을 모으는데, 교차를 따지는 코드는 어디에도 없다. |
+| [`examples/sudoku/sudoku.gw`](examples/sudoku/sudoku.gw) | 스도쿠, 무더기로 — 탐색을 시작하기 전에 단서로 문제를 깎아 내는 일, 그리고 퍼즐 파일 하나를 모든 CPU에 흩어 풀면서도 입력 차례로 찍어 내는 순서 있는 팬인. |
+| [`examples/partridge/partridge.gw`](examples/partridge/partridge.gw) | 파티지 퍼즐 — `NewMCC()`가 있어야 하는 하나뿐인 예제인데, 크기 *k*짜리 조각 *k*장이 곧 다중도이기 때문이다. 36 × 36 덮기를 37줄에 담아 내는 상자 그림 출력기도 있다. |

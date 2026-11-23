@@ -1,7 +1,7 @@
 % The tree drawn in exercise 7.2.2.1-29, with the columns that answer 29's
 % construction gives to each of its nodes.
 %
-% This file is read twice: luamplib runs it while verify.w is typeset, and
+% This file is read twice: luamplib runs it while verify.gw is typeset, and
 % mpost runs it on its own to make the picture that README.md shows.
 
 beginfig(1);

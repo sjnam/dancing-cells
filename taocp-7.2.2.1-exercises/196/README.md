@@ -71,7 +71,7 @@ That rules out the engines in this repository. `ssxcc` and its relatives
 descend from Knuth's sparse-set programs, where covering an item shortens a set
 instead of unlinking nodes, and where items of size one are forced before any
 branching happens at all. Their update counts are their own and would answer a
-different question. So `verify/verify.w` carries a plain Algorithm X, its
+different question. So `verify/verify.gw` carries a plain Algorithm X, its
 `cover`, `hide`, `uncover` and `unhide` exactly as in (12)–(15) of the text,
 with `updates` incremented in exactly the two places Knuth increments it.
 `ssxcc` still gets a say: it is asked for a second opinion on the number of
@@ -285,12 +285,12 @@ exactly as stated.
 ## 8. Running it
 
 ```sh
-cd verify && gtangle verify.w && go run . -mode all
+cd verify && gtangle verify.gw && go run . -mode all
 ```
 
 Modes: `dual`, `inverse`, `root`, `count`, `total`, `families`, `mrv`, `sweep`,
 and `all`. `-a` sets the sequence (default `246677889`), `-upto` how far the
 exhaustive sweeps go (default 9), and `-top` the largest $n$ for the three
 families (default 16). The literate source is
-[verify/verify.w](verify/verify.w) and the typeset program is
+[verify/verify.gw](verify/verify.gw) and the typeset program is
 [verify/verify.pdf](verify/verify.pdf).

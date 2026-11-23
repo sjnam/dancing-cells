@@ -641,7 +641,7 @@ func (d *Diagram) MaxWeight(w []int) ([]cells.Option, int, bool) {
 }
 
 @** DLX 입력 읽기.
-형식 {\tt DLX}는 \.{dcells.w}에 적혀 있다. 이 패키지는 제 패키지로 따로 서 있어
+형식 {\tt DLX}는 \.{dcells.gw}에 적혀 있다. 이 패키지는 제 패키지로 따로 서 있어
 그 글의 훑개를 빌려 올 수 없으므로, 필요한 몇 줄이 여기 나온다. 나머지 단계는
 {\tt SSXCC}의 것에 옵션 번호 매김을 더한 것이다.
 @<입력 단계@>=

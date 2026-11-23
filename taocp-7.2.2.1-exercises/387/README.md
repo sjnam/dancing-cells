@@ -264,7 +264,7 @@ them" — and the figure is labelled (i) through (xi). So **twelve** should read
 
 ## 9. Method
 
-The verification is a literate program, [`verify/verify.w`](verify/verify.w),
+The verification is a literate program, [`verify/verify.gw`](verify/verify.gw),
 typeset as [`verify/verify.pdf`](verify/verify.pdf). This exercise needs no
 exact cover, so it uses none of this repository's engines — it is here because
 it belongs with the other readings.

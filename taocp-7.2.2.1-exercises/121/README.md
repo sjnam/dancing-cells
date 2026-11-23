@@ -56,7 +56,7 @@ This is an exact cover problem with colors, and a small one: cells of the board
 are the primary items, the symbol on each shared edge is a color on a secondary
 item, and one option places one type in one cell. A $15\times15$ board is 225
 items and 20,700 options, and `NewXCC()` settles it in tens of milliseconds.
-The program is [`verify/verify.w`](verify/verify.w).
+The program is [`verify/verify.gw`](verify/verify.gw).
 
 ## 2. The 92 types, and a check on the transcription
 
@@ -286,6 +286,6 @@ cell, as the errata say; with it the block holds together as printed.
 
 | File | |
 | --- | --- |
-| [`verify/verify.w`](verify/verify.w) | the program, as a literate document |
+| [`verify/verify.gw`](verify/verify.gw) | the program, as a literate document |
 | [`verify/verify.pdf`](verify/verify.pdf) | the same, typeset |
 | [`verify/tetrads.mp`](verify/tetrads.mp) | the picture, in MetaPost |

@@ -65,7 +65,7 @@ Answer 442 gives the recipe:
 > Algorithm 7.1.4R will give a ZDD. Then the NONSUB subroutine of answer
 > 7.1.4–237 will produce a ZDD for *f*, the complements of hitori covers.
 
-We follow it exactly. [`verify/verify.w`](verify/verify.w) walks the cells in
+We follow it exactly. [`verify/verify.gw`](verify/verify.gw) walks the cells in
 row-major order, carrying a frontier one row wide that records, for each
 column, whether the last decided cell there is black and if not which white
 component it belongs to. States are memoized, which is what makes the walk a
@@ -237,7 +237,7 @@ would be interesting to know.
 
 ```sh
 cd taocp-7.2.2.1-exercises/442/verify
-gtangle verify.w && go run verify.go            # every mode, about two minutes
+gtangle verify.gw && go run verify.go            # every mode, about two minutes
 go run verify.go -mode counts                   # the two matrices
 go run verify.go -mode brute -n 6               # the independent check
 go run verify.go -mode sym                      # the symmetry statistics

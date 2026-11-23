@@ -339,7 +339,7 @@ the answer says 281,618.
 
 ## 12. Cutting the family where the answer cuts it
 
-The introduction to `verify.w` says this program cannot check the answer's six
+The introduction to `verify.gw` says this program cannot check the answer's six
 types one at a time, because the types are a bookkeeping device of its own.
 That is true of the types, but the family can be cut into pieces the case
 analysis has to respect, and the answer names the cut itself: a reflection
@@ -492,14 +492,14 @@ models above, and prints the identities. Its modes:
 | `-mode weak -g both` | section 9 | 1.5 min |
 
 The three long counts were first made with a stand-alone program written while
-working the exercise out; [`verify.w`](verify/verify.w) grew afterwards, out of
+working the exercise out; [`verify.gw`](verify/verify.gw) grew afterwards, out of
 the parts that turned out to matter. To be sure the two agree I had both print
 their problems (`-dump`) and compared them item for item: same options, same
 grouping of options into orbits, same partition of each orbit's options by
 patch value. So the models are the same problem under different item names, and
-the long counts belong to [`verify.w`](verify/verify.w) as much as to the
+the long counts belong to [`verify.gw`](verify/verify.gw) as much as to the
 program that first produced them. The same goes for the split of section 12:
-the stand-alone program and [`verify.w`](verify/verify.w)
+the stand-alone program and [`verify.gw`](verify/verify.gw)
 give 616,272 for each of the two configurations of the missing group, so the
 12,839 is not an artefact of either one.
 

@@ -295,7 +295,7 @@ trees. The 4 × 4 puzzle does have the single solution the note implies.
 
 ## 11. Method
 
-The verification is a literate program, [`verify/verify.w`](verify/verify.w),
+The verification is a literate program, [`verify/verify.gw`](verify/verify.gw),
 typeset as [`verify/verify.pdf`](verify/verify.pdf). The searches use the XCC
 engine of this repository — Knuth's Algorithm C, dancing cells rather than
 dancing links.

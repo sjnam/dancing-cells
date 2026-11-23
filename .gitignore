@@ -3,7 +3,7 @@
 /cmd/ssxcc/ssxcc
 /cmd/ssmcc/ssmcc
 *.shape
-# GWEB 문학적 프로그램: .w 파일만이 원본이다. tangle/weave 결과는 모두 생성물.
+# GWEB 문학적 프로그램: .gw 파일만이 원본이다. tangle/weave 결과는 모두 생성물.
 /dcells.tex
 /dcells.idx
 /dcells.scn
@@ -39,7 +39,7 @@
 /xccdc.log
 /xccdc.toc
 
-# examples/ 아래의 프로그램은 모두 문학적 프로그램이다: <이름>/<이름>.w만
+# examples/ 아래의 프로그램은 모두 문학적 프로그램이다: <이름>/<이름>.gw만
 # 원본이고 .go와 조판 결과는 gtangle/gweave가 만들어 낸다.
 /examples/domino/domino.go
 /examples/domino/domino.tex
@@ -135,7 +135,7 @@
 /examples/word-cube-dlx/word-cube-dlx.log
 /examples/word-cube-dlx/word-cube-dlx.toc
 
-# examples/words도 문학적 프로그램이다: words.w만 원본이고,
+# examples/words도 문학적 프로그램이다: words.gw만 원본이고,
 # 나머지는 gtangle/gweave가 만들어 낸다.
 /examples/words/words.go
 /examples/words/words.tex
@@ -156,13 +156,13 @@
 /dlx-pre
 /word-cube-dlx
 
-# examples/transversal도 문학적 프로그램이다: transversal.w만 원본이다.
+# examples/transversal도 문학적 프로그램이다: transversal.gw만 원본이다.
 
-# examples/hollow도 문학적 프로그램이다: hollow.w만 원본이다.
+# examples/hollow도 문학적 프로그램이다: hollow.gw만 원본이다.
 
-# 연습문제 검증 프로그램도 문학적 프로그램이다: verify.w만 원본이다.
+# 연습문제 검증 프로그램도 문학적 프로그램이다: verify.gw만 원본이다.
 # 다만 verify.pdf는 예외로 저장소에 넣는다 --- 이 검증은 저자에게 보낼 것이고,
-# 읽는 이에게 GWEB를 깔라고 할 수는 없다. verify 디렉터리에는 .w와 .pdf뿐이다.
+# 읽는 이에게 GWEB를 깔라고 할 수는 없다. verify 디렉터리에는 .gw와 .pdf뿐이다.
 /taocp-7.2.2.1-exercises/*/verify/verify.go
 /taocp-7.2.2.1-exercises/*/verify/*.tex
 /taocp-7.2.2.1-exercises/*/verify/*.idx

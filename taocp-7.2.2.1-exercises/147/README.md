@@ -212,7 +212,7 @@ tried to break it.
 - **A third, which anyone can run.** That second program is not in this
   directory, so in November 2026 — after a bug in my reading of exercise 334
   had hidden behind checks that all shared one step — I added one to
-  [`verify.w`](verify/verify.w) that shares nothing with the rest of it:
+  [`verify.gw`](verify/verify.gw) that shares nothing with the rest of it:
   thirty cubes made by sorting the 720 paintings by rotation, and plain
   backtracking with the first cell pinned. `-mode brute -b 2x2x4` gives 244
   bricks, with 4, 46, 172 and 22 showing 3, 4, 5 and 6 colours, and the
@@ -236,7 +236,7 @@ tried to break it.
 
 ## 8. Method
 
-The program is a GWEB literate program. [`verify.w`](verify/verify.w) is the
+The program is a GWEB literate program. [`verify.gw`](verify/verify.gw) is the
 source and `gtangle` produces the Go from it; the typeset document,
 [`verify.pdf`](verify/verify.pdf), is committed beside it so it can be read
 without installing GWEB. The exact cover problems go to the XCC engine of this

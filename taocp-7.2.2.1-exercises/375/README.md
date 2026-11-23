@@ -243,11 +243,11 @@ cannot beat 27.
 ## 7. Running it
 
 ```sh
-cd verify && gtangle verify.w && go run . -mode all
+cd verify && gtangle verify.gw && go run . -mode all
 ```
 
 Modes: `motley` (the counts of exercise 365), `census` (which patterns can be
 made incomparable at all), `seven`, `eight`, `nine`, `direct` (the brute-force
 check that uses no theory), and `all`. The literate source is
-[verify/verify.w](verify/verify.w) and the typeset program is
+[verify/verify.gw](verify/verify.gw) and the typeset program is
 [verify/verify.pdf](verify/verify.pdf).

@@ -1,4 +1,4 @@
-# Every program here is a literate program: <name>/<name>.w is the source and
+# Every program here is a literate program: <name>/<name>.gw is the source and
 # the .go beside it is generated.  They are written in Korean and typeset with
 # luatex, since kotexgweb needs it.  To add one, put its directory name in
 # EXAMPLES below.
@@ -24,14 +24,14 @@ PDFFILES := $(foreach e,$(EXAMPLES),$(e)/$(e).pdf)
 
 all: build
 
-# One macro serves them all: <name>/<name>.w makes <name>.go and <name>.pdf in
+# One macro serves them all: <name>/<name>.gw makes <name>.go and <name>.pdf in
 # place.
 define example
-$(1)/$(1).go: $(1)/$(1).w
-	cd $(1) && $$(GTANGLE) $(1).w
+$(1)/$(1).go: $(1)/$(1).gw
+	cd $(1) && $$(GTANGLE) $(1).gw
 	gofmt -w $(1)/$(1).go
-$(1)/$(1).pdf: $(1)/$(1).w
-	cd $(1) && $$(GWEAVE) $(1).w
+$(1)/$(1).pdf: $(1)/$(1).gw
+	cd $(1) && $$(GWEAVE) $(1).gw
 	cd $(1) && $$(LUATEX) $(1).tex
 	cd $(1) && $$(LUATEX) $(1).tex
 endef
@@ -51,7 +51,7 @@ vet: tangle
 # Typeset the literate documents (two passes resolve the cross-references).
 pdf: $(PDFFILES)
 
-# clean removes everything the .w files generate; `make` puts the Go sources
+# clean removes everything the .gw files generate; `make` puts the Go sources
 # back.
 clean:
 	rm -f $(GOFILES)

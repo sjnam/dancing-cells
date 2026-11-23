@@ -262,7 +262,7 @@ since most of them shared the faulty step.
 
 ## 9. Method
 
-The program is a GWEB literate program. [`verify.w`](verify/verify.w) is the
+The program is a GWEB literate program. [`verify.gw`](verify/verify.gw) is the
 source and `gtangle` produces the Go from it; the typeset document,
 [`verify.pdf`](verify/verify.pdf), is committed beside it so it can be read
 without installing GWEB. The exact cover problems go to the MCC/XCC engine of

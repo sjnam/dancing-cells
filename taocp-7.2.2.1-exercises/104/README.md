@@ -308,7 +308,7 @@ the all-interval property — 4 rows out of 3856 when $n = 12$.
 ## 6. Method
 
 One program did the work, kept in [`verify/`](verify/). It is a GWEB literate
-program — [`verify.w`](verify/verify.w) is the source, and `gtangle` produces
+program — [`verify.gw`](verify/verify.gw) is the source, and `gtangle` produces
 the Go from it. The typeset document, [`verify.pdf`](verify/verify.pdf), is
 committed beside the source, so it can be read without installing GWEB.
 
@@ -325,7 +325,7 @@ It has four modes.
 To reproduce:
 
 ```sh
-make tangle                     # gtangle verify.w -> verify.go
+make tangle                     # gtangle verify.gw -> verify.go
 cd taocp-7.2.2.1-exercises/104/verify && go build -o v .
 ./v -mode example
 ./v -mode perfect
@@ -333,7 +333,7 @@ cd taocp-7.2.2.1-exercises/104/verify && go build -o v .
 ./v -mode xcc
 ```
 
-`make pdf` regenerates `verify.pdf` from `verify.w`.
+`make pdf` regenerates `verify.pdf` from `verify.gw`.
 
 ---
 

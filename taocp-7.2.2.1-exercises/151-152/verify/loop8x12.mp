@@ -1,7 +1,7 @@
 % The 8x12 array of exercise 7.2.2.1-152: all forty-eight path dominoes, their
-% arcs forming a single closed loop.  Found by verify.w, chunk 4.
+% arcs forming a single closed loop.  Found by verify.gw, chunk 4.
 %
-% This file is read twice: luamplib runs it while verify.w is typeset, and
+% This file is read twice: luamplib runs it while verify.gw is typeset, and
 % mpost runs it on its own to make the picture that README.md shows.
 
 beginfig(1);

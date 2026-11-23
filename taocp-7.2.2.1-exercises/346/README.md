@@ -288,7 +288,7 @@ its answer.
 
 ## 12. Method
 
-The verification is a literate program, [`verify/verify.w`](verify/verify.w),
+The verification is a literate program, [`verify/verify.gw`](verify/verify.gw),
 typeset as [`verify/verify.pdf`](verify/verify.pdf). It uses the MCC engine of
 this repository — Knuth's Algorithm M, dancing cells rather than dancing links
 — for every search.
