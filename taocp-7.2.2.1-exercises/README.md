@@ -15,7 +15,9 @@ nineteen exercises for §7.2.2.1. **All nineteen have a reading here.** By
 8 November 2026 every one of them had come off the list: 55, 147, 305–306,
 320, 323 and 337 by 3 November; 129, 196, 262, 334, 375, 387, 432 and 442 by
 6 November; 29–30, 104, 121 and 346 by 7 November; and 151–152, the last, by
-8 November. The readings all stay.
+8 November. The readings all stay. One more, of exercise 246, answers a
+question Knuth put to his helpers on 24 November 2026; it has
+[a section of its own](#at-knuths-request).
 
 Each exercise's directory holds the report itself as `README.md` — which is
 what GitHub shows when you open it — and the program behind it as a
@@ -108,6 +110,19 @@ is listed here, newest first, so that a returning reader can see what moved.
 | [387](387) | Classify the types of symmetry that a polycube might have | two of the eleven pictures are not minimal; Knuth agrees |
 | [432](432) | Find the most interesting 3×3 kakuro puzzles | the puzzle called hardest cannot exist (revised 5 Nov 2026) |
 | [442](442) | Enumerate all hitori covers of small grids | every count confirmed; one range entry is wrong; Knuth agrees |
+
+## At Knuth's request
+
+Shisheng Li found that the left-hand partition of 7.2.2.1–(116) was not
+optimum: the pruning of exercise 242 had discarded options that become usable
+once the two New York options are allowed. Knuth revised pages 115 and 116 and
+asked whether the partitions of answer 246, which minimize exterior and
+interior costs instead of squared populations, are still the best under the
+corrected options.
+
+| Exercise | What Knuth asked | What came out |
+| --- | --- | --- |
+| [246](246) | Are the optimum partitions of answer 246 still the best for the corrected options? | on the left, \$90 becomes **\$78** (two partitions) and \$176 becomes **\$164**; the right-hand \$74 and \$230 stand; the revised exercise's 33,782 should be 33,780 |
 
 ## What came out
 
