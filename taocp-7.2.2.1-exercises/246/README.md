@@ -113,10 +113,10 @@ once, by a partition whose seven clusters without New York hold between
 37,252,895 and 37,851,641 people. For the right-hand problem the minimum is
 also attained once, with all six clusters between 50,655,442 and 51,140,193.
 
-The running times are the one thing I could not match. `DLX5` as posted, with
-its default parameters, takes 40,602,032 + 1,190,713,655 mems for the
-right-hand problem, close to the printed 1.1 Gμ. For the left-hand problem it
-takes 33,824,357 + 19,575,062,486 mems on `contig48pop.dlx5`, ten times the
+Of the numbers on page 116, only the running times fail to match. `DLX5` as
+posted, with its default parameters, takes 40,602,032 + 1,190,713,655 mems for
+the right-hand problem, close to the printed 1.1 Gμ. For the left-hand problem
+it takes 33,824,357 + 19,575,062,486 mems on `contig48pop.dlx5`, ten times the
 printed "only 2.0 gigamems". Perhaps the 2.0 was meant to be 20, or it was
 measured differently; I mention it only because the sentence is new.
 
