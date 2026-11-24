@@ -766,7 +766,7 @@ Best int // Minimize에서 가장 싼 덮개를 몇 개나 찾을 것인가
 @<값 살림살이@>=
 minimizing bool
 optNo      []int32 // 노드 -> 그 노드가 속한 옵션
-optCost    []int32 // 옵션 번호 -> 부르는 쪽이 매긴 값
+optCost    []int64 // 옵션 번호 -> 부르는 쪽이 매긴 값
 optTax     []int64 // 옵션 번호 -> 그 값에 든 세금
 itemBase   []int32 // 아이템 번호 -> set 안의 밑자리
 cost       int64   // 이제껏 들인 옵션들의 값
@@ -802,7 +802,7 @@ func (m *MCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 그 번호를 칠한다.
 @<옵션에 값을 매긴다@>=
 m.optNo = make([]int32, m.lastNode+1)
-m.optCost = make([]int32, int(m.options)+1)
+m.optCost = make([]int64, int(m.options)+1)
 o := int32(0)
 for k := 1; k < m.lastNode; k++ {
 	if m.nd[k].itm <= 0 {
@@ -810,7 +810,7 @@ for k := 1; k < m.lastNode; k++ {
 	}
 	if m.nd[k-1].itm <= 0 {
 		o++
-		m.optCost[o] = int32(cost(int(o), m.option(k)))
+		m.optCost[o] = int64(cost(int(o), m.option(k)))
 	}
 	m.optNo[k] = o
 }
@@ -860,7 +860,7 @@ for k := 0; k < m.active; k++ {
 t := infCost
 for c := x; c < x+m.size(x); c++ {
 	o := m.optNo[int(m.set[c])]
-	t = min(t, int64(m.optCost[o])-m.optTax[o])
+	t = min(t, m.optCost[o]-m.optTax[o])
 }
 
 @ 세금을 문 아이템을 담은 옵션은 \.{ssxcc.gw}에서처럼 순값이 음수가 아니다. 그런
@@ -870,7 +870,7 @@ for c := x; c < x+m.size(x); c++ {
 입력을 알리듯 그렇다고 말한다.
 @<순값이 음수이면 물리친다@>=
 for o := 1; o < len(m.optCost); o++ {
-	if net := int64(m.optCost[o]) - m.optTax[o]; net < 0 {
+	if net := m.optCost[o] - m.optTax[o]; net < 0 {
 		panic(fmt.Sprintf("dcells: option %d has negative net cost %d; "+
 			"no item of fixed multiplicity absorbs it", o, net))
 	}
@@ -890,7 +890,7 @@ for k := 1; k < m.lastNode; k++ {
 	if m.nd[k].itm > 0 && m.nd[k-1].itm <= 0 {
 		o := m.optNo[k]
 		m.byNet = append(m.byNet,
-			pricedOpt{int32(k), int64(m.optCost[o]) - m.optTax[o]})
+			pricedOpt{int32(k), m.optCost[o] - m.optTax[o]})
 	}
 }
 slices.SortStableFunc(m.byNet, func(a, b pricedOpt) int {
@@ -968,7 +968,7 @@ if m.minimizing {
 price, tax := int64(0), int64(0)
 if m.minimizing {
 	o := m.optNo[opt]
-	price, tax = int64(m.optCost[o]), m.optTax[o]
+	price, tax = m.optCost[o], m.optTax[o]
 }
 
 @ 연단은 \.{ssxcc.gw}의 그 힙이다. 새로 온 것이 뿌리에 있던 가장 비싼 덮개를
@@ -1621,6 +1621,22 @@ func TestMCCMinimizeRefusesNegative(t *testing.T) {
 	}()
 	NewMCC().Minimize(strings.NewReader("a 0:1|c\na\nc\n"),
 		func(_ int, _ Option) int { return -1 })
+}
+
+@ 값이 |int32|에 들지 않아도 그대로 다뤄져야 한다. 글 \.{ssxcc.gw}의 같은
+시험이다.
+@(ssmcc_test.go@>=
+func TestMCCMinimizeLargeCosts(t *testing.T) {
+	price := map[string]int{"a b": 5_000_000_000, "a": 2_000_000_000, "b": 2_000_000_000}
+	res := NewMCC().Minimize(strings.NewReader("a b\na b\na\nb\n"),
+		func(_ int, opt Option) int { return price[strings.Join(opt, " ")] })
+	var last []Option
+	for sol := range res.Solutions {
+		last = sol
+	}
+	if fmt.Sprint(last) != "[[a] [b]]" {
+		t.Errorf("cheapest cover is %v, want [[a] [b]]", last)
+	}
 }
 
 @** 색인.

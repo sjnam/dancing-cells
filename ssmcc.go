@@ -79,7 +79,7 @@ type MCC struct {
 //line ssmcc.gw:767
 	minimizing bool
 	optNo      []int32     // 노드 -> 그 노드가 속한 옵션
-	optCost    []int32     // 옵션 번호 -> 부르는 쪽이 매긴 값
+	optCost    []int64     // 옵션 번호 -> 부르는 쪽이 매긴 값
 	optTax     []int64     // 옵션 번호 -> 그 값에 든 세금
 	itemBase   []int32     // 아이템 번호 -> set 안의 밑자리
 	cost       int64       // 이제껏 들인 옵션들의 값
@@ -321,7 +321,7 @@ func (m *MCC) search(stage int) bool {
 	price, tax := int64(0), int64(0)
 	if m.minimizing {
 		o := m.optNo[opt]
-		price, tax = int64(m.optCost[o]), m.optTax[o]
+		price, tax = m.optCost[o], m.optTax[o]
 	}
 
 //line ssmcc.gw:373
@@ -361,7 +361,7 @@ func (m *MCC) forcedMove(stage, bi int) bool {
 	price, tax := int64(0), int64(0)
 	if m.minimizing {
 		o := m.optNo[opt]
-		price, tax = int64(m.optCost[o]), m.optTax[o]
+		price, tax = m.optCost[o], m.optTax[o]
 	}
 
 //line ssmcc.gw:407
@@ -669,7 +669,7 @@ func (m *MCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 
 //line ssmcc.gw:804
 	m.optNo = make([]int32, m.lastNode+1)
-	m.optCost = make([]int32, int(m.options)+1)
+	m.optCost = make([]int64, int(m.options)+1)
 	o := int32(0)
 	for k := 1; k < m.lastNode; k++ {
 		if m.nd[k].itm <= 0 {
@@ -677,7 +677,7 @@ func (m *MCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 		}
 		if m.nd[k-1].itm <= 0 {
 			o++
-			m.optCost[o] = int32(cost(int(o), m.option(k)))
+			m.optCost[o] = int64(cost(int(o), m.option(k)))
 		}
 		m.optNo[k] = o
 	}
@@ -704,7 +704,7 @@ func (m *MCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 		t := infCost
 		for c := x; c < x+m.size(x); c++ {
 			o := m.optNo[int(m.set[c])]
-			t = min(t, int64(m.optCost[o])-m.optTax[o])
+			t = min(t, m.optCost[o]-m.optTax[o])
 		}
 
 //line ssmcc.gw:853
@@ -718,7 +718,7 @@ func (m *MCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 
 //line ssmcc.gw:872
 	for o := 1; o < len(m.optCost); o++ {
-		if net := int64(m.optCost[o]) - m.optTax[o]; net < 0 {
+		if net := m.optCost[o] - m.optTax[o]; net < 0 {
 			panic(fmt.Sprintf("dcells: option %d has negative net cost %d; "+
 				"no item of fixed multiplicity absorbs it", o, net))
 		}
@@ -732,7 +732,7 @@ func (m *MCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 		if m.nd[k].itm > 0 && m.nd[k-1].itm <= 0 {
 			o := m.optNo[k]
 			m.byNet = append(m.byNet,
-				pricedOpt{int32(k), int64(m.optCost[o]) - m.optTax[o]})
+				pricedOpt{int32(k), m.optCost[o] - m.optTax[o]})
 		}
 	}
 	slices.SortStableFunc(m.byNet, func(a, b pricedOpt) int {

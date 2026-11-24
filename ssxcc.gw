@@ -709,10 +709,14 @@ Best int // Minimize에서 가장 싼 덮개를 몇 개나 찾을 것인가
 배열 |optNo|는 노드마다 그것이 속한 옵션의 번호를 알려 주며, |optCost|는 부르는
 쪽이 매긴 값을, |optTax|는 그 값 가운데 세금인 몫을 담는다. 모두 |Minimize|가
 지어 주기 전까지는 nil인 채인데, 필드 |minimizing|이 뜻하는 바가 바로 그것이다.
+값은 |int64|로 담는다. 값 함수가 돌려주는 |int|를 |int32|로 자르면 큰 값이 소리
+없이 넘치는데, 연습문제 7.2.2.1--246의 제곱 인구처럼 값이 $10^{15}$에 이르는
+문제도 있다. 다만 한 덮개의 값을 모두 더한 것은 |infCost|, 곧 $2^{62}$보다
+작아야 한다.
 @<값 살림살이@>=
 minimizing bool
 optNo      []int32 // 노드 -> 그 노드가 속한 옵션
-optCost    []int32 // 옵션 번호 -> 부르는 쪽이 매긴 값
+optCost    []int64 // 옵션 번호 -> 부르는 쪽이 매긴 값
 optTax     []int64 // 옵션 번호 -> 그 값에 든 세금
 itemBase   []int32 // 아이템 번호 -> set 안의 밑자리
 cost       int64   // 이제껏 맡긴 옵션들의 값
@@ -756,7 +760,7 @@ func (s *XCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 그 번호를 칠한다.
 @<옵션에 값을 매긴다@>=
 s.optNo = make([]int32, s.lastNode+1)
-s.optCost = make([]int32, int(s.options)+1)
+s.optCost = make([]int64, int(s.options)+1)
 o := int32(0)
 for k := 1; k < s.lastNode; k++ {
 	if s.nd[k].itm <= 0 {
@@ -764,7 +768,7 @@ for k := 1; k < s.lastNode; k++ {
 	}
 	if s.nd[k-1].itm <= 0 {
 		o++
-		s.optCost[o] = int32(cost(int(o), s.option(k)))
+		s.optCost[o] = int64(cost(int(o), s.option(k)))
 	}
 	s.optNo[k] = o
 }
@@ -823,7 +827,7 @@ for k := 0; k < s.active; k++ {
 t := infCost
 for c := x; c < x+s.size(x); c++ {
 	o := s.optNo[int(s.set[c])]
-	t = min(t, int64(s.optCost[o])-s.optTax[o])
+	t = min(t, s.optCost[o]-s.optTax[o])
 }
 
 @ 연단은 |Best|개의 빈자리로 시작하고 자리마다 값이 |infCost|이므로, 처음 오는
@@ -868,7 +872,7 @@ if s.minimizing {
 price, tax := int64(0), int64(0)
 if s.minimizing {
 	o := s.optNo[opt]
-	price, tax = int64(s.optCost[o]), s.optTax[o]
+	price, tax = s.optCost[o], s.optTax[o]
 }
 
 @ 새 덮개는 연단에서 가장 비싼 것을 밀어내고 그 자리에 오르는데, 가장 비싼 것은
@@ -975,7 +979,7 @@ for k := 1; k < s.lastNode; k++ {
 	if s.nd[k].itm > 0 && s.nd[k-1].itm <= 0 {
 		o := s.optNo[k]
 		s.byNet = append(s.byNet,
-			pricedOpt{int32(k), int64(s.optCost[o]) - s.optTax[o]})
+			pricedOpt{int32(k), s.optCost[o] - s.optTax[o]})
 	}
 }
 slices.SortStableFunc(s.byNet, func(a, b pricedOpt) int {
@@ -1466,6 +1470,25 @@ for i := 1; i < len(seen); i++ {
 }
 if got := seen[len(seen)-1]; got != 3 {
 	t.Errorf("cheapest cover costs %d, want 3", got)
+}
+
+@ 값이 |int32|에 들지 않아도 그대로 다뤄져야 한다. 옵션 $\{ab\}$, $\{a\}$,
+$\{b\}$의 값이 $5\cdot10^9$, $2\cdot10^9$, $2\cdot10^9$이면 가장 싼 덮개는
+$\{a\}+\{b\}$이고 그 값은 $4\cdot10^9$이다. 값을 |int32|로 자르면
+$5\cdot10^9$이 $705\,032\,704$로 줄어 $\{ab\}$가 이기는데, 2026년 11월까지
+실제로 그랬다.
+@(ssxcc_test.go@>=
+func TestMinimizeLargeCosts(t *testing.T) {
+	price := map[string]int{"a b": 5_000_000_000, "a": 2_000_000_000, "b": 2_000_000_000}
+	res := NewXCC().Minimize(strings.NewReader("a b\na b\na\nb\n"),
+		func(_ int, opt Option) int { return price[strings.Join(opt, " ")] })
+	var last []Option
+	for sol := range res.Solutions {
+		last = sol
+	}
+	if fmt.Sprint(last) != "[[a] [b]]" {
+		t.Errorf("cheapest cover is %v, want [[a] [b]]", last)
+	}
 }
 
 @ 더 매운 테스트는 $n$-퀸 판에 값을 매긴다. 퀸 하나의 값은 주대각선에서 떨어진
