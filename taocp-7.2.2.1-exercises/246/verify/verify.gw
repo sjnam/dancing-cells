@@ -26,13 +26,11 @@ the graph file \.{contiguous-usa-48.gb}. It reads the graph with the \GO/
 port of the Stanford GraphBase, makes the options with an enumeration of its
 own, attaches the three kinds of cost, and finds the cheapest covers with the
 branch-and-bound |Minimize| of this repository, asking for the |k| cheapest so
-that ties show up. It solves six problems in all: the four of answer~246
-with the corrected options, and the two left-hand ones again with the options
-as they were in 2018.
-
-The squared-population problems of page~116 are not among them. Their costs
-run to $10^{15}$, and |Minimize| keeps the cost of an option in an |int32|;
-I checked those two with Knuth's own \.{DLX5} instead.
+that ties show up. It solves eight problems in all: as controls, the two
+squared-population problems of page~116; the four of answer~246 with the
+corrected options; and the two left-hand ones again with the options as they
+were in 2018. Squared populations run to $10^{15}$, which |Minimize| holds
+without trouble, since it keeps costs in |int64|.
 
 @c
 package main
@@ -140,7 +138,7 @@ type problem struct {
 	lo, hi int64    // the populations allowed
 	exempt string   // a vertex whose residual component escapes pruning
 	extra  []string // options added by hand
-	cost   string   // \.{"ext"} or \.{"int"}
+	cost   string   // \.{"sq"}, \.{"ext"}, or \.{"int"}
 	book   string   // what the book prints
 	draw   bool     // whether its optimum covers appear in the picture
 }
@@ -154,6 +152,11 @@ fill; that is why \.{NY} is the vertex to exempt. The problems marked
 @<Declarations@>=
 var withNY = []string{"CT MA NY RI NH VT ME", "CT MA NY RI NH VT NJ ME"}
 var problems = []problem{
+	{"left, squared populations (page 116)", 37e6, 39e6, "NY", withNY,
+		"sq", "unique; the seven clusters without NY in [37.2..37.9] million",
+		false},
+	{"right, squared populations (page 116)", 50.5e6, 51.5e6, "", nil,
+		"sq", "unique; all six clusters in [50650000..51150000]", false},
 	{"left, exterior costs", 37e6, 39e6, "NY", withNY,
 		"ext", "the printed answer has $90", true},
 	{"left, interior costs", 37e6, 39e6, "NY", withNY,
@@ -263,8 +266,9 @@ if ok {
 }
 
 @* Costs.
-The two costs are those of answer~246. The exterior cost of a set $U$ is the number of edges from $U$
-to vertices not in~$U$. The interior cost, from exercise~244, is the number
+The squared population is the cost of page~116; the other two are those of
+answer~246. The exterior cost of a set $U$ is the number of edges from $U$ to
+vertices not in~$U$. The interior cost, from exercise~244, is the number
 of ordered pairs of distinct vertices of~$U$ that are not adjacent, which is
 $|U|(|U|-1)$ minus twice the number of edges inside~$U$. I keep the costs in
 |price|, indexed like |opts|, and also by set in |priceOf|, since a cover
@@ -281,6 +285,8 @@ for j, s := range opts {
 		out += int64(bits.OnesCount64(adj[v] &^ s))
 	}
 	switch p.cost {
+	case "sq":
+		price[j] = weight(s) * weight(s)
 	case "ext":
 		price[j] = out
 	case "int":
@@ -509,6 +515,11 @@ Both optima use the heavyweight New York option, the one with New Jersey.
 The right-hand problems are untouched by the correction, since they have no
 exceptional options, and they come out as printed: \$74 and \$230, each
 attained by a single cover, the same covers that answer~246 draws.
+
+The two controls come out as page~116 says. Each minimum of the squared
+populations is attained by a single cover. On the left, the seven clusters
+without New York hold between 37,252,895 and 37,851,641 people; on the right,
+the six clusters hold between 50,655,442 and 51,140,193.
 
 The picture shows, from left to right, the two covers of exterior cost \$78
 and the cover of interior cost \$164.

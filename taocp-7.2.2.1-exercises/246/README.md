@@ -167,7 +167,10 @@ caught this repository's solver reporting covers that left a state out, such
 as one of interior cost \$162 that never covered Montana: a forced move left
 over from a branch abandoned on cost made a later node branch on the wrong
 item. That is fixed in [ssxcc.gw](../../ssxcc.gw), and every number above
-comes from the fixed solver.
+comes from the fixed solver. The solver also kept the cost of an option in 32
+bits, too few for squared populations, which reach 10¹⁵; that is fixed as
+well, and the program now solves the two problems of page 116 too, as
+controls.
 
 ## 5. Reproducing
 
@@ -212,6 +215,6 @@ tangle; the graph file is in `verify/`.
 ```sh
 cd verify
 gtangle verify.gw
-go run . -mp partitions.mp          # pruned, as in exercise 242: about 20 s
-go run . -prune=false               # every connected set in range: about 20 min
+go run . -mp partitions.mp          # pruned, as in exercise 242: about 30 s
+go run . -prune=false               # every connected set in range: about 30 min
 ```
