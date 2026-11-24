@@ -1,0 +1,522 @@
+\input luamplib.sty
+
+\def\title{Equipopulated States, Revisited}
+
+@s Option int
+@s Graph int
+@s Vertex int
+@s Builder int
+
+@* Introduction.
+In November 2026 Shisheng Li found that the left-hand partition of
+7.2.2.1--(116), which divides the 48 contiguous United States into eight
+connected clusters of nearly equal population, was not the optimum it was
+said to be. Knuth traced the trouble to the pruning of exercise~242: the
+options for that problem include two exceptional ones, New York with New
+England and possibly New Jersey, whose populations lie outside $[37\,000\,000
+\,.\,.\,39\,000\,000)$; and an option must not be rejected for stranding a
+component whose population is not a sum of numbers in that range, if one of
+the exceptional options might help to fill it. He reworked pages 115 and~116,
+and asked whether the four partitions printed in answer~246, which minimize
+exterior and interior costs instead of squared populations, survive the
+change of options.
+
+This program answers that question, sharing nothing with Knuth's programs but
+the graph file \.{contiguous-usa-48.gb}. It reads the graph with the \GO/
+port of the Stanford GraphBase, makes the options with an enumeration of its
+own, attaches the three kinds of cost, and finds the cheapest covers with the
+branch-and-bound |Minimize| of this repository, asking for the |k| cheapest so
+that ties show up. It solves six problems in all: the four of answer~246
+with the corrected options, and the two left-hand ones again with the options
+as they were in 2018.
+
+The squared-population problems of page~116 are not among them. Their costs
+run to $10^{15}$, and |Minimize| keeps the cost of an option in an |int32|;
+I checked those two with Knuth's own \.{DLX5} instead.
+
+@c
+package main
+
+import (
+	"bufio"
+	"flag"
+	"fmt"
+	"math"
+	"math/bits"
+	"os"
+	"sort"
+	"strings"
+
+	cells "github.com/sjnam/dancing-cells"
+	"github.com/sjnam/go-sgb/gbsave"
+)
+
+@<Declarations@>
+@<Functions@>
+
+func main() {
+	@<Read the command line@>
+	@<Restore the graph of the 48 states@>
+	@<Solve each problem and compare it with the book@>
+	@<Write the figure, if asked@>
+}
+
+@ The flag \.{-k} says how many of the cheapest covers to find; twenty is
+enough to see every tie at the top. With \.{-prune=false} no option is
+pruned at all, so that every connected set in range goes to the solver; that
+is slower, but it makes the answers independent of any argument about which
+options are useless. The flag \.{-mp} names a file to receive the
+MetaPost source of the pictures below.
+
+@<Read the command line@>=
+gfile := flag.String("g", "contiguous-usa-48.gb", "the graph")
+kbest := flag.Int("k", 20, "how many of the cheapest covers to find")
+prune := flag.Bool("prune", true, "prune the options as exercise 242 does")
+mpfile := flag.String("mp", "", "write the pictures to this MetaPost file")
+flag.Parse()
+
+@* The graph.
+The graph has 48 vertices, so a set of states fits in a |uint64|. Vertex~|v|
+gets the bit |1<<v|, in the order of the file, which is alphabetical by the
+states' full names. Knuth's programs keep the population in utility field
+|v.I| of each vertex, and the file says so: its utility types begin
+\.{SI}, so field~|U| holds a string (the full name) and field~|V| an integer.
+
+@<Declarations@>=
+var (
+	n     int              // the number of vertices
+	name  []string         // their two-letter names
+	pop   []int64          // their populations in 2010
+	adj   []uint64         // the neighbors of each vertex, as a set
+	index = map[string]int{} // inverse of |name|
+)
+
+@ @<Restore the graph of the 48 states@>=
+g, err := gbsave.RestoreGraph(*gfile)
+if err != nil {
+	fmt.Fprintln(os.Stderr, "I can't restore the graph:", err)
+	os.Exit(1)
+}
+n = int(g.N)
+name, pop, adj = make([]string, n), make([]int64, n), make([]uint64, n)
+for v := 0; v < n; v++ {
+	name[v], pop[v] = g.Vertices[v].Name, g.Vertices[v].V.I
+	index[name[v]] = v
+}
+for v := 0; v < n; v++ {
+	for a := g.Vertices[v].Arcs; a != nil; a = a.Next {
+		adj[v] |= 1 << index[a.Tip.Name]
+	}
+}
+all := uint64(1)<<n - 1
+fmt.Printf("%s: %d vertices, %d edges\n", g.ID, n, g.M/2)
+
+@ Two small functions turn sets into numbers and names into sets.
+
+@<Functions@>=
+func weight(s uint64) (w int64) {
+	for ; s != 0; s &= s - 1 {
+		w += pop[bits.TrailingZeros64(s)]
+	}
+	return
+}
+
+func setOf(names []string) (s uint64) {
+	for _, t := range names {
+		s |= 1 << index[t]
+	}
+	return
+}
+
+@* The problems.
+A problem is a range $[|lo|\,.\,.\,|hi|)$ of populations, a few options added
+by hand, a kind of cost, and what the book says about it. The field |exempt|
+names a vertex whose component, in the residual graph of a candidate option,
+is excused from the pruning test; it is empty when nothing is excused.
+
+@<Declarations@>=
+type problem struct {
+	title  string   // how the report refers to it
+	lo, hi int64    // the populations allowed
+	exempt string   // a vertex whose residual component escapes pruning
+	extra  []string // options added by hand
+	cost   string   // \.{"ext"} or \.{"int"}
+	book   string   // what the book prints
+	draw   bool     // whether its optimum covers appear in the picture
+}
+
+@ The left-hand problems add the two options with New York. On page~116 they
+are the {\it only\/} options that may fall outside the range, so a residual
+component that contains \.{NY} is the only kind that one of them can help to
+fill; that is why \.{NY} is the vertex to exempt. The problems marked
+``2018'' exempt nothing, which is what the old pruning did.
+
+@<Declarations@>=
+var withNY = []string{"CT MA NY RI NH VT ME", "CT MA NY RI NH VT NJ ME"}
+var problems = []problem{
+	{"left, exterior costs", 37e6, 39e6, "NY", withNY,
+		"ext", "the printed answer has $90", true},
+	{"left, interior costs", 37e6, 39e6, "NY", withNY,
+		"int", "the printed answer has $176", true},
+	{"left, exterior costs, options of 2018", 37e6, 39e6, "", withNY,
+		"ext", "$90, as printed", false},
+	{"left, interior costs, options of 2018", 37e6, 39e6, "", withNY,
+		"int", "$176, as printed", false},
+	{"right, exterior costs", 50.5e6, 51.5e6, "", nil,
+		"ext", "$74, as printed", false},
+	{"right, interior costs", 50.5e6, 51.5e6, "", nil,
+		"int", "$230, as printed", false},
+}
+
+@ Every problem goes through the same four steps.
+
+@<Solve each problem and compare it with the book@>=
+var panels [][]uint64 // optimum covers to be drawn
+for _, p := range problems {
+	@<Make the options of problem |p|@>
+	@<Attach the costs@>
+	@<Find the |k| cheapest covers of problem |p|@>
+	@<Report on problem |p|@>
+}
+
+@* Connected sets.
+Every option except the added ones is a connected set of states whose
+population lies in $[|lo|\,.\,.\,|hi|)$. Knuth's program for exercise
+7.2.2--78 finds them by a backtrack over ``lexicographically smallest proofs
+of reachability.'' To share nothing with it I use the other textbook method.
+Each connected set~$S$ is grown from its smallest vertex~$r$. At each step
+the candidates are the neighbors of the set so far that exceed~$r$ and have
+not been ruled out; we try them one at a time, and once a candidate has been
+tried it is ruled out for its later siblings and their descendants. A
+connected set $T$ that contains the set so far is then reached in exactly one
+branch, the one that picks the first candidate lying in~$T$: earlier branches
+pick vertices outside~$T$, and later ones have ruled that candidate out. So
+every connected set appears exactly once.
+
+Since populations are positive, a set that has reached |hi| can't be
+extended, and a candidate that would carry it there is simply ruled out.
+
+@<Make the options of problem |p|@>=
+var opts []uint64
+found, pruned := 0, 0
+var below uint64 // the vertices less than the root
+var grow func(s, cand, out uint64, w int64)
+grow = func(s, cand, out uint64, w int64) {
+	if w >= p.lo {
+		found++
+		@<Keep |s| unless it strands a component@>
+	}
+	for cand != 0 {
+		v := bits.TrailingZeros64(cand)
+		b := uint64(1) << v
+		cand &^= b
+		if w+pop[v] < p.hi {
+			grow(s|b, (cand|adj[v])&^(s|b)&^out&^below, out, w+pop[v])
+		}
+		out |= b
+	}
+}
+for r := 0; r < n; r++ {
+	below = uint64(1)<<r - 1
+	if pop[r] < p.hi {
+		grow(1<<r, adj[r]&^below, 0, pop[r])
+	}
+}
+for _, o := range p.extra {
+	opts = append(opts, setOf(strings.Fields(o)))
+}
+
+@ Here is the test of exercise 242. Take the residual graph, without~$S$, and
+look at each of its components~$C$. Unless an added option can take part in
+covering $C$, the states of~$C$ must be covered by options from the range,
+so the population $d$ of~$C$ must be a sum of $k$ numbers in
+$[|lo|\,.\,.\,|hi|)$ for some~$k$, that is, $k\cdot|lo|\le d\le k(|hi|-1)$.
+The smallest candidate is $k=\lceil d/(|hi|-1)\rceil$, and if it fails, so
+does every larger~$k$. A component is found by starting from its lowest
+vertex and adding neighbors until nothing changes.
+
+@<Keep |s| unless it strands a component@>=
+ok := true
+for rest := all &^ s; *prune && ok && rest != 0; {
+	c := rest & -rest
+	for grown := true; grown; {
+		nb := uint64(0)
+		for t := c; t != 0; t &= t - 1 {
+			nb |= adj[bits.TrailingZeros64(t)]
+		}
+		grown = nb&rest&^c != 0
+		c |= nb & rest
+	}
+	rest &^= c
+	if p.exempt != "" && c&(1<<index[p.exempt]) != 0 {
+		continue
+	}
+	d := weight(c)
+	if d < (d+p.hi-2)/(p.hi-1)*p.lo {
+		ok = false
+	}
+}
+if ok {
+	opts = append(opts, s)
+} else {
+	pruned++
+}
+
+@* Costs.
+The two costs are those of answer~246. The exterior cost of a set $U$ is the number of edges from $U$
+to vertices not in~$U$. The interior cost, from exercise~244, is the number
+of ordered pairs of distinct vertices of~$U$ that are not adjacent, which is
+$|U|(|U|-1)$ minus twice the number of edges inside~$U$. I keep the costs in
+|price|, indexed like |opts|, and also by set in |priceOf|, since a cover
+comes back as a list of sets.
+
+@<Attach the costs@>=
+price := make([]int64, len(opts))
+priceOf := map[uint64]int64{}
+for j, s := range opts {
+	size, in, out := int64(bits.OnesCount64(s)), int64(0), int64(0)
+	for t := s; t != 0; t &= t - 1 {
+		v := bits.TrailingZeros64(t)
+		in += int64(bits.OnesCount64(adj[v] & s))
+		out += int64(bits.OnesCount64(adj[v] &^ s))
+	}
+	switch p.cost {
+	case "ext":
+		price[j] = out
+	case "int":
+		price[j] = size*(size-1) - in
+	}
+	priceOf[s] = price[j]
+}
+
+@* Covers.
+The options go to the solver as text in the usual format: the 48 names, then
+one line per option. The cost function receives the option's number, counted
+from~1 in input order, so it reads |price| directly.
+
+The solver delivers covers as a chain, each new one cheaper than the |k|th
+cheapest seen so far; when the search is over, the |k| cheapest delivered are
+the |k| cheapest covers of the problem.
+
+@<Find the |k| cheapest covers of problem |p|@>=
+var text strings.Builder
+text.WriteString(strings.Join(name, " ") + "\n")
+for _, s := range opts {
+	for t := s; t != 0; t &= t - 1 {
+		text.WriteString(" " + name[bits.TrailingZeros64(t)])
+	}
+	text.WriteString("\n")
+}
+xc := cells.NewXCC()
+xc.Best = *kbest
+res := xc.Minimize(strings.NewReader(text.String()),
+	func(o int, _ cells.Option) int { return int(price[o-1]) })
+type cover struct {
+	cost int64
+	sets []uint64
+}
+var covers []cover
+for sol := range res.Solutions {
+	var c cover
+	for _, opt := range sol {
+		s := setOf(opt)
+		c.sets, c.cost = append(c.sets, s), c.cost+priceOf[s]
+	}
+	@<Make sure that |c| is a partition of the 48 states@>
+	covers = append(covers, c)
+}
+sort.SliceStable(covers, func(i, j int) bool {
+	return covers[i].cost < covers[j].cost
+})
+if len(covers) > *kbest {
+	covers = covers[:*kbest]
+}
+
+@ A solver is a program too, so I don't take its word that a cover covers.
+The sets must be disjoint and their union must be everything; and each must
+be one of the options, or |priceOf| would quietly have charged nothing for
+it.
+
+This check is not idle. Its first run caught the solver of this repository
+reporting covers that left a state out, such as a cover of interior cost
+\$162 that never covered Montana. The engine had let a stale entry of its
+stack of forced moves survive a branch that it abandoned on cost, so that a
+later node branched on an item that was not the smallest and starved another
+one. That has been fixed in \.{ssxcc.gw}; every cover now passes.
+
+@<Make sure that |c| is a partition of the 48 states@>=
+var union uint64
+total := 0
+for _, s := range c.sets {
+	if _, ok := priceOf[s]; !ok {
+		panic(fmt.Sprintf("the solver returned a set that is not an option: %x", s))
+	}
+	union |= s
+	total += bits.OnesCount64(s)
+}
+if union != all || total != n {
+	panic(fmt.Sprintf("the solver returned a cover that is not a partition: %v", sol))
+}
+
+@ The report gives the counts of options, the costs of the |k| cheapest
+covers with their multiplicities, and then every cover of minimum cost, one
+cluster per line, heaviest first, with the cluster's population and cost.
+
+@<Report on problem |p|@>=
+fmt.Printf("\n%s\n", p.title)
+fmt.Printf("  %d connected sets in [%d..%d), %d pruned, %d+%d options\n",
+	found, p.lo, p.hi, pruned, len(opts)-len(p.extra), len(p.extra))
+fmt.Printf("  the %d cheapest covers:", len(covers))
+for i := 0; i < len(covers); {
+	j := i
+	for j < len(covers) && covers[j].cost == covers[i].cost {
+		j++
+	}
+	fmt.Printf(" $%d", covers[i].cost)
+	if j-i > 1 {
+		fmt.Printf(" (x%d)", j-i)
+	}
+	i = j
+}
+fmt.Printf("\n  the book: %s\n", p.book)
+for _, c := range covers {
+	if c.cost != covers[0].cost {
+		break
+	}
+	sort.Slice(c.sets, func(i, j int) bool {
+		return weight(c.sets[i]) > weight(c.sets[j])
+	})
+	fmt.Println("  an optimum cover:")
+	for _, s := range c.sets {
+		var b []string
+		for t := s; t != 0; t &= t - 1 {
+			b = append(b, name[bits.TrailingZeros64(t)])
+		}
+		fmt.Printf("    %-42s %6.3fM  $%d\n", strings.Join(b, " "),
+			float64(weight(s))/1e6, priceOf[s])
+	}
+	if p.draw {
+		panels = append(panels, c.sets)
+	}
+}
+
+@* The pictures.
+The optimum covers of the corrected left-hand problems are drawn as the book
+draws them: each state at its place in the grid of 7.2.2.1--(112), with area
+proportional to population; solid edges inside a cluster and dashed edges
+between clusters. Here are the places, column and row, counting rows
+downward.
+
+@<Declarations@>=
+var place = map[string][2]int{
+	"ND": {4, 0}, "VT": {10, 0}, "NH": {11, 0}, "ME": {12, 0},
+	"WA": {1, 1}, "MT": {3, 1}, "SD": {4, 1}, "MN": {5, 1}, "WI": {6, 1},
+	"MI": {7, 1}, "NY": {10, 1}, "MA": {11, 1},
+	"OR": {1, 2}, "ID": {2, 2}, "WY": {3, 2}, "NE": {4, 2}, "IA": {5, 2},
+	"IL": {6, 2}, "IN": {7, 2}, "OH": {8, 2}, "PA": {9, 2}, "NJ": {10, 2},
+	"CT": {11, 2}, "RI": {12, 2},
+	"CA": {0, 3}, "NV": {1, 3}, "UT": {2, 3}, "CO": {3, 3}, "KS": {4, 3},
+	"MO": {5, 3}, "KY": {7, 3}, "WV": {8, 3}, "MD": {9, 3}, "DE": {10, 3},
+	"AZ": {2, 4}, "NM": {3, 4}, "OK": {4, 4}, "AR": {5, 4}, "TN": {7, 4},
+	"VA": {8, 4},
+	"TX": {4, 5}, "LA": {5, 5}, "MS": {6, 5}, "AL": {7, 5}, "GA": {8, 5},
+	"NC": {9, 5},
+	"FL": {8, 6}, "SC": {9, 6},
+}
+
+@ The panels sit side by side, 14 units apart. The program writes only
+straight lines and circles, so the file holds nothing that \TeX\ or \.{GWEB}
+could misread.
+
+@<Write the figure, if asked@>=
+if *mpfile != "" {
+	f, err := os.Create(*mpfile)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+	w := bufio.NewWriter(f)
+	fmt.Fprintln(w, "% The optimum covers of answer 7.2.2.1-246 with the corrected options.")
+	fmt.Fprintln(w, "% Written by verify.go -mp; read by luamplib and by mpost.")
+	fmt.Fprintln(w, "beginfig(1);")
+	fmt.Fprintln(w, "  u := 11bp; color cut; cut := (.35,.35,1);")
+	for k, sets := range panels {
+		@<Write panel |k|, the cover |sets|@>
+	}
+	fmt.Fprintln(w, "endfig;")
+	w.Flush()
+	f.Close()
+}
+
+@ Within a panel the dashed edges go first, then the solid ones, then the
+circles on top. The largest state, California, gets radius $0.6u$.
+
+@<Write panel |k|, the cover |sets|@>=
+at := func(v int) string {
+	q := place[name[v]]
+	return fmt.Sprintf("(%d*u,%d*u)", 14*k+q[0], -q[1])
+}
+cluster := make([]int, n)
+for c, s := range sets {
+	for t := s; t != 0; t &= t - 1 {
+		cluster[bits.TrailingZeros64(t)] = c
+	}
+}
+for pass := 0; pass < 2; pass++ {
+	for u := 0; u < n; u++ {
+		for t := adj[u] &^ (uint64(1)<<(u+1) - 1); t != 0; t &= t - 1 {
+			v := bits.TrailingZeros64(t)
+			if same := cluster[u] == cluster[v]; same && pass == 1 {
+				fmt.Fprintf(w, "  draw %s--%s withpen pencircle scaled 1.2bp;\n",
+					at(u), at(v))
+			} else if !same && pass == 0 {
+				fmt.Fprintf(w, "  draw %s--%s dashed evenly scaled .5 "+
+					"withpen pencircle scaled .4bp withcolor cut;\n", at(u), at(v))
+			}
+		}
+	}
+}
+big := float64(pop[index["CA"]])
+for v := 0; v < n; v++ {
+	r := 0.6 * math.Sqrt(float64(pop[v])/big)
+	fmt.Fprintf(w, "  fill fullcircle scaled (%.3f*u) shifted %s withcolor (1,.5,0);\n",
+		2*r, at(v))
+	fmt.Fprintf(w, "  draw fullcircle scaled (%.3f*u) shifted %s "+
+		"withpen pencircle scaled .5bp;\n", 2*r, at(v))
+}
+
+@* What came out.
+I ran the program on 24 November 2026, with the default flags and again with
+\.{-prune=false}. In the second run every problem keeps all of its connected
+sets, so the two problems ``of 2018'' turn into the corrected ones; apart from
+that, the two runs agree on everything below.
+
+The options come out as on page~116: 291,282 connected sets in
+$[37\,000\,000\,.\,.\,39\,000\,000)$, of which the corrected test prunes
+257,502 and leaves 33,780; with the two New York options that makes 33,782.
+The old test, which exempts nothing, leaves 31,685, the number that page~116
+gives for the options that have no solution. With those 31,685 and the two New
+York options, the minimum costs are \$90 (in two ways) and \$176 (in one),
+which are the costs that answer~246 prints. So that is what the printed
+answer was solving.
+
+With the corrected options the minimum exterior cost drops to \$78, attained
+by two covers that differ only in where Mississippi and Oklahoma go; the next
+costs are \$80 (nine covers) and \$82 (nine). The minimum interior cost drops
+to \$164, attained by a single cover; then come \$168 (four) and \$170 (ten).
+Both optima use the heavyweight New York option, the one with New Jersey.
+
+The right-hand problems are untouched by the correction, since they have no
+exceptional options, and they come out as printed: \$74 and \$230, each
+attained by a single cover, the same covers that answer~246 draws.
+
+The picture shows, from left to right, the two covers of exterior cost \$78
+and the cover of interior cost \$164.
+
+$$\mplibcode input partitions; \endmplibcode$$
+
+The first two still have a cluster that runs from Arizona to Minnesota, and
+the cover of interior cost \$164 has one that runs from Nevada and Oregon
+across Montana and North Dakota to Michigan.
+
+@* Index.
