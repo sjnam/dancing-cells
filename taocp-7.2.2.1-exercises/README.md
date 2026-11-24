@@ -30,6 +30,15 @@ Nothing is claimed that the program does not check.
 When a reading turns out to be wrong it is corrected in place, and the change
 is listed here, newest first, so that a returning reader can see what moved.
 
+- **25 November 2026, [246](246).** Answering Knuth about exercise 246 turned
+  up two faults in the min-cost search of this repository's solver. A forced
+  move left over from a branch abandoned on cost could make it report a cover
+  that left an item uncovered; and it kept the cost of an option in 32 bits,
+  so that larger costs wrapped around. Both are fixed. The program of 246
+  checks every cover it is given, which is how the first fault came to light;
+  the second had kept the squared-population problems of page 116 out of that
+  program, which now solves them too, in agreement with DLX5. No other reading
+  here uses the min-cost search, so none of them is affected.
 - **8 November 2026, [151, 152](151-152).** The reading said that answer 152
   prints no 8×12 arrangement, and this page listed finding one as going past
   the book. The answer does print one, on page 459 between answers 151 and 152;
