@@ -155,6 +155,13 @@ gives the same minima, the same partitions and the same twenty cheapest costs.
 (Without pruning, the two problems "of 2018" become the corrected ones, so
 that run says nothing new about them.)
 
+One more check uses a different kind of search altogether. Given the same
+291,284 unpruned options with exterior costs, the integer-programming solver
+HiGHS 1.16, which works from linear-programming bounds rather than by dancing
+links, proves \$78 optimal with a gap of 0. It counts no ties, so the two
+partitions rest on the other two routes; and it was not run for interior
+costs.
+
 The check that the solver returns real partitions was not idle. Its first run
 caught this repository's solver reporting covers that left a state out, such
 as one of interior cost \$162 that never covered Montana: a forced move left
@@ -164,19 +171,47 @@ comes from the fixed solver.
 
 ## 5. Reproducing
 
+**With Knuth's programs.** `back-reachable-weighted.w` and Knuth's change
+files come from his tarball, not from this repository; only the two merged
+change files live here. So the work is done in a directory of its own,
+starting from this one. The
+[Stanford GraphBase](https://www-cs-faculty.stanford.edu/~knuth/sgb.html)
+should be installed where its `make install` puts it.
+
+```sh
+mkdir -p /tmp/newpop48
+cp back-reachable-weighted-pruned-partly-*.ch /tmp/newpop48
+cd /tmp/newpop48
+curl -fO https://cs.stanford.edu/~knuth/newpop48.tgz && tar xzf newpop48.tgz
+curl -fO https://cs.stanford.edu/~knuth/contiguous-usa-48.gb
+curl -fO https://cs.stanford.edu/~knuth/programs/dlx5.w
+
+ctangle back-reachable-weighted.w back-reachable-weighted-pruned-partly-extcosts.ch
+cc -O2 -w -o brw-ext back-reachable-weighted.c -I/usr/local/sgb/include -L/usr/local/lib -lgb
+
+ctangle dlx5.w
+cc -O2 -w -std=gnu89 -o dlx5 dlx5.c     # dlx5.w declares main without int
+
+./brw-ext 37000000 39000000 contiguous-usa-48.gb NY > ext.dlx5
+printf ' CT MA NY RI NH VT ME |2\n CT MA NY RI NH VT NJ ME |3\n' >> ext.dlx5
+./dlx5 k20 < ext.dlx5 > /dev/null
+```
+
+The generator reports 291,282 connected sets, 257,502 pruned, 33,780 left;
+`dlx5` ends with `$78 (repeated 2 times)`, `$80 (repeated 9 times)` and
+`$82 (repeated 9 times)`. For interior costs, use the `intcosts` change file
+and give the two New York options the costs 22 and 34; the minimum is \$164.
+Option `k20` asks for the 20 cheapest solutions, so it costs more mems than
+the plain run `./dlx5 < ext.dlx5`. The plain run takes 33,770,442 +
+4,168,652,101 mems: the search mems of section 1 exactly, and 22 more mems of
+input, because `contig48pop.dlx5` puts the two New York options first.
+
+**With the program here.** It needs [GWEB](https://github.com/sjnam/gweb) to
+tangle; the graph file is in `verify/`.
+
 ```sh
 cd verify
 gtangle verify.gw
 go run . -mp partitions.mp          # pruned, as in exercise 242: about 20 s
-go run . -prune=false               # every connected set in range
-```
-
-and, with the Stanford GraphBase and Knuth's files from the tarball,
-
-```sh
-ctangle back-reachable-weighted.w back-reachable-weighted-pruned-partly-extcosts.ch
-cc -o brw-ext back-reachable-weighted.c -lgb
-./brw-ext 37000000 39000000 contiguous-usa-48.gb NY > ext.dlx5
-# append the two New York options, with costs 2 and 3
-dlx5 k20 < ext.dlx5
+go run . -prune=false               # every connected set in range: about 20 min
 ```
