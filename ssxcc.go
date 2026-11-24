@@ -27,10 +27,10 @@ type XCC struct {
 	Debug         bool          // 입력 요약과 마무리 통계를 stderr에 찍는다
 	PulseInterval time.Duration // 양수이면 이따금 Heartbeat 문자열을 내준다
 
-//line ssxcc.gw:698
+//line ssxcc.gw:701
 	Bound func(Frame) int // 앞으로 치를 값의 하한, nil이어도 된다
 
-//line ssxcc.gw:703
+//line ssxcc.gw:706
 	Best int // Minimize에서 가장 싼 덮개를 몇 개나 찾을 것인가
 
 //line ssxcc.gw:163
@@ -76,7 +76,7 @@ type XCC struct {
 
 //line ssxcc.gw:169
 
-//line ssxcc.gw:710
+//line ssxcc.gw:713
 	minimizing bool
 	optNo      []int32     // 노드 -> 그 노드가 속한 옵션
 	optCost    []int32     // 옵션 번호 -> 부르는 쪽이 매긴 값
@@ -231,20 +231,21 @@ func (s *XCC) search(level int) bool {
 	}
 	s.tick()
 
-//line ssxcc.gw:841
+//line ssxcc.gw:853
 	if s.minimizing {
 		rest := s.taxDue
 		if s.Bound != nil {
 			rest = max(rest, int64(s.Bound(Frame{s})))
 		}
 		if s.cost+rest >= s.podium[0] {
+			s.forced = 0 // 이 마디가 맡을 강제 이동은 이제 묵은 것이다
 			return true
 		}
 	}
 
 //line ssxcc.gw:334
 
-//line ssxcc.gw:918
+//line ssxcc.gw:931
 	if s.minimizing {
 		budget := s.podium[0] - s.cost - s.taxDue
 		p := 0
@@ -253,7 +254,7 @@ func (s *XCC) search(level int) bool {
 		}
 		for ; p < len(s.byNet) && s.byNet[p].net >= budget; p++ {
 
-//line ssxcc.gw:938
+//line ssxcc.gw:951
 			for nn := int(s.byNet[p].node); s.nd[nn].itm > 0; nn++ {
 				u, v := int(s.nd[nn].itm), int(s.nd[nn].loc)
 				if s.pos(u) >= s.active || v >= u+s.size(u) {
@@ -261,6 +262,7 @@ func (s *XCC) search(level int) bool {
 				}
 				ss := s.size(u) - 1
 				if ss == 0 && u < s.second {
+					s.forced = 0
 					return true // 주 아이템에 감당할 수 있는 옵션이 하나도 남지 않았다
 				}
 				nnp := int(s.set[u+ss])
@@ -270,7 +272,7 @@ func (s *XCC) search(level int) bool {
 				s.updates++
 			}
 
-//line ssxcc.gw:926
+//line ssxcc.gw:939
 		}
 		s.sweptAt = ensure(s.sweptAt, level+1)
 		s.sweptAt[level] = int32(p)
@@ -292,7 +294,7 @@ func (s *XCC) search(level int) bool {
 		opt := int(s.set[c])
 		s.choice[level] = int32(opt)
 
-//line ssxcc.gw:855
+//line ssxcc.gw:868
 		price, tax := int64(0), int64(0)
 		if s.minimizing {
 			o := s.optNo[opt]
@@ -301,7 +303,7 @@ func (s *XCC) search(level int) bool {
 
 //line ssxcc.gw:365
 
-//line ssxcc.gw:976
+//line ssxcc.gw:990
 		if s.minimizing && s.cost+price+s.taxDue-tax >= s.podium[0] {
 			continue
 		}
@@ -332,7 +334,7 @@ func (s *XCC) chooseItem() (best int, solution bool) {
 		}
 	}
 
-//line ssxcc.gw:409
+//line ssxcc.gw:412
 	score := infSize
 	for k := 0; k < s.active; k++ {
 		x := int(s.item[k])
@@ -359,10 +361,10 @@ func (s *XCC) chooseItem() (best int, solution bool) {
 	return best, score == infSize
 }
 
-//line ssxcc.gw:436
+//line ssxcc.gw:439
 func (s *XCC) commitOption(opt int) bool {
 
-//line ssxcc.gw:443
+//line ssxcc.gw:446
 	p := s.active
 	s.oactive = s.active
 	for q := opt + 1; q != opt; {
@@ -383,9 +385,9 @@ func (s *XCC) commitOption(opt int) bool {
 	}
 	s.active = p
 
-//line ssxcc.gw:438
+//line ssxcc.gw:441
 
-//line ssxcc.gw:470
+//line ssxcc.gw:473
 	for q := opt + 1; q != opt; {
 		c := int(s.nd[q].itm)
 		if c < 0 {
@@ -407,11 +409,11 @@ func (s *XCC) commitOption(opt int) bool {
 		q++
 	}
 
-//line ssxcc.gw:439
+//line ssxcc.gw:442
 	return true
 }
 
-//line ssxcc.gw:498
+//line ssxcc.gw:501
 func (s *XCC) hide(c, color, check int) bool {
 	for rr, end := c, c+s.size(c); rr < end; rr++ {
 		tt := int(s.set[rr])
@@ -419,7 +421,7 @@ func (s *XCC) hide(c, color, check int) bool {
 			continue
 		}
 
-//line ssxcc.gw:514
+//line ssxcc.gw:517
 		for nn := tt + 1; nn != tt; {
 			u, v := int(s.nd[nn].itm), int(s.nd[nn].loc)
 			if u < 0 {
@@ -429,7 +431,7 @@ func (s *XCC) hide(c, color, check int) bool {
 			if s.pos(u) < s.oactive {
 				ss := s.size(u) - 1
 
-//line ssxcc.gw:533
+//line ssxcc.gw:536
 				if ss <= 1 && check != 0 && u < s.second && s.pos(u) < s.active {
 					if ss == 0 {
 						return false
@@ -439,7 +441,7 @@ func (s *XCC) hide(c, color, check int) bool {
 					s.forced++
 				}
 
-//line ssxcc.gw:523
+//line ssxcc.gw:526
 				nnp := int(s.set[u+ss])
 				s.setSize(u, ss)
 				s.set[u+ss], s.set[v] = int32(nn), int32(nnp)
@@ -449,12 +451,12 @@ func (s *XCC) hide(c, color, check int) bool {
 			nn++
 		}
 
-//line ssxcc.gw:505
+//line ssxcc.gw:508
 	}
 	return true
 }
 
-//line ssxcc.gw:545
+//line ssxcc.gw:548
 func (s *XCC) swapOut(x int) {
 	p := s.active - 1
 	s.active = p
@@ -466,7 +468,7 @@ func (s *XCC) swapOut(x int) {
 	s.updates++
 }
 
-//line ssxcc.gw:566
+//line ssxcc.gw:569
 func (s *XCC) saveSizes(level int) {
 	s.savestack = ensure(s.savestack, s.saveptr+s.active)
 	for p := 0; p < s.active; p++ {
@@ -486,12 +488,12 @@ func (s *XCC) restoreSizes(level int) {
 	}
 }
 
-//line ssxcc.gw:594
+//line ssxcc.gw:597
 func (s *XCC) visit(level int) bool {
 	s.count++
 	if s.minimizing {
 
-//line ssxcc.gw:866
+//line ssxcc.gw:879
 		h, i := s.podium, 0
 		for j := 1; j < len(h); j = 2*i + 1 {
 			if j+1 < len(h) && h[j+1] > h[j] {
@@ -505,7 +507,7 @@ func (s *XCC) visit(level int) bool {
 		}
 		h[i] = s.cost
 
-//line ssxcc.gw:598
+//line ssxcc.gw:601
 	}
 	sol := make([]Option, level)
 	for k := 0; k < level; k++ {
@@ -519,7 +521,7 @@ func (s *XCC) visit(level int) bool {
 	}
 }
 
-//line ssxcc.gw:615
+//line ssxcc.gw:618
 func (s *XCC) tick() {
 	if s.pulse == nil {
 		return
@@ -534,7 +536,7 @@ func (s *XCC) tick() {
 	}
 }
 
-//line ssxcc.gw:635
+//line ssxcc.gw:638
 func (s *XCC) option(p int) Option {
 	for s.nd[p-1].itm > 0 {
 		p-- // 옵션의 첫 노드로 옮긴다
@@ -550,11 +552,11 @@ func (s *XCC) option(p int) Option {
 	return opt
 }
 
-//line ssxcc.gw:740
+//line ssxcc.gw:743
 func (s *XCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 	s.inputMatrix(rd)
 
-//line ssxcc.gw:755
+//line ssxcc.gw:758
 	s.optNo = make([]int32, s.lastNode+1)
 	s.optCost = make([]int32, int(s.options)+1)
 	o := int32(0)
@@ -569,16 +571,16 @@ func (s *XCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 		s.optNo[k] = o
 	}
 
-//line ssxcc.gw:775
+//line ssxcc.gw:778
 	s.itemBase = make([]int32, s.itemlen+1)
 	for k := 0; k < s.itemlen; k++ {
 		base := int(s.item[k])
 		s.itemBase[s.itemNo(base)] = int32(base)
 	}
 
-//line ssxcc.gw:743
+//line ssxcc.gw:746
 
-//line ssxcc.gw:804
+//line ssxcc.gw:807
 	s.optTax = make([]int64, len(s.optCost))
 	s.taxDue = 0
 	for k := 0; k < s.active; k++ {
@@ -587,23 +589,23 @@ func (s *XCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 			continue // 부 아이템은 세금을 물지 않고, 옵션이 없는 아이템도 그렇다
 		}
 
-//line ssxcc.gw:820
+//line ssxcc.gw:823
 		t := infCost
 		for c := x; c < x+s.size(x); c++ {
 			o := s.optNo[int(s.set[c])]
 			t = min(t, int64(s.optCost[o])-s.optTax[o])
 		}
 
-//line ssxcc.gw:812
+//line ssxcc.gw:815
 		for c := x; c < x+s.size(x); c++ {
 			s.optTax[s.optNo[int(s.set[c])]] += t
 		}
 		s.taxDue += t
 	}
 
-//line ssxcc.gw:744
+//line ssxcc.gw:747
 
-//line ssxcc.gw:959
+//line ssxcc.gw:973
 	s.byNet = s.byNet[:0]
 	for k := 1; k < s.lastNode; k++ {
 		if s.nd[k].itm > 0 && s.nd[k-1].itm <= 0 {
@@ -616,15 +618,15 @@ func (s *XCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 		return cmp.Compare(b.net, a.net)
 	})
 
-//line ssxcc.gw:745
+//line ssxcc.gw:748
 
-//line ssxcc.gw:829
+//line ssxcc.gw:832
 	s.podium = make([]int64, max(s.Best, 1))
 	for i := range s.podium {
 		s.podium[i] = infCost
 	}
 
-//line ssxcc.gw:746
+//line ssxcc.gw:749
 	s.minimizing = true
 
 //line ssxcc.gw:277
@@ -671,10 +673,10 @@ func (s *XCC) Minimize(rd io.Reader, cost func(o int, opt Option) int) *Result {
 
 	return &Result{Solutions: s.solStream, Heartbeat: s.heartbeat}
 
-//line ssxcc.gw:748
+//line ssxcc.gw:751
 }
 
-//line ssxcc.gw:1004
+//line ssxcc.gw:1018
 func (s *XCC) eachLive(yield func(item, opt int) bool) {
 	for k := 0; k < s.active; k++ {
 		x := int(s.item[k])
@@ -690,10 +692,10 @@ func (s *XCC) eachLive(yield func(item, opt int) bool) {
 	}
 }
 
-//line ssxcc.gw:1023
+//line ssxcc.gw:1037
 func (s *XCC) optionCost(opt int) int { return int(s.optCost[opt]) }
 
-//line ssxcc.gw:1024
+//line ssxcc.gw:1038
 func (s *XCC) itemName(item int) string { return s.names[item] }
 
 func (s *XCC) itemNeed(item int) int {
@@ -703,17 +705,17 @@ func (s *XCC) itemNeed(item int) int {
 	return 0
 }
 
-//line ssxcc.gw:1041
+//line ssxcc.gw:1055
 func (s *XCC) inputMatrix(rd io.Reader) {
 	br := bufio.NewReader(rd)
 	s.readItemNames(br)
 	s.readOptions(br)
 }
 
-//line ssxcc.gw:1057
+//line ssxcc.gw:1071
 func (s *XCC) readItemNames(br *bufio.Reader) {
 
-//line ssxcc.gw:1080
+//line ssxcc.gw:1094
 	var buf []byte
 	var p int
 	found := false
@@ -731,7 +733,7 @@ func (s *XCC) readItemNames(br *bufio.Reader) {
 		failf("no items")
 	}
 
-//line ssxcc.gw:1059
+//line ssxcc.gw:1073
 	for buf[p] != 0 {
 		name, next := token(buf, p, false)
 		if name == "|" {
@@ -752,7 +754,7 @@ func (s *XCC) readItemNames(br *bufio.Reader) {
 	s.lastItm = len(s.names) // 아이템 수 + 1 (names[0]은 쓰지 않는다)
 }
 
-//line ssxcc.gw:1100
+//line ssxcc.gw:1114
 func (s *XCC) readOptions(br *bufio.Reader) {
 	for {
 		buf, ok := nextLine(br)
@@ -767,13 +769,13 @@ func (s *XCC) readOptions(br *bufio.Reader) {
 	s.finalize()
 }
 
-//line ssxcc.gw:1119
+//line ssxcc.gw:1133
 func (s *XCC) readOption(buf []byte) {
 	spacer := s.lastNode
 	hasPrimary := false
 	for p := skipSpace(buf, 0); buf[p] != 0; {
 
-//line ssxcc.gw:1139
+//line ssxcc.gw:1153
 		name, next := token(buf, p, true)
 		if name == "" {
 			failf("empty item name")
@@ -798,12 +800,12 @@ func (s *XCC) readOption(buf []byte) {
 		}
 		p = skipSpace(buf, next)
 
-//line ssxcc.gw:1124
+//line ssxcc.gw:1138
 	}
 
 	if !hasPrimary {
 
-//line ssxcc.gw:1166
+//line ssxcc.gw:1180
 		for s.lastNode > spacer {
 			slot := int(s.nd[s.lastNode].itm) << 2
 			s.setSize(slot, s.size(slot)-1)
@@ -811,7 +813,7 @@ func (s *XCC) readOption(buf []byte) {
 			s.lastNode--
 		}
 
-//line ssxcc.gw:1128
+//line ssxcc.gw:1142
 		return
 	}
 	s.nd[spacer].loc = int32(s.lastNode - spacer)
@@ -821,7 +823,7 @@ func (s *XCC) readOption(buf []byte) {
 	s.nd[s.lastNode].itm = int32(spacer + 1 - s.lastNode)
 }
 
-//line ssxcc.gw:1178
+//line ssxcc.gw:1192
 func (s *XCC) createNode(m, spacer int, hasPrimary *bool) {
 	slot := m << 2
 	s.set = ensure(s.set, slot)
@@ -840,10 +842,10 @@ func (s *XCC) createNode(m, spacer int, hasPrimary *bool) {
 	s.setPos(slot, s.lastNode)
 }
 
-//line ssxcc.gw:1199
+//line ssxcc.gw:1213
 func (s *XCC) finalize() {
 
-//line ssxcc.gw:1210
+//line ssxcc.gw:1224
 	s.active, s.itemlen = s.lastItm-1, s.lastItm-1
 	s.item = ensure(s.item, s.itemlen)
 	s.set = ensure(s.set, (s.itemlen<<2)+1) // 입력 칸을 모두 읽을 수 있게
@@ -862,9 +864,9 @@ func (s *XCC) finalize() {
 		s.osecond = s.second - 1
 	}
 
-//line ssxcc.gw:1201
+//line ssxcc.gw:1215
 
-//line ssxcc.gw:1232
+//line ssxcc.gw:1246
 	for ; k != 0; k-- {
 		base := int(s.item[k-1])
 		if k == s.second {
@@ -878,9 +880,9 @@ func (s *XCC) finalize() {
 		s.setItemNo(base, k)
 	}
 
-//line ssxcc.gw:1202
+//line ssxcc.gw:1216
 
-//line ssxcc.gw:1249
+//line ssxcc.gw:1263
 	for k = 1; k < s.lastNode; k++ {
 		if s.nd[k].itm < 0 {
 			continue
@@ -892,5 +894,5 @@ func (s *XCC) finalize() {
 		s.set[loc] = int32(k)
 	}
 
-//line ssxcc.gw:1203
+//line ssxcc.gw:1217
 }
