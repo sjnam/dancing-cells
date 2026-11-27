@@ -1,8 +1,8 @@
 module github.com/sjnam/dancing-cells
 
-go 1.27.1
+go 1.27.4
 
 require (
-	github.com/sjnam/bdd v0.0.0-20260907100623-3d39573a11bd
-	github.com/sjnam/go-sgb v0.1.0
+	github.com/sjnam/bdd v0.1.1
+	github.com/sjnam/go-sgb v0.1.1
 )
